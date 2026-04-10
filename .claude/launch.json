@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "/bin/zsh",
+      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/web dev --port $PORT"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "extension",
+      "runtimeExecutable": "/bin/zsh",
+      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/extension dev"],
+      "port": 3001,
+      "autoPort": false
+    }
+  ]
+}
