@@ -4,9 +4,9 @@
     {
       "name": "web",
       "runtimeExecutable": "/bin/zsh",
-      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/web dev --port $PORT"],
-      "port": 3000,
-      "autoPort": true
+      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/web dev --port 3100"],
+      "port": 3100,
+      "autoPort": false
     },
     {
       "name": "extension",

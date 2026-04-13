@@ -71,19 +71,6 @@ export const verificationTokens = pgTable(
 
 // --- App tables ---
 
-export const apiKeys = pgTable("api_keys", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  keyHash: text("key_hash").notNull().unique(),
-  keyPrefix: text("key_prefix").notNull(),
-  name: text("name").notNull(),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-  lastUsedAt: timestamp("last_used_at", { mode: "date" }),
-  revokedAt: timestamp("revoked_at", { mode: "date" }),
-});
-
 export const balanceSnapshots = pgTable("balance_snapshots", {
   id: serial("id").primaryKey(),
   userId: uuid("user_id")

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, desc, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { balanceSnapshots, scrapeEvents } from "@/lib/db/schema";
-import { validateApiKey } from "@/lib/api-key";
+import { verifyExtensionToken } from "@/lib/jwt";
 import { auth } from "@/lib/auth";
 import { balancePayloadSchema } from "@/lib/validators";
 import { logger } from "@/lib/logger";
@@ -12,12 +12,12 @@ export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Missing API key" }, { status: 401 });
+    return NextResponse.json({ error: "Missing token" }, { status: 401 });
   }
 
-  const apiKeyResult = await validateApiKey(authHeader.slice(7));
-  if (!apiKeyResult) {
-    return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+  const tokenResult = await verifyExtensionToken(authHeader.slice(7));
+  if (!tokenResult) {
+    return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
   }
 
   const body = await req.json();
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { provider, balance, scrapedAt, scrapeEvent } = parsed.data;
-  const userId = apiKeyResult.userId;
+  const userId = tokenResult.userId;
 
   try {
     // Always log the scrape event

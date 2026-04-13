@@ -15,10 +15,10 @@ export default defineBackground(() => {
 });
 
 async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
-  const { apiKey } = await getState();
+  const { token } = await getState();
 
-  if (!apiKey) {
-    extLogger.warn("background.no_api_key");
+  if (!token) {
+    extLogger.warn("background.not_signed_in");
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EF4444" });
     return;
@@ -39,7 +39,7 @@ async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
     },
   };
 
-  const apiResult = await submitBalance(payload, apiKey);
+  const apiResult = await submitBalance(payload, token);
 
   if (apiResult.ok && result.success && result.balance) {
     const display =
@@ -53,6 +53,11 @@ async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
       balance: result.balance,
       syncedAt: new Date().toISOString(),
     });
+  } else if (!apiResult.ok && apiResult.status === 401) {
+    // Token expired — prompt re-auth
+    browser.action.setBadgeText({ text: "!" });
+    browser.action.setBadgeBackgroundColor({ color: "#EAB308" });
+    await setLastError("Session expired — please sign in again");
   } else if (!apiResult.ok && !isRetry) {
     extLogger.warn("background.retry", { error: apiResult.error });
     setTimeout(() => handleScrapeResult(result, true), RETRY_DELAY_MS);

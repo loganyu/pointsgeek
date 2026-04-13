@@ -3,11 +3,11 @@ import { PROVIDERS } from "@point-portfolio/shared";
 
 export const balancePayloadSchema = z.object({
   provider: z.enum(PROVIDERS),
-  balance: z.number().int().nonneg().optional(),
+  balance: z.number().int().min(0).optional(),
   scrapedAt: z.string().datetime(),
   scrapeEvent: z.object({
     success: z.boolean(),
-    durationMs: z.number().int().nonneg(),
+    durationMs: z.number().int().min(0),
     extensionVersion: z.string(),
     matchedSelector: z.string().optional(),
     selectorsAttempted: z.array(z.string()),

@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
-import { getState, setApiKey } from "../../lib/storage";
+import { getState } from "../../lib/storage";
+import { signInWithGoogle, signOut } from "../../lib/auth";
 import { STALE_THRESHOLD_MS } from "@point-portfolio/shared";
 
+interface UserInfo {
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
 export default function App() {
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [apiKeyInput, setApiKeyInput] = useState("");
-  const [hasKey, setHasKey] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
     loadState();
@@ -16,31 +22,34 @@ export default function App() {
 
   async function loadState() {
     const state = await getState();
-    setHasKey(!!state.apiKey);
+    setUser(state.user ?? null);
     if (state.latestBalance) {
       setBalance(state.latestBalance.balance);
       setSyncedAt(state.latestBalance.syncedAt);
     }
-    if (state.lastError) {
-      setLastError(state.lastError);
-    }
+    setLastError(state.lastError ?? null);
   }
 
-  async function saveKey() {
-    if (!apiKeyInput.trim()) return;
-    setSaving(true);
-    await setApiKey(apiKeyInput.trim());
-    setHasKey(true);
-    setApiKeyInput("");
-    setSaving(false);
+  async function handleSignIn() {
+    setSigningIn(true);
+    const success = await signInWithGoogle();
+    if (success) await loadState();
+    setSigningIn(false);
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    setUser(null);
+    setBalance(null);
+    setSyncedAt(null);
+    setLastError(null);
   }
 
   function getStatusColor() {
     if (lastError) return "#EF4444";
     if (!syncedAt) return "#9CA3AF";
     const age = Date.now() - new Date(syncedAt).getTime();
-    if (age < STALE_THRESHOLD_MS) return "#22C55E";
-    return "#EAB308";
+    return age < STALE_THRESHOLD_MS ? "#22C55E" : "#EAB308";
   }
 
   function formatBalance(n: number) {
@@ -51,116 +60,129 @@ export default function App() {
     return new Date(iso).toLocaleString();
   }
 
+  if (!user) {
+    return (
+      <div style={{ width: 320, padding: 16, fontFamily: "system-ui, sans-serif" }}>
+        <h1 style={{ fontSize: 18, margin: "0 0 12px", fontWeight: 600 }}>
+          Point Portfolio
+        </h1>
+        <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 12px" }}>
+          Sign in to start tracking your points and miles.
+        </p>
+        <button
+          onClick={handleSignIn}
+          disabled={signingIn}
+          style={{
+            width: "100%",
+            padding: "10px 0",
+            background: "#fff",
+            color: "#333",
+            border: "1px solid #D1D5DB",
+            borderRadius: 6,
+            fontSize: 13,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          {signingIn ? "Signing in..." : "Sign in with Google"}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: 320, padding: 16, fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: 18, margin: "0 0 12px", fontWeight: 600 }}>
-        Point Portfolio
-      </h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 18, margin: 0, fontWeight: 600 }}>
+          Point Portfolio
+        </h1>
+        <button
+          onClick={handleSignOut}
+          style={{
+            fontSize: 11,
+            color: "#9CA3AF",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Sign out
+        </button>
+      </div>
 
-      {!hasKey ? (
-        <div>
-          <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 8px" }}>
-            Paste your API key from the web dashboard to get started.
-          </p>
-          <input
-            type="password"
-            placeholder="pp_..."
-            value={apiKeyInput}
-            onChange={(e) => setApiKeyInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && saveKey()}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              fontSize: 13,
-              boxSizing: "border-box",
-            }}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        {user.image && (
+          <img
+            src={user.image}
+            alt=""
+            style={{ width: 24, height: 24, borderRadius: "50%" }}
           />
-          <button
-            onClick={saveKey}
-            disabled={saving || !apiKeyInput.trim()}
-            style={{
-              marginTop: 8,
-              width: "100%",
-              padding: "8px 0",
-              background: "#3B82F6",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {saving ? "Saving..." : "Save API Key"}
-          </button>
+        )}
+        <span style={{ fontSize: 12, color: "#6B7280" }}>
+          {user.email}
+        </span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: getStatusColor(),
+          }}
+        />
+        <span style={{ fontSize: 12, color: "#6B7280" }}>
+          {lastError
+            ? lastError
+            : syncedAt
+              ? `Synced ${formatTime(syncedAt)}`
+              : "Not synced yet"}
+        </span>
+      </div>
+
+      {balance !== null ? (
+        <div style={{ fontSize: 32, fontWeight: 700, margin: "8px 0" }}>
+          {formatBalance(balance)}
+          <span style={{ fontSize: 14, fontWeight: 400, color: "#6B7280", marginLeft: 4 }}>
+            MR pts
+          </span>
         </div>
       ) : (
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: getStatusColor(),
-              }}
-            />
-            <span style={{ fontSize: 12, color: "#6B7280" }}>
-              {lastError
-                ? `Error: ${lastError}`
-                : syncedAt
-                  ? `Synced ${formatTime(syncedAt)}`
-                  : "Not synced yet"}
-            </span>
-          </div>
-
-          {balance !== null ? (
-            <div style={{ fontSize: 32, fontWeight: 700, margin: "8px 0" }}>
-              {formatBalance(balance)}
-              <span style={{ fontSize: 14, fontWeight: 400, color: "#6B7280", marginLeft: 4 }}>
-                MR pts
-              </span>
-            </div>
-          ) : (
-            <p style={{ fontSize: 14, color: "#6B7280" }}>
-              Visit americanexpress.com to sync your balance.
-            </p>
-          )}
-
-          <button
-            onClick={() => browser.runtime.sendMessage({ type: "SYNC_NOW" })}
-            style={{
-              marginTop: 8,
-              width: "100%",
-              padding: "8px 0",
-              background: "#3B82F6",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            Sync Now
-          </button>
-
-          <a
-            href="http://localhost:3000/dashboard"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: "block",
-              textAlign: "center",
-              marginTop: 8,
-              fontSize: 12,
-              color: "#3B82F6",
-            }}
-          >
-            Open Dashboard
-          </a>
-        </div>
+        <p style={{ fontSize: 14, color: "#6B7280", margin: "8px 0" }}>
+          Visit americanexpress.com to sync your balance.
+        </p>
       )}
+
+      <a
+        href="https://www.americanexpress.com"
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: "block",
+          textAlign: "center",
+          marginTop: 8,
+          width: "100%",
+          padding: "8px 0",
+          background: "#3B82F6",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          fontSize: 13,
+          textDecoration: "none",
+        }}
+      >
+        {balance !== null ? "Sync Now" : "Go to Amex to Sync"}
+      </a>
     </div>
   );
 }
