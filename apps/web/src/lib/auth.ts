@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Resend from "next-auth/providers/resend";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "./db";
 import { users, accounts, sessions, verificationTokens } from "./db/schema";
@@ -11,7 +12,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  providers: [Google],
+  providers: [
+    Google,
+    Resend({
+      from: process.env.AUTH_EMAIL_FROM || "noreply@example.com",
+    }),
+  ],
   session: { strategy: "jwt" },
   callbacks: {
     jwt({ token, user }) {

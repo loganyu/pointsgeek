@@ -1,4 +1,4 @@
-export const PROVIDERS = ["amex_mr", "chase_ur"] as const;
+export const PROVIDERS = ["amex_mr", "chase_ur", "capital_one"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export interface ScrapeResult {

@@ -5,8 +5,9 @@ import { balanceSnapshots } from "@/lib/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 const PROVIDERS = [
-  { id: "amex_mr" as const, label: "Amex Membership Rewards", url: "https://www.americanexpress.com" },
-  { id: "chase_ur" as const, label: "Chase Ultimate Rewards", url: "https://ultimaterewardspoints.chase.com" },
+  { id: "amex_mr" as const, label: "Amex Membership Rewards", short: "Amex", url: "https://www.americanexpress.com" },
+  { id: "chase_ur" as const, label: "Chase Ultimate Rewards", short: "Chase", url: "https://ultimaterewardspoints.chase.com" },
+  { id: "capital_one" as const, label: "Capital One Miles", short: "Cap One", url: "https://myaccounts.capitalone.com" },
 ];
 
 function timeAgo(date: Date): string {
@@ -110,7 +111,7 @@ export default async function DashboardPage() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                    {b.provider === "amex_mr" ? "Amex" : "Chase"}
+                    {PROVIDERS.find((p) => p.id === b.provider)?.short ?? b.provider}
                   </span>
                   <span>{Number(b.balance).toLocaleString()} pts</span>
                 </div>

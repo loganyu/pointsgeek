@@ -28,6 +28,12 @@ const PROVIDER_CONFIG: { id: Provider; label: string; short: string; url: string
     short: "Chase",
     url: "https://ultimaterewardspoints.chase.com",
   },
+  {
+    id: "capital_one",
+    label: "Capital One Miles",
+    short: "Cap One",
+    url: "https://myaccounts.capitalone.com",
+  },
 ];
 
 export default function App() {
