@@ -15,6 +15,13 @@
       "when": 1776118297633,
       "tag": "0001_wet_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776122752762,
+      "tag": "0002_flowery_infant_terrible",
+      "breakpoints": true
     }
   ]
 }

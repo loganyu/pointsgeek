@@ -6,6 +6,9 @@ export default defineConfig({
     server: {
       port: 3001,
     },
+    browser: {
+      disabled: true,
+    },
   },
   manifest: {
     name: "Point Portfolio",
@@ -14,6 +17,8 @@ export default defineConfig({
     host_permissions: [
       "https://www.americanexpress.com/*",
       "https://global.americanexpress.com/*",
+      "https://ultimaterewardspoints.chase.com/*",
+      "https://secure.chase.com/*",
     ],
   },
 });

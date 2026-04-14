@@ -1,4 +1,4 @@
-export const PROVIDERS = ["amex_mr"] as const;
+export const PROVIDERS = ["amex_mr", "chase_ur"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export interface ScrapeResult {
@@ -34,5 +34,6 @@ export interface BalanceResponse {
 
 export interface ExtensionMessage {
   type: "BALANCE_SCRAPED" | "SCRAPE_FAILED" | "SYNC_NOW";
+  provider?: Provider;
   payload?: ScrapeResult;
 }

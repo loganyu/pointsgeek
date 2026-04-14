@@ -1,4 +1,4 @@
-import type { ExtensionMessage, ScrapeResult } from "@point-portfolio/shared";
+import type { ExtensionMessage, ScrapeResult, Provider } from "@point-portfolio/shared";
 import { RETRY_DELAY_MS } from "@point-portfolio/shared";
 import { submitBalance } from "../lib/api";
 import { getState, setLatestBalance, setLastError } from "../lib/storage";
@@ -8,13 +8,13 @@ export default defineBackground(() => {
   browser.runtime.onMessage.addListener(
     (message: ExtensionMessage, _sender, _sendResponse) => {
       if (message.type === "BALANCE_SCRAPED" || message.type === "SCRAPE_FAILED") {
-        handleScrapeResult(message.payload!);
+        handleScrapeResult(message.provider || "amex_mr", message.payload!);
       }
     }
   );
 });
 
-async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
+async function handleScrapeResult(provider: Provider, result: ScrapeResult, isRetry = false) {
   const { token } = await getState();
 
   if (!token) {
@@ -25,7 +25,7 @@ async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
   }
 
   const payload = {
-    provider: "amex_mr" as const,
+    provider,
     balance: result.balance,
     scrapedAt: new Date().toISOString(),
     scrapeEvent: {
@@ -42,25 +42,19 @@ async function handleScrapeResult(result: ScrapeResult, isRetry = false) {
   const apiResult = await submitBalance(payload, token);
 
   if (apiResult.ok && result.success && result.balance) {
-    const display =
-      result.balance >= 1000
-        ? `${Math.round(result.balance / 1000)}k`
-        : String(result.balance);
-    browser.action.setBadgeText({ text: display });
-    browser.action.setBadgeBackgroundColor({ color: "#22C55E" });
+    browser.action.setBadgeText({ text: "" });
     await setLatestBalance({
-      provider: "amex_mr",
+      provider,
       balance: result.balance,
       syncedAt: new Date().toISOString(),
     });
   } else if (!apiResult.ok && apiResult.status === 401) {
-    // Token expired — prompt re-auth
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EAB308" });
     await setLastError("Session expired — please sign in again");
   } else if (!apiResult.ok && !isRetry) {
-    extLogger.warn("background.retry", { error: apiResult.error });
-    setTimeout(() => handleScrapeResult(result, true), RETRY_DELAY_MS);
+    extLogger.warn("background.retry", { provider, error: apiResult.error });
+    setTimeout(() => handleScrapeResult(provider, result, true), RETRY_DELAY_MS);
   } else if (!apiResult.ok) {
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EF4444" });

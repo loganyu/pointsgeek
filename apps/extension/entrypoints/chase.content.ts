@@ -1,24 +1,26 @@
-import { waitForBalance } from "../lib/scraper";
+import { waitForChaseBalance } from "../lib/scraper-chase";
 import { extLogger } from "../lib/logger";
 
 export default defineContentScript({
   matches: [
-    "https://www.americanexpress.com/*",
-    "https://global.americanexpress.com/*",
+    "https://ultimaterewardspoints.chase.com/*",
+    "https://secure.chase.com/*",
   ],
   async main() {
-    extLogger.info("scrape.start", { provider: "amex_mr", url: window.location.href });
+    extLogger.info("scrape.start", { provider: "chase_ur", url: window.location.href });
 
-    const result = await waitForBalance(document);
+    const result = await waitForChaseBalance(document);
 
     if (result.success) {
       extLogger.info("scrape.success", {
+        provider: "chase_ur",
         balance: result.balance,
         matchedSelector: result.matchedSelector,
         durationMs: result.durationMs,
       });
     } else {
       extLogger.warn("scrape.failed", {
+        provider: "chase_ur",
         error: result.error,
         durationMs: result.durationMs,
         selectorsAttempted: result.selectorsAttempted,
@@ -27,7 +29,7 @@ export default defineContentScript({
 
     browser.runtime.sendMessage({
       type: result.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
-      provider: "amex_mr",
+      provider: "chase_ur",
       payload: result,
     });
   },

@@ -14,7 +14,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 
 // --- Enums ---
 
-export const providerEnum = pgEnum("provider", ["amex_mr"]);
+export const providerEnum = pgEnum("provider", ["amex_mr", "chase_ur"]);
 
 // --- NextAuth tables ---
 

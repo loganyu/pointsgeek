@@ -16,7 +16,7 @@ interface StoredBalance {
 interface StoredState {
   token?: string;
   user?: UserInfo;
-  latestBalance?: StoredBalance;
+  balances?: Record<string, StoredBalance>;
   lastError?: string;
 }
 
@@ -24,10 +24,20 @@ export async function getState(): Promise<StoredState> {
   const result = await browser.storage.local.get([
     "token",
     "user",
+    "balances",
     "latestBalance",
     "lastError",
-  ]);
-  return result as StoredState;
+  ]) as StoredState & { latestBalance?: StoredBalance };
+
+  // Migrate old single-balance format to multi-provider format
+  if (result.latestBalance && !result.balances) {
+    const balances = { [result.latestBalance.provider]: result.latestBalance };
+    await browser.storage.local.set({ balances });
+    await browser.storage.local.remove(["latestBalance"]);
+    result.balances = balances;
+  }
+
+  return result;
 }
 
 export async function setAuth(token: string, user: UserInfo): Promise<void> {
@@ -39,10 +49,9 @@ export async function clearAuth(): Promise<void> {
 }
 
 export async function setLatestBalance(balance: StoredBalance): Promise<void> {
-  await browser.storage.local.set({
-    latestBalance: balance,
-    lastError: undefined,
-  });
+  const { balances = {} } = await getState();
+  balances[balance.provider] = balance;
+  await browser.storage.local.set({ balances, lastError: undefined });
 }
 
 export async function setLastError(error: string): Promise<void> {
