@@ -49,8 +49,14 @@ export default function App() {
   async function loadState() {
     const state = await getState();
     setUser(state.user ?? null);
-    setBalances(state.balances ?? {});
-    setLastError(state.lastError ?? null);
+    const b = state.balances ?? {};
+    setBalances(b);
+    // Clear stale errors if any balance synced successfully after the error
+    const hasRecentSync = Object.values(b).length > 0;
+    setLastError(hasRecentSync ? null : (state.lastError ?? null));
+    if (hasRecentSync && state.lastError) {
+      browser.storage.local.remove(["lastError"]);
+    }
   }
 
   async function handleSignIn() {
