@@ -10,7 +10,13 @@ interface UserInfo {
 interface StoredBalance {
   provider: Provider;
   balance: number;
+  cardInfo?: { cardName: string; lastFour?: string };
   syncedAt: string;
+}
+
+function balanceKey(provider: string, cardInfo?: { cardName: string; lastFour?: string }): string {
+  if (!cardInfo) return provider;
+  return `${provider}|${cardInfo.cardName}${cardInfo.lastFour ? ` ${cardInfo.lastFour}` : ""}`;
 }
 
 interface StoredState {
@@ -50,7 +56,8 @@ export async function clearAuth(): Promise<void> {
 
 export async function setLatestBalance(balance: StoredBalance): Promise<void> {
   const { balances = {} } = await getState();
-  balances[balance.provider] = balance;
+  const key = balanceKey(balance.provider, balance.cardInfo);
+  balances[key] = balance;
   await browser.storage.local.set({ balances, lastError: undefined });
 }
 

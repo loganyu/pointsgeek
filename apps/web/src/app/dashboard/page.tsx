@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { balanceSnapshots } from "@/lib/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { balanceSnapshots, cards } from "@/lib/db/schema";
+import { eq, desc, and, isNull, isNotNull } from "drizzle-orm";
 
 const PROVIDERS = [
   { id: "amex_mr" as const, label: "Amex Membership Rewards", short: "Amex", url: "https://www.americanexpress.com" },
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
-  // Get latest balance per provider
+  // Get latest total balance per provider (cardId IS NULL = program total)
   const latestPerProvider = await Promise.all(
     PROVIDERS.map(async (p) => {
       const rows = await db
@@ -35,24 +35,69 @@ export default async function DashboardPage() {
         .where(
           and(
             eq(balanceSnapshots.userId, session.user.id!),
-            eq(balanceSnapshots.provider, p.id)
+            eq(balanceSnapshots.provider, p.id),
+            isNull(balanceSnapshots.cardId)
           )
         )
         .orderBy(desc(balanceSnapshots.scrapedAt))
         .limit(1);
-      return { ...p, latest: rows[0] ?? null };
+
+      // Get latest per-card balances for this provider (joined with cards table)
+      const subAccountRows = await db
+        .select({
+          id: balanceSnapshots.id,
+          balance: balanceSnapshots.balance,
+          scrapedAt: balanceSnapshots.scrapedAt,
+          cardId: balanceSnapshots.cardId,
+          cardName: cards.cardName,
+          lastFour: cards.lastFour,
+        })
+        .from(balanceSnapshots)
+        .innerJoin(cards, eq(balanceSnapshots.cardId, cards.id))
+        .where(
+          and(
+            eq(balanceSnapshots.userId, session.user.id!),
+            eq(balanceSnapshots.provider, p.id),
+            isNotNull(balanceSnapshots.cardId)
+          )
+        )
+        .orderBy(desc(balanceSnapshots.scrapedAt))
+        .limit(10);
+
+      // Dedupe to latest per card
+      const subAccountMap = new Map<string, typeof subAccountRows[0]>();
+      for (const row of subAccountRows) {
+        if (row.cardId && !subAccountMap.has(row.cardId)) {
+          subAccountMap.set(row.cardId, row);
+        }
+      }
+
+      return {
+        ...p,
+        latest: rows[0] ?? null,
+        subAccounts: Array.from(subAccountMap.values()),
+      };
     })
   );
 
-  // Get recent snapshots across all providers
+  // Get recent snapshots across all providers (with optional card info)
   const recentSnapshots = await db
-    .select()
+    .select({
+      id: balanceSnapshots.id,
+      provider: balanceSnapshots.provider,
+      balance: balanceSnapshots.balance,
+      scrapedAt: balanceSnapshots.scrapedAt,
+      cardId: balanceSnapshots.cardId,
+      cardName: cards.cardName,
+      lastFour: cards.lastFour,
+    })
     .from(balanceSnapshots)
+    .leftJoin(cards, eq(balanceSnapshots.cardId, cards.id))
     .where(eq(balanceSnapshots.userId, session.user.id!))
     .orderBy(desc(balanceSnapshots.scrapedAt))
     .limit(10);
 
-  const hasAnyData = latestPerProvider.some((p) => p.latest);
+  const hasAnyData = latestPerProvider.some((p) => p.latest || p.subAccounts.length > 0);
 
   return (
     <main className="max-w-2xl mx-auto p-8">
@@ -64,7 +109,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 mb-8">
-        {latestPerProvider.map(({ id, label, url, latest }) => (
+        {latestPerProvider.map(({ id, label, url, latest, subAccounts }) => (
           <div key={id} className="bg-white rounded-xl border p-6">
             <div className="flex items-start justify-between mb-2">
               <p className="text-sm text-gray-500">{label}</p>
@@ -94,6 +139,29 @@ export default async function DashboardPage() {
                 No data yet — visit the site to sync
               </p>
             )}
+            {subAccounts.length > 0 && (
+              <div className="mt-3 pt-3 border-t space-y-2">
+                {subAccounts.map((sub) => (
+                  <div
+                    key={sub.cardId}
+                    className="flex items-baseline justify-between text-xs text-gray-500"
+                  >
+                    <span>
+                      {sub.cardName}
+                      {sub.lastFour && (
+                        <span className="text-gray-400 ml-1">...{sub.lastFour}</span>
+                      )}
+                    </span>
+                    <span>
+                      {Number(sub.balance).toLocaleString()} pts
+                      <span className="ml-2 text-gray-400">
+                        {timeAgo(sub.scrapedAt)}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -114,6 +182,11 @@ export default async function DashboardPage() {
                     {PROVIDERS.find((p) => p.id === b.provider)?.short ?? b.provider}
                   </span>
                   <span>{Number(b.balance).toLocaleString()} pts</span>
+                  {b.cardName && (
+                    <span className="text-xs text-gray-400">
+                      ({b.cardName}{b.lastFour ? ` ...${b.lastFour}` : ""})
+                    </span>
+                  )}
                 </div>
                 <span className="text-gray-400">
                   {timeAgo(b.scrapedAt)}

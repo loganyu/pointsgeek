@@ -1,7 +1,14 @@
-import type { BalancePayload } from "@point-portfolio/shared";
+import type { BalancePayload, PointsProgram, Card } from "@point-portfolio/shared";
 import { extLogger } from "./logger";
 
 const API_BASE = "http://localhost:3100";
+
+function authHeaders(token: string) {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 export async function submitBalance(
   payload: BalancePayload,
@@ -15,10 +22,7 @@ export async function submitBalance(
   try {
     const res = await fetch(`${API_BASE}/api/balances`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: authHeaders(token),
       body: JSON.stringify(payload),
     });
 
@@ -33,5 +37,39 @@ export async function submitBalance(
   } catch (err) {
     extLogger.error("api.network_error", { error: String(err) });
     return { ok: false, error: "Network error" };
+  }
+}
+
+export async function findOrCreateProgram(
+  token: string,
+  data: { programType: string; name: string; currency: string; issuer: string }
+): Promise<PointsProgram | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/programs`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function findOrCreateCard(
+  token: string,
+  data: { programId: string; cardName: string; lastFour?: string; issuer: string }
+): Promise<Card | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/cards`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
   }
 }

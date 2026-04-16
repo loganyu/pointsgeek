@@ -4,6 +4,8 @@ import { PROVIDERS } from "@point-portfolio/shared";
 export const balancePayloadSchema = z.object({
   provider: z.enum(PROVIDERS),
   balance: z.number().int().min(0).optional(),
+  programId: z.string().uuid().optional(),
+  cardId: z.string().uuid().optional(),
   scrapedAt: z.string().datetime(),
   scrapeEvent: z.object({
     success: z.boolean(),

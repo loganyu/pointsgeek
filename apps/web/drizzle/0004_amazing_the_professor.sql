@@ -1,0 +1,1 @@
+ALTER TABLE "balance_snapshots" ADD COLUMN "account_label" text;

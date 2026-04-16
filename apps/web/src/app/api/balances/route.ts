@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { provider, balance, scrapedAt, scrapeEvent } = parsed.data;
+  const { provider, balance, programId, cardId, scrapedAt, scrapeEvent } = parsed.data;
   const userId = tokenResult.userId;
 
   try {
@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
         userId,
         provider,
         balance: BigInt(balance),
+        programId: programId ?? null,
+        cardId: cardId ?? null,
         scrapedAt: new Date(scrapedAt),
       });
     }

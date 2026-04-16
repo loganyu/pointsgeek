@@ -157,7 +157,12 @@ export default function App() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {PROVIDER_CONFIG.map(({ id, label, short, url }) => {
-          const b = balances[id];
+          const total = balances[id];
+          // Find per-card entries: keys like "capital_one|Venture X ...2397"
+          const subAccounts = Object.entries(balances)
+            .filter(([key]) => key.startsWith(`${id}|`))
+            .map(([key, val]) => ({ label: key.split("|")[1], ...val }));
+
           return (
             <div
               key={id}
@@ -183,23 +188,48 @@ export default function App() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {b ? "Refresh" : `Sync ${short}`}
+                  {total ? "Refresh" : `Sync ${short}`}
                 </a>
               </div>
-              {b ? (
+              {total ? (
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                   <div style={{ fontSize: 26, fontWeight: 700 }}>
-                    {formatBalance(b.balance)}
+                    {formatBalance(total.balance)}
                     <span style={{ fontSize: 12, fontWeight: 400, color: "#9CA3AF", marginLeft: 4 }}>
                       pts
                     </span>
                   </div>
-                  <span style={{ fontSize: 11, color: isStale(b.syncedAt) ? "#EAB308" : "#9CA3AF" }}>
-                    {timeAgo(b.syncedAt)}
+                  <span style={{ fontSize: 11, color: isStale(total.syncedAt) ? "#EAB308" : "#9CA3AF" }}>
+                    {timeAgo(total.syncedAt)}
                   </span>
                 </div>
               ) : (
                 <span style={{ fontSize: 13, color: "#9CA3AF" }}>No data yet</span>
+              )}
+              {subAccounts.length > 0 && (
+                <div style={{ marginTop: 8, borderTop: "1px solid #E5E7EB", paddingTop: 8 }}>
+                  {subAccounts.map((sub) => (
+                    <div
+                      key={sub.label}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        fontSize: 12,
+                        color: "#6B7280",
+                        paddingTop: 4,
+                      }}
+                    >
+                      <span>{sub.label}</span>
+                      <span>
+                        {formatBalance(sub.balance)} pts
+                        <span style={{ marginLeft: 6, fontSize: 10, color: isStale(sub.syncedAt) ? "#EAB308" : "#9CA3AF" }}>
+                          {timeAgo(sub.syncedAt)}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           );

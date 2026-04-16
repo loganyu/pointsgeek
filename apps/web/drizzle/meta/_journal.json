@@ -29,6 +29,20 @@
       "when": 1776202197482,
       "tag": "0003_past_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776294280539,
+      "tag": "0004_amazing_the_professor",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776300000000,
+      "tag": "0005_programs_and_cards",
+      "breakpoints": true
     }
   ]
 }
