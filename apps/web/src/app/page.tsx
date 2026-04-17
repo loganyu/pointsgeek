@@ -9,12 +9,12 @@ export default async function Home() {
     <div className="flex flex-col flex-1 items-center justify-center">
       <main className="text-center space-y-6">
         <h1 className="text-4xl font-bold">Point Portfolio</h1>
-        <p className="text-lg text-gray-500 max-w-md">
+        <p className="text-lg text-text-secondary max-w-md">
           Track your credit card points and miles across all your accounts.
         </p>
         <a
           href="/api/auth/signin"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+          className="inline-block bg-text-accent text-white px-6 py-3 rounded-lg hover:bg-text-accent-hover transition-colors"
         >
           Sign In
         </a>
