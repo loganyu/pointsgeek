@@ -25,11 +25,18 @@ export interface Card {
   active: boolean;
 }
 
+export interface PerCardBalance {
+  cardName: string;
+  lastFour?: string;
+  balance: number;
+}
+
 export interface ScrapeResult {
   success: boolean;
   balance?: number;
   cardInfo?: { cardName: string; lastFour?: string };
   discoveredCards?: Array<{ cardName: string; lastFour?: string }>;
+  perCardBalances?: PerCardBalance[];
   error?: { code: string; message: string };
   durationMs: number;
   selectorsAttempted: string[];

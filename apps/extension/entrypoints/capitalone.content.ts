@@ -1,5 +1,6 @@
 import { waitForCapitalOneBalance } from "../lib/scraper-capitalone";
 import { extLogger } from "../lib/logger";
+import type { PerCardBalance } from "@point-portfolio/shared";
 
 export default defineContentScript({
   matches: [
@@ -30,6 +31,17 @@ export default defineContentScript({
           count: result.discoveredCards.length,
           cards: result.discoveredCards,
         });
+
+        // Try to get per-card miles by opening the rewards card-picker dialog
+        const perCard = await extractPerCardMilesViaDialog(document);
+        if (perCard.length > 0) {
+          result.perCardBalances = perCard;
+          extLogger.info("scrape.per_card_balances", {
+            provider: "capital_one",
+            count: perCard.length,
+            cards: perCard,
+          });
+        }
       }
 
       extLogger.info("scrape.success", {
@@ -121,6 +133,115 @@ function waitForCardsFromSummary(
         clearTimeout(timer);
         observer.disconnect();
         resolve(cards);
+      }
+    });
+
+    observer.observe(doc.body, { childList: true, subtree: true });
+  });
+}
+
+/**
+ * Extract per-card miles by clicking "View rewards" to open the card-picker dialog.
+ *
+ * The dialog (c1-ease-card-radio-picker-dialog) shows each card with its
+ * individual miles balance — e.g. "VentureOne ...3001" / "903 Miles".
+ *
+ * Flow: click button → wait for dialog → scrape → close dialog.
+ * If the user only has one card, the dialog won't appear (direct navigation).
+ */
+async function extractPerCardMilesViaDialog(
+  doc: Document,
+  timeoutMs = 8_000
+): Promise<PerCardBalance[]> {
+  // Find the "View rewards" button inside the loyalty tile
+  const loyaltyTile = doc.querySelector("#loyalty-tile");
+  if (!loyaltyTile) return [];
+
+  const viewRewardsBtn = loyaltyTile.querySelector(
+    "button.action-button"
+  ) as HTMLButtonElement | null;
+  if (!viewRewardsBtn) return [];
+
+  extLogger.info("scrape.opening_rewards_dialog", { provider: "capital_one" });
+
+  // Click to trigger the Angular dialog
+  viewRewardsBtn.click();
+
+  // Wait for the card-picker dialog to render
+  const dialog = await waitForElement(
+    doc,
+    "c1-ease-card-radio-picker-dialog",
+    timeoutMs
+  );
+
+  if (!dialog) {
+    extLogger.warn("scrape.rewards_dialog_not_found", { provider: "capital_one" });
+    return [];
+  }
+
+  // Small delay for Angular to finish rendering dialog content
+  await new Promise((r) => setTimeout(r, 500));
+
+  // Extract per-card data from radio buttons
+  const results: PerCardBalance[] = [];
+  const radioButtons = dialog.querySelectorAll("gng-radio-button");
+
+  for (const radio of radioButtons) {
+    const nameEl = radio.querySelector(".c1-ease-card-radio-picker__display-name");
+    const displayWrapper = radio.querySelector(".c1-ease-card-radio-picker__display-wrapper");
+    if (!nameEl || !displayWrapper) continue;
+
+    const rawName = nameEl.textContent?.trim() ?? "";
+    // Name format: "VentureOne ...3001" or "Venture X ...2397"
+    const nameMatch = rawName.match(/^(.+?)\s+\.{3}(\d{4})$/);
+    const cardName = nameMatch ? nameMatch[1].trim() : rawName;
+    const lastFour = nameMatch ? nameMatch[2] : undefined;
+
+    // Miles text is in a sibling div next to the display-name
+    // e.g. "903 Miles" or "67,538 Miles"
+    const milesEl = nameEl.nextElementSibling;
+    const milesText = milesEl?.textContent?.trim() ?? "";
+    const milesMatch = milesText.match(/([\d,]+)\s*Miles/i);
+    if (!milesMatch) continue;
+
+    const balance = parseInt(milesMatch[1].replace(/,/g, ""), 10);
+    if (isNaN(balance)) continue;
+
+    results.push({ cardName, lastFour, balance });
+  }
+
+  // Close the dialog
+  const closeBtn = dialog.querySelector(
+    "button.c1-ease-dialog-close-button"
+  ) as HTMLButtonElement | null;
+  if (closeBtn) {
+    closeBtn.click();
+  }
+
+  return results;
+}
+
+/** Wait for an element to appear in the DOM using MutationObserver */
+function waitForElement(
+  doc: Document,
+  selector: string,
+  timeoutMs: number
+): Promise<Element | null> {
+  const existing = doc.querySelector(selector);
+  if (existing) return Promise.resolve(existing);
+
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      resolve(null);
+    }, timeoutMs);
+
+    const observer = new MutationObserver(() => {
+      const el = doc.querySelector(selector);
+      if (el) {
+        clearTimeout(timer);
+        observer.disconnect();
+        resolve(el);
       }
     });
 

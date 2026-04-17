@@ -70,21 +70,24 @@ async function handleScrapeResult(message: ExtensionMessage, isRetry = false) {
     }
   }
 
+  // Build and submit the aggregate balance
+  const scrapeEvent = {
+    success: result.success,
+    durationMs: result.durationMs,
+    extensionVersion: browser.runtime.getManifest().version,
+    matchedSelector: result.matchedSelector,
+    selectorsAttempted: result.selectorsAttempted,
+    errorCode: result.error?.code,
+    errorMessage: result.error?.message,
+  };
+
   const payload = {
     provider,
     balance: result.balance,
     programId,
     cardId,
     scrapedAt: new Date().toISOString(),
-    scrapeEvent: {
-      success: result.success,
-      durationMs: result.durationMs,
-      extensionVersion: browser.runtime.getManifest().version,
-      matchedSelector: result.matchedSelector,
-      selectorsAttempted: result.selectorsAttempted,
-      errorCode: result.error?.code,
-      errorMessage: result.error?.message,
-    },
+    scrapeEvent,
   };
 
   const apiResult = await submitBalance(payload, token);
@@ -101,12 +104,69 @@ async function handleScrapeResult(message: ExtensionMessage, isRetry = false) {
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EAB308" });
     await setLastError("Session expired — please sign in again");
+    return; // Don't proceed to per-card if auth failed
   } else if (!apiResult.ok && !isRetry) {
     extLogger.warn("background.retry", { provider, error: apiResult.error });
     setTimeout(() => handleScrapeResult(message, true), RETRY_DELAY_MS);
+    return;
   } else if (!apiResult.ok) {
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EF4444" });
     await setLastError(apiResult.error || "Unknown error");
+    return;
+  }
+
+  // Submit per-card balances (e.g. Capital One per-card miles from dialog)
+  if (programId && result.perCardBalances?.length) {
+    extLogger.info("background.submitting_per_card_balances", {
+      provider,
+      count: result.perCardBalances.length,
+    });
+
+    const programDef = PROGRAM_DEFAULTS[provider];
+
+    for (const pcb of result.perCardBalances) {
+      const card = await findOrCreateCard(token, {
+        programId,
+        cardName: pcb.cardName,
+        lastFour: pcb.lastFour,
+        issuer: programDef.issuer,
+      });
+
+      if (!card?.id) {
+        extLogger.warn("background.per_card_skip", {
+          provider,
+          cardName: pcb.cardName,
+          reason: "card_not_found",
+        });
+        continue;
+      }
+
+      const perCardPayload = {
+        provider,
+        balance: pcb.balance,
+        programId,
+        cardId: card.id,
+        scrapedAt: new Date().toISOString(),
+        scrapeEvent,
+      };
+
+      const perCardResult = await submitBalance(perCardPayload, token);
+
+      if (perCardResult.ok) {
+        extLogger.info("background.per_card_submitted", {
+          provider,
+          cardName: pcb.cardName,
+          lastFour: pcb.lastFour,
+          balance: pcb.balance,
+        });
+      } else {
+        extLogger.warn("background.per_card_failed", {
+          provider,
+          cardName: pcb.cardName,
+          error: perCardResult.error,
+        });
+      }
+    }
   }
 }
