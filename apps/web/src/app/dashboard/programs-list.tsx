@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProgramLogo } from "./program-logo";
 
 export interface CardData {
   id: string;
@@ -15,34 +16,50 @@ export interface ProgramData {
   label: string;
   short: string;
   url: string;
+  issuer: string;
   programName: string;
+  programType: "bank_rewards" | "airline" | "hotel";
   totalBalance: number | null;
   lastUpdated: string | null;
   cards: CardData[];
 }
 
+/* ── Formatting helpers ──────────────────────────────────── */
+
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 45) return "just now";
+
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins} ${mins === 1 ? "minute" : "minutes"} ago`;
+
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs} ${hrs === 1 ? "hour" : "hours"} ago`;
+
   const days = Math.floor(hrs / 24);
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
+  if (days < 30) return `${days} ${days === 1 ? "day" : "days"} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} ${months === 1 ? "month" : "months"} ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} ${years === 1 ? "year" : "years"} ago`;
 }
 
 function formatBalance(n: number): string {
   return n.toLocaleString();
 }
 
-function ChevronIcon({ open }: { open: boolean }) {
+/* ── Icons ───────────────────────────────────────────────── */
+
+function Chevron({ open, size = 16 }: { open: boolean; size?: number }) {
   return (
     <svg
-      className={`w-4 h-4 text-text-tertiary transition-transform duration-200 ${
+      className={`text-text-tertiary transition-transform duration-200 ${
         open ? "rotate-90" : ""
       }`}
+      style={{ width: size, height: size }}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -53,150 +70,188 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function CardIcon() {
+/* ── Card row (innermost, rendered under an expanded program) ── */
+
+function CardRow({ card, issuer }: { card: CardData; issuer: string }) {
   return (
-    <svg
-      className="w-4 h-4 text-text-tertiary shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"
-      />
-    </svg>
+    <div className="flex items-center justify-between py-2.5 pl-16 pr-4 border-b border-border-light last:border-b-0 bg-surface-secondary/40">
+      <div className="flex items-center gap-3 min-w-0">
+        <ProgramLogo issuer={issuer} size={24} />
+        <span className="text-sm text-text-primary truncate">
+          {card.cardName}
+          {card.lastFour && ` (...${card.lastFour})`}
+        </span>
+      </div>
+      <div className="text-right shrink-0 pl-4">
+        {card.balance !== null ? (
+          <div className="text-sm tabular-nums text-text-primary">
+            {formatBalance(card.balance)}
+          </div>
+        ) : (
+          <div className="text-sm text-text-tertiary">—</div>
+        )}
+        {card.lastUpdated && (
+          <div className="text-xs text-text-tertiary mt-0.5">
+            {timeAgo(card.lastUpdated)}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-/* ── Program Group (collapsible) ─────────────────────────── */
+/* ── Program row (expandable if it has cards) ────────────── */
 
-function ProgramGroup({ program }: { program: ProgramData }) {
+function ProgramRow({ program }: { program: ProgramData }) {
   const [open, setOpen] = useState(false);
   const hasCards = program.cards.length > 0;
   const hasData = program.totalBalance !== null;
 
   return (
     <>
-      {/* Program header row */}
-      <tr
+      <div
         onClick={() => hasCards && setOpen(!open)}
-        className={`border-b border-border group ${
-          hasCards ? "cursor-pointer" : ""
-        }`}
+        className={`flex items-center justify-between py-3 pl-4 pr-4 border-b border-border-light last:border-b-0 group ${
+          hasCards ? "cursor-pointer hover:bg-surface-secondary/60" : ""
+        } transition-colors`}
       >
-        {/* Expand chevron + program name */}
-        <td className="py-3 pr-3 pl-3">
-          <div className="flex items-center gap-3">
-            <span className="w-4 flex items-center justify-center shrink-0">
-              {hasCards ? <ChevronIcon open={open} /> : null}
-            </span>
-            <span className="font-medium text-text-primary group-hover:text-text-accent transition-colors">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="w-4 flex items-center justify-center shrink-0">
+            {hasCards ? <Chevron open={open} /> : null}
+          </span>
+          <ProgramLogo issuer={program.issuer} size={36} />
+          <div className="min-w-0">
+            <div className="font-medium text-text-primary truncate group-hover:text-text-accent transition-colors">
               {program.label}
-            </span>
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {program.programName}
+            </div>
           </div>
-        </td>
-
-        {/* Program name */}
-        <td className="py-3 px-3 text-text-secondary text-sm hidden sm:table-cell">
-          {program.programName}
-        </td>
-
-        {/* Last updated */}
-        <td className="py-3 px-3 text-text-secondary text-sm hidden md:table-cell">
-          {hasData && program.lastUpdated
-            ? timeAgo(program.lastUpdated)
-            : !hasData
-              ? (
-                <a
-                  href={program.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-text-accent hover:text-text-accent-hover transition-colors"
-                >
-                  Sync
-                </a>
-              )
-              : "—"}
-        </td>
-
-        {/* Balance */}
-        <td className="py-3 pl-3 pr-3 text-right">
+        </div>
+        <div className="text-right shrink-0 pl-4">
           {hasData ? (
-            <span className="text-lg font-semibold tabular-nums text-text-primary">
-              {formatBalance(program.totalBalance!)}
-            </span>
+            <>
+              <div className="text-base font-semibold tabular-nums text-text-primary">
+                {formatBalance(program.totalBalance!)}
+              </div>
+              {program.lastUpdated && (
+                <div className="text-xs text-text-tertiary mt-0.5">
+                  {timeAgo(program.lastUpdated)}
+                </div>
+              )}
+            </>
           ) : (
-            <span className="text-text-tertiary">—</span>
+            <a
+              href={program.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm text-text-accent hover:text-text-accent-hover transition-colors"
+            >
+              Sync →
+            </a>
           )}
-        </td>
-      </tr>
+        </div>
+      </div>
 
-      {/* Expanded card rows */}
       {open &&
         hasCards &&
         program.cards.map((card) => (
-          <tr
-            key={card.id}
-            className="border-b border-border-light bg-surface-secondary/50"
-          >
-            {/* Card name indented */}
-            <td className="py-2.5 pr-3 pl-3">
-              <div className="flex items-center gap-3 pl-7">
-                <CardIcon />
-                <span className="text-sm text-text-secondary">
-                  {card.cardName}
-                </span>
-                {card.lastFour && (
-                  <span className="text-xs text-text-tertiary">
-                    ...{card.lastFour}
-                  </span>
-                )}
-              </div>
-            </td>
-
-            {/* Rewards — empty for cards */}
-            <td className="py-2.5 px-3 hidden sm:table-cell" />
-
-            {/* Last updated */}
-            <td className="py-2.5 px-3 text-sm text-text-tertiary hidden md:table-cell">
-              {card.lastUpdated ? timeAgo(card.lastUpdated) : "—"}
-            </td>
-
-            {/* Balance */}
-            <td className="py-2.5 pl-3 pr-3 text-right">
-              {card.balance !== null ? (
-                <span className="text-sm tabular-nums text-text-secondary">
-                  {formatBalance(card.balance)}
-                </span>
-              ) : (
-                <span className="text-sm text-text-tertiary">—</span>
-              )}
-            </td>
-          </tr>
+          <CardRow key={card.id} card={card} issuer={program.issuer} />
         ))}
     </>
   );
 }
 
-/* ── Main Programs Table ─────────────────────────────────── */
+/* ── Category section (Banks / Airlines / Hotels) ────────── */
 
-export default function ProgramsList({
+function CategorySection({
+  title,
   programs,
+  emptyMessage,
+  defaultOpen = true,
 }: {
+  title: string;
   programs: ProgramData[];
+  emptyMessage: string;
+  defaultOpen?: boolean;
 }) {
-  const totalPoints = programs.reduce(
+  const [open, setOpen] = useState(defaultOpen);
+
+  const programsWithData = programs.filter((p) => p.totalBalance !== null);
+  const total = programsWithData.reduce(
     (sum, p) => sum + (p.totalBalance ?? 0),
     0
   );
-  const hasAnyData = programs.some((p) => p.totalBalance !== null);
+  const hasAnyData = programsWithData.length > 0;
+  const programCount = programs.length;
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      {/* Category header (clickable) */}
+      <div
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between py-4 px-4 cursor-pointer hover:bg-surface-secondary/40 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <Chevron open={open} size={20} />
+          <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+          {programCount > 0 && (
+            <span className="text-xs text-text-tertiary">
+              {programCount} {programCount === 1 ? "program" : "programs"}
+            </span>
+          )}
+        </div>
+        <div className="text-right">
+          {hasAnyData ? (
+            <div className="text-xl font-semibold tabular-nums text-text-primary">
+              {formatBalance(total)}
+            </div>
+          ) : (
+            <div className="text-sm text-text-tertiary">—</div>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      {open && (
+        <div className="border-t border-border">
+          {programs.length === 0 ? (
+            <div className="py-8 px-4 text-center">
+              <p className="text-sm text-text-tertiary">{emptyMessage}</p>
+            </div>
+          ) : (
+            programs.map((program) => (
+              <ProgramRow key={program.providerId} program={program} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main ProgramsList ───────────────────────────────────── */
+
+export default function ProgramsList({
+  banks,
+  airlines,
+  hotels,
+}: {
+  banks: ProgramData[];
+  airlines: ProgramData[];
+  hotels: ProgramData[];
+}) {
+  const allPrograms = [...banks, ...airlines, ...hotels];
+  const totalPoints = allPrograms.reduce(
+    (sum, p) => sum + (p.totalBalance ?? 0),
+    0
+  );
+  const hasAnyData = allPrograms.some((p) => p.totalBalance !== null);
+
+  return (
+    <div className="space-y-4">
       {/* Total summary card */}
       {hasAnyData && (
         <div className="rounded-xl border border-border bg-surface p-6">
@@ -212,38 +267,22 @@ export default function ProgramsList({
         </div>
       )}
 
-      {/* Programs table */}
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
-        <table className="w-full text-left table-fixed">
-          <colgroup>
-            <col />
-            <col className="hidden sm:table-column w-36" />
-            <col className="hidden md:table-column w-32" />
-            <col className="w-28" />
-          </colgroup>
-          <thead>
-            <tr className="border-b border-border bg-surface-secondary/50">
-              <th className="py-2.5 pr-3 pl-3 text-xs font-medium uppercase tracking-wider text-text-tertiary">
-                Program
-              </th>
-              <th className="py-2.5 px-3 text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">
-                Rewards
-              </th>
-              <th className="py-2.5 px-3 text-xs font-medium uppercase tracking-wider text-text-tertiary hidden md:table-cell">
-                Last Updated
-              </th>
-              <th className="py-2.5 pl-3 pr-3 text-xs font-medium uppercase tracking-wider text-text-tertiary text-right">
-                Balance
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {programs.map((program) => (
-              <ProgramGroup key={program.providerId} program={program} />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Category cards */}
+      <CategorySection
+        title="Banks"
+        programs={banks}
+        emptyMessage="No bank rewards programs yet."
+      />
+      <CategorySection
+        title="Airlines"
+        programs={airlines}
+        emptyMessage="No airline programs yet."
+      />
+      <CategorySection
+        title="Hotels"
+        programs={hotels}
+        emptyMessage="No hotel programs yet. Sync a hotel rewards site to get started."
+      />
     </div>
   );
 }

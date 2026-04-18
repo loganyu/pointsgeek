@@ -10,38 +10,52 @@ import { eq, desc, and, isNull } from "drizzle-orm";
 import ProgramsList, { type ProgramData, type CardData } from "./programs-list";
 import { ThemeToggle } from "./theme-toggle";
 
-const PROVIDERS = [
+type ProgramCategory = "bank_rewards" | "airline" | "hotel";
+
+const PROVIDERS: Array<{
+  id: "amex_mr" | "chase_ur" | "capital_one" | "delta_skymiles";
+  label: string;
+  short: string;
+  url: string;
+  issuer: string;
+  programName: string;
+  programType: ProgramCategory;
+}> = [
   {
-    id: "amex_mr" as const,
+    id: "amex_mr",
     label: "Amex Membership Rewards",
     short: "Amex MR",
     url: "https://www.americanexpress.com",
     issuer: "amex",
     programName: "Membership Rewards",
+    programType: "bank_rewards",
   },
   {
-    id: "chase_ur" as const,
+    id: "chase_ur",
     label: "Chase Ultimate Rewards",
     short: "Chase UR",
     url: "https://ultimaterewardspoints.chase.com",
     issuer: "chase",
     programName: "Ultimate Rewards",
+    programType: "bank_rewards",
   },
   {
-    id: "capital_one" as const,
+    id: "capital_one",
     label: "Capital One Miles",
     short: "Capital One",
     url: "https://myaccounts.capitalone.com",
     issuer: "capital_one",
     programName: "Capital One Miles",
+    programType: "bank_rewards",
   },
   {
-    id: "delta_skymiles" as const,
+    id: "delta_skymiles",
     label: "Delta SkyMiles",
     short: "Delta",
     url: "https://www.delta.com/myskymiles/overview",
     issuer: "delta",
     programName: "Delta SkyMiles",
+    programType: "airline",
   },
 ];
 
@@ -124,7 +138,9 @@ export default async function DashboardPage() {
         label: provider.label,
         short: provider.short,
         url: provider.url,
+        issuer: provider.issuer,
         programName,
+        programType: provider.programType,
         totalBalance: latestTotal ? Number(latestTotal.balance) : null,
         lastUpdated: latestTotal
           ? latestTotal.scrapedAt.toISOString()
@@ -133,6 +149,11 @@ export default async function DashboardPage() {
       };
     })
   );
+
+  // Group programs by category
+  const banks = programs.filter((p) => p.programType === "bank_rewards");
+  const airlines = programs.filter((p) => p.programType === "airline");
+  const hotels = programs.filter((p) => p.programType === "hotel");
 
   return (
     <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -152,7 +173,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <ProgramsList programs={programs} />
+      <ProgramsList banks={banks} airlines={airlines} hotels={hotels} />
     </main>
   );
 }

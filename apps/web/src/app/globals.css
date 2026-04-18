@@ -3,34 +3,36 @@
 /* Use class-based dark mode so next-themes can toggle it */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Monarch-inspired "fresh-air" palette */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --surface: #ffffff;
-  --surface-hover: #f9fafb;
-  --surface-secondary: #f3f4f6;
-  --border: #e5e7eb;
-  --border-light: #f3f4f6;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  --text-accent: #2563eb;
-  --text-accent-hover: #1d4ed8;
+  --background: #f5f2ed;       /* warm cream page bg */
+  --foreground: #22201d;       /* dark brown-black text */
+  --surface: #ffffff;          /* pure white cards */
+  --surface-hover: #faf7f1;    /* slight warm hover */
+  --surface-secondary: #efece6;/* deeper cream for row hover / nested rows */
+  --border: #e3ded3;           /* warm light border */
+  --border-light: #ebe6db;     /* very subtle warm divider */
+  --text-primary: #22201d;     /* same as foreground */
+  --text-secondary: #5f5d5a;   /* warm medium gray */
+  --text-tertiary: #a6a39f;    /* warm light gray */
+  --text-accent: #ff692d;      /* Monarch orange */
+  --text-accent-hover: #eb5519;/* darker orange on hover */
 }
 
+/* Dark ("nocturnal") mode — deep warm-navy with the same orange accent */
 .dark {
-  --background: #0b0f1a;
-  --foreground: #e5e7eb;
-  --surface: #111827;
-  --surface-hover: #1f2937;
-  --surface-secondary: #1f2937;
-  --border: #1f2937;
-  --border-light: #1f2937;
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  --text-accent: #60a5fa;
-  --text-accent-hover: #93bbfd;
+  --background: #13161f;       /* deep navy */
+  --foreground: #f0ede6;       /* warm off-white text */
+  --surface: #1c2030;          /* cards */
+  --surface-hover: #232839;    /* card hover */
+  --surface-secondary: #2a2f42;/* nested rows */
+  --border: #2d3246;           /* subtle border */
+  --border-light: #262b3d;     /* dividers */
+  --text-primary: #f0ede6;
+  --text-secondary: #a6a39f;
+  --text-tertiary: #6b6865;
+  --text-accent: #ff7a47;      /* slightly brighter orange for dark bg */
+  --text-accent-hover: #ff9466;
 }
 
 @theme inline {
