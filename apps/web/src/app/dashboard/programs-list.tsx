@@ -15,7 +15,7 @@ export interface ProgramData {
   label: string;
   short: string;
   url: string;
-  currency: string;
+  programName: string;
   totalBalance: number | null;
   lastUpdated: string | null;
   cards: CardData[];
@@ -99,9 +99,9 @@ function ProgramGroup({ program }: { program: ProgramData }) {
           </div>
         </td>
 
-        {/* Currency */}
+        {/* Program name */}
         <td className="py-3 px-3 text-text-secondary text-sm hidden sm:table-cell">
-          {program.currency === "miles" ? "Miles" : "Points"}
+          {program.programName}
         </td>
 
         {/* Last updated */}
@@ -221,7 +221,7 @@ export default function ProgramsList({
                 Program
               </th>
               <th className="py-2.5 px-3 text-xs font-medium uppercase tracking-wider text-text-tertiary hidden sm:table-cell">
-                Type
+                Rewards
               </th>
               <th className="py-2.5 px-3 text-xs font-medium uppercase tracking-wider text-text-tertiary hidden md:table-cell">
                 Last Updated

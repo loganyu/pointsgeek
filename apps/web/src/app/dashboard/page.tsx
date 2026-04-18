@@ -17,7 +17,7 @@ const PROVIDERS = [
     short: "Amex MR",
     url: "https://www.americanexpress.com",
     issuer: "amex",
-    defaultCurrency: "pts",
+    programName: "Membership Rewards",
   },
   {
     id: "chase_ur" as const,
@@ -25,7 +25,7 @@ const PROVIDERS = [
     short: "Chase UR",
     url: "https://ultimaterewardspoints.chase.com",
     issuer: "chase",
-    defaultCurrency: "pts",
+    programName: "Ultimate Rewards",
   },
   {
     id: "capital_one" as const,
@@ -33,7 +33,7 @@ const PROVIDERS = [
     short: "Capital One",
     url: "https://myaccounts.capitalone.com",
     issuer: "capital_one",
-    defaultCurrency: "miles",
+    programName: "Capital One Miles",
   },
 ];
 
@@ -59,8 +59,7 @@ export default async function DashboardPage() {
   const programs: ProgramData[] = await Promise.all(
     PROVIDERS.map(async (provider) => {
       const program = userPrograms.find((p) => p.issuer === provider.issuer);
-      const currency =
-        program?.currency === "miles" ? "miles" : provider.defaultCurrency;
+      const programName = program?.name ?? provider.programName;
 
       // Get latest total balance (cardId IS NULL)
       const totalRows = await db
@@ -117,7 +116,7 @@ export default async function DashboardPage() {
         label: provider.label,
         short: provider.short,
         url: provider.url,
-        currency,
+        programName,
         totalBalance: latestTotal ? Number(latestTotal.balance) : null,
         lastUpdated: latestTotal
           ? latestTotal.scrapedAt.toISOString()
