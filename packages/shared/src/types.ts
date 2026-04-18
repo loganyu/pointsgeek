@@ -1,17 +1,14 @@
-export const PROVIDERS = ["amex_mr", "chase_ur", "capital_one"] as const;
+export const PROVIDERS = ["amex_mr", "chase_ur", "capital_one", "delta_skymiles"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const PROGRAM_TYPES = ["bank_rewards", "airline", "hotel"] as const;
 export type ProgramType = (typeof PROGRAM_TYPES)[number];
 
-export const CURRENCIES = ["points", "miles"] as const;
-export type Currency = (typeof CURRENCIES)[number];
-
 export interface PointsProgram {
   id: string;
   programType: ProgramType;
   name: string;
-  currency: Currency;
+  currency: string;
   issuer: string;
   active: boolean;
 }

@@ -158,7 +158,7 @@ function ProgramGroup({ program }: { program: ProgramData }) {
               </div>
             </td>
 
-            {/* Currency — empty for cards */}
+            {/* Rewards — empty for cards */}
             <td className="py-2.5 px-3 hidden sm:table-cell" />
 
             {/* Last updated */}
@@ -214,7 +214,13 @@ export default function ProgramsList({
 
       {/* Programs table */}
       <div className="rounded-xl border border-border bg-surface overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
+          <colgroup>
+            <col />
+            <col className="hidden sm:table-column w-36" />
+            <col className="hidden md:table-column w-32" />
+            <col className="w-28" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-surface-secondary/50">
               <th className="py-2.5 pr-3 pl-3 text-xs font-medium uppercase tracking-wider text-text-tertiary">

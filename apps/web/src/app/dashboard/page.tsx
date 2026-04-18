@@ -35,6 +35,14 @@ const PROVIDERS = [
     issuer: "capital_one",
     programName: "Capital One Miles",
   },
+  {
+    id: "delta_skymiles" as const,
+    label: "Delta SkyMiles",
+    short: "Delta",
+    url: "https://www.delta.com/myskymiles/overview",
+    issuer: "delta",
+    programName: "Delta SkyMiles",
+  },
 ];
 
 export default async function DashboardPage() {

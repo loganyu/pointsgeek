@@ -21,6 +21,7 @@ export default defineConfig({
       "https://secure.chase.com/*",
       "https://myaccounts.capitalone.com/*",
       "https://verified.capitalone.com/*",
+      "https://www.delta.com/*",
     ],
   },
 });

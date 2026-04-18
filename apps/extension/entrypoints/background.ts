@@ -9,6 +9,7 @@ const PROGRAM_DEFAULTS: Record<Provider, { programType: string; name: string; cu
   amex_mr: { programType: "bank_rewards", name: "Membership Rewards", currency: "points", issuer: "amex" },
   chase_ur: { programType: "bank_rewards", name: "Ultimate Rewards", currency: "points", issuer: "chase" },
   capital_one: { programType: "bank_rewards", name: "Capital One Miles", currency: "miles", issuer: "capital_one" },
+  delta_skymiles: { programType: "airline", name: "Delta SkyMiles", currency: "miles", issuer: "delta" },
 };
 
 export default defineBackground(() => {

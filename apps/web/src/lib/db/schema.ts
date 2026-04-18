@@ -14,9 +14,9 @@ import type { AdapterAccountType } from "next-auth/adapters";
 
 // --- Enums ---
 
-export const providerEnum = pgEnum("provider", ["amex_mr", "chase_ur", "capital_one"]);
+export const providerEnum = pgEnum("provider", ["amex_mr", "chase_ur", "capital_one", "delta_skymiles"]);
 export const programTypeEnum = pgEnum("program_type", ["bank_rewards", "airline", "hotel"]);
-export const currencyEnum = pgEnum("currency", ["points", "miles"]);
+// currency was previously a pgEnum("points","miles") — migrated to text in 0006
 
 // --- NextAuth tables ---
 
@@ -80,7 +80,7 @@ export const pointsPrograms = pgTable("points_programs", {
     .references(() => users.id, { onDelete: "cascade" }),
   programType: programTypeEnum("program_type").notNull(),
   name: text("name").notNull(),
-  currency: currencyEnum("currency").notNull().default("points"),
+  currency: text("currency").notNull().default("points"),
   issuer: text("issuer").notNull(),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
