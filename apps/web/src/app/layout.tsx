@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Point Portfolio",
+  title: "Points Geek",
   description: "Track your credit card points and miles",
 };
 

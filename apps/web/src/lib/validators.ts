@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PROVIDERS } from "@point-portfolio/shared";
+import { PROVIDERS } from "@points-geek/shared";
 
 export const balancePayloadSchema = z.object({
   provider: z.enum(PROVIDERS),

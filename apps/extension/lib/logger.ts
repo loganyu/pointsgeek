@@ -16,7 +16,7 @@ function log(level: LogLevel, event: string, data?: Record<string, unknown>) {
   };
 
   const method = level === "error" ? "error" : level === "warn" ? "warn" : "log";
-  console[method](`[PointPortfolio] ${event}`, entry);
+  console[method](`[PointsGeek] ${event}`, entry);
 }
 
 export const extLogger = {

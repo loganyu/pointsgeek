@@ -1,4 +1,4 @@
-import type { BalancePayload, PointsProgram, Card } from "@point-portfolio/shared";
+import type { BalancePayload, PointsProgram, Card } from "@points-geek/shared";
 import { extLogger } from "./logger";
 
 const API_BASE = "http://localhost:3100";

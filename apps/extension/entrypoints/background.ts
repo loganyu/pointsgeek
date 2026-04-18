@@ -1,5 +1,5 @@
-import type { ExtensionMessage, ScrapeResult, Provider } from "@point-portfolio/shared";
-import { RETRY_DELAY_MS } from "@point-portfolio/shared";
+import type { ExtensionMessage, ScrapeResult, Provider } from "@points-geek/shared";
+import { RETRY_DELAY_MS } from "@points-geek/shared";
 import { submitBalance, findOrCreateProgram, findOrCreateCard } from "../lib/api";
 import { getState, setLatestBalance, setLastError } from "../lib/storage";
 import { extLogger } from "../lib/logger";

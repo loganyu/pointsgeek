@@ -1,4 +1,4 @@
-import type { Provider } from "@point-portfolio/shared";
+import type { Provider } from "@points-geek/shared";
 
 interface UserInfo {
   id: string;

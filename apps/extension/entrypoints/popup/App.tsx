@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { getState } from "../../lib/storage";
 import { signInWithGoogle, signOut } from "../../lib/auth";
-import type { Provider } from "@point-portfolio/shared";
-import { STALE_THRESHOLD_MS } from "@point-portfolio/shared";
+import type { Provider } from "@points-geek/shared";
+import { STALE_THRESHOLD_MS } from "@points-geek/shared";
 
 interface UserInfo {
   name: string | null;
@@ -97,7 +97,7 @@ export default function App() {
     return (
       <div style={{ width: 320, padding: 16, fontFamily: "system-ui, sans-serif" }}>
         <h1 style={{ fontSize: 18, margin: "0 0 12px", fontWeight: 600 }}>
-          Point Portfolio
+          Points Geek
         </h1>
         <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 12px" }}>
           Sign in to start tracking your points and miles.
@@ -135,7 +135,7 @@ export default function App() {
   return (
     <div style={{ width: 320, padding: 16, fontFamily: "system-ui, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <h1 style={{ fontSize: 18, margin: 0, fontWeight: 600 }}>Point Portfolio</h1>
+        <h1 style={{ fontSize: 18, margin: 0, fontWeight: 600 }}>Points Geek</h1>
         <button
           onClick={handleSignOut}
           style={{ fontSize: 11, color: "#9CA3AF", background: "none", border: "none", cursor: "pointer" }}

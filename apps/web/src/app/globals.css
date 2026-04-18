@@ -3,7 +3,7 @@
 /* Use class-based dark mode so next-themes can toggle it */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Monarch-inspired "fresh-air" palette */
+/* "fresh-air" palette */
 :root {
   --background: #f5f2ed;       /* warm cream page bg */
   --foreground: #22201d;       /* dark brown-black text */
@@ -15,7 +15,7 @@
   --text-primary: #22201d;     /* same as foreground */
   --text-secondary: #5f5d5a;   /* warm medium gray */
   --text-tertiary: #a6a39f;    /* warm light gray */
-  --text-accent: #ff692d;      /* Monarch orange */
+  --text-accent: #ff692d;      /* orange */
   --text-accent-hover: #eb5519;/* darker orange on hover */
 }
 

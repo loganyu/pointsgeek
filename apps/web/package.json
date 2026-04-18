@@ -1,5 +1,5 @@
 {
-  "name": "@point-portfolio/web",
+  "name": "@points-geek/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
-    "@point-portfolio/shared": "workspace:*",
+    "@points-geek/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.2.2",
     "next": "16.2.2",

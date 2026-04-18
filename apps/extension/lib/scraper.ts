@@ -1,5 +1,5 @@
-import type { ScrapeResult } from "@point-portfolio/shared";
-import { SCRAPE_TIMEOUT_MS } from "@point-portfolio/shared";
+import type { ScrapeResult } from "@points-geek/shared";
+import { SCRAPE_TIMEOUT_MS } from "@points-geek/shared";
 
 interface SelectorStrategy {
   name: string;

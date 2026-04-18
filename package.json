@@ -1,16 +1,16 @@
 {
-  "name": "point-portfolio",
+  "name": "points-geek",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @point-portfolio/web dev",
-    "dev:ext": "pnpm --filter @point-portfolio/extension dev",
-    "build": "pnpm --filter @point-portfolio/shared build && pnpm --filter @point-portfolio/web build",
-    "build:ext": "pnpm --filter @point-portfolio/shared build && pnpm --filter @point-portfolio/extension build",
+    "dev": "pnpm --filter @points-geek/web dev",
+    "dev:ext": "pnpm --filter @points-geek/extension dev",
+    "build": "pnpm --filter @points-geek/shared build && pnpm --filter @points-geek/web build",
+    "build:ext": "pnpm --filter @points-geek/shared build && pnpm --filter @points-geek/extension build",
     "lint": "pnpm -r lint",
     "test": "vitest run",
-    "db:generate": "pnpm --filter @point-portfolio/web db:generate",
-    "db:migrate": "pnpm --filter @point-portfolio/web db:migrate"
+    "db:generate": "pnpm --filter @points-geek/web db:generate",
+    "db:migrate": "pnpm --filter @points-geek/web db:migrate"
   },
   "packageManager": "pnpm@10.33.0"
 }

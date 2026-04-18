@@ -18,8 +18,7 @@ size, PNG and SVG look identical.)
 
 ## Guidelines
 
-- **Format**: PNG or SVG. PNG is easier to source (works with Monarch's own
-  institution logos). For PNG, use at least 128×128 — higher is better for
+- **Format**: PNG or SVG. PNG is easier to source. For PNG, use at least 128×128 — higher is better for
   retina displays. For SVG, any size works since it's vector.
 - **Viewbox / aspect**: square, centered. The rendered logo sits inside a
   36px circle on program rows and a 24px circle on card rows, so square

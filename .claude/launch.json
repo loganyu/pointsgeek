@@ -4,14 +4,14 @@
     {
       "name": "web",
       "runtimeExecutable": "/bin/zsh",
-      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/web dev --port 3100"],
+      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @points-geek/web dev --port 3100"],
       "port": 3100,
       "autoPort": false
     },
     {
       "name": "extension",
       "runtimeExecutable": "/bin/zsh",
-      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @point-portfolio/extension dev"],
+      "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @points-geek/extension dev"],
       "port": 3001,
       "autoPort": false
     }

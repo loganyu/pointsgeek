@@ -160,7 +160,7 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-text-primary">
-          Point Portfolio
+          Points Geek
         </h1>
         <div className="flex items-center gap-3">
           <ThemeToggle />

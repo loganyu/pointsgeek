@@ -1,6 +1,6 @@
 import { waitForCapitalOneBalance } from "../lib/scraper-capitalone";
 import { extLogger } from "../lib/logger";
-import type { PerCardBalance } from "@point-portfolio/shared";
+import type { PerCardBalance } from "@points-geek/shared";
 
 export default defineContentScript({
   matches: [

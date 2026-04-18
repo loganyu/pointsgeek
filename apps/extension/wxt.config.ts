@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   manifest: {
-    name: "Point Portfolio",
+    name: "Points Geek",
     description: "Track your credit card points and miles",
     permissions: ["storage", "activeTab", "identity"],
     host_permissions: [

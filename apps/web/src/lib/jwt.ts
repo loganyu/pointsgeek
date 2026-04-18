@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-const ISSUER = "point-portfolio";
+const ISSUER = "points-geek";
 const EXPIRY = "30d";
 
 export async function signExtensionToken(payload: {

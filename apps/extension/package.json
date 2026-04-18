@@ -1,6 +1,6 @@
 {
-  "name": "@point-portfolio/extension",
-  "description": "Point Portfolio - Track your credit card points and miles",
+  "name": "@points-geek/extension",
+  "description": "Points Geek - Track your credit card points and miles",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -17,7 +17,7 @@
   "dependencies": {
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "@point-portfolio/shared": "workspace:*"
+    "@points-geek/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

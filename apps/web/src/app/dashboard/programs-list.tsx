@@ -70,6 +70,60 @@ function Chevron({ open, size = 16 }: { open: boolean; size?: number }) {
   );
 }
 
+function RefreshIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <path d="M21 2v6h-6" />
+      <path d="M21 13a9 9 0 11-3-7.7L21 8" />
+    </svg>
+  );
+}
+
+/**
+ * Timestamp + refresh link
+ * Clicking the refresh icon opens the issuer's site in a new tab — once the
+ * user logs in there, the content script scrapes and updates the balance.
+ */
+function LastUpdated({ iso, url }: { iso: string; url: string }) {
+  return (
+    <div className="flex items-center gap-1 justify-end">
+      <span className="text-xs text-text-tertiary">{timeAgo(iso)}</span>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Log in to refresh"
+        className="group/tip relative inline-flex items-center justify-center p-1 -m-1 rounded text-text-tertiary hover:text-text-primary transition-colors"
+      >
+        <RefreshIcon />
+        {/* style dark tooltip */}
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-md bg-[var(--text-primary)] text-[var(--background)] px-2.5 py-1.5 text-xs font-medium shadow-lg opacity-0 transition-opacity duration-100 group-hover/tip:opacity-100"
+        >
+          Log in to refresh
+          {/* Arrow pointing down at the icon */}
+          <span
+            aria-hidden="true"
+            className="absolute top-full right-2 h-0 w-0 border-4 border-transparent border-t-[var(--text-primary)]"
+          />
+        </span>
+      </a>
+    </div>
+  );
+}
+
 /* ── Card row (innermost, rendered under an expanded program) ── */
 
 function CardRow({ card, issuer }: { card: CardData; issuer: string }) {
@@ -84,16 +138,11 @@ function CardRow({ card, issuer }: { card: CardData; issuer: string }) {
       </div>
       <div className="text-right shrink-0 pl-4">
         {card.balance !== null ? (
-          <div className="text-sm tabular-nums text-text-primary">
+          <span className="text-sm tabular-nums text-text-primary">
             {formatBalance(card.balance)}
-          </div>
+          </span>
         ) : (
-          <div className="text-sm text-text-tertiary">—</div>
-        )}
-        {card.lastUpdated && (
-          <div className="text-xs text-text-tertiary mt-0.5">
-            {timeAgo(card.lastUpdated)}
-          </div>
+          <span className="text-sm text-text-tertiary">—</span>
         )}
       </div>
     </div>
@@ -136,8 +185,8 @@ function ProgramRow({ program }: { program: ProgramData }) {
                 {formatBalance(program.totalBalance!)}
               </div>
               {program.lastUpdated && (
-                <div className="text-xs text-text-tertiary mt-0.5">
-                  {timeAgo(program.lastUpdated)}
+                <div className="mt-0.5">
+                  <LastUpdated iso={program.lastUpdated} url={program.url} />
                 </div>
               )}
             </>
@@ -182,7 +231,7 @@ function CategorySection({
   const programsWithData = programs.filter((p) => p.totalBalance !== null);
   const total = programsWithData.reduce(
     (sum, p) => sum + (p.totalBalance ?? 0),
-    0
+    0,
   );
   const hasAnyData = programsWithData.length > 0;
   const programCount = programs.length;
@@ -246,7 +295,7 @@ export default function ProgramsList({
   const allPrograms = [...banks, ...airlines, ...hotels];
   const totalPoints = allPrograms.reduce(
     (sum, p) => sum + (p.totalBalance ?? 0),
-    0
+    0,
   );
   const hasAnyData = allPrograms.some((p) => p.totalBalance !== null);
 
