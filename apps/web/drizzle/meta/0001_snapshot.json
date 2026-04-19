@@ -1,6 +1,6 @@
 {
-  "id": "21352d07-c989-4c9b-a899-dce8760be3d9",
-  "prevId": "25c38e1b-b7d2-47b5-8167-13004b133851",
+  "id": "33dd20e6-4015-42a2-860d-0b512b647d6e",
+  "prevId": "34ee91a7-7770-4c5e-b462-8d5d47779ecb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -128,11 +128,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "program_id": {
+          "name": "program_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "card_id": {
+          "name": "card_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "balance": {
           "name": "balance",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true
+        },
+        "balance_type": {
+          "name": "balance_type",
+          "type": "balance_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'total'"
         },
         "scraped_at": {
           "name": "scraped_at",
@@ -168,10 +188,222 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "balance_snapshots_program_id_points_programs_id_fk": {
+          "name": "balance_snapshots_program_id_points_programs_id_fk",
+          "tableFrom": "balance_snapshots",
+          "tableTo": "points_programs",
+          "columnsFrom": [
+            "program_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "balance_snapshots_card_id_cards_id_fk": {
+          "name": "balance_snapshots_card_id_cards_id_fk",
+          "tableFrom": "balance_snapshots",
+          "tableTo": "cards",
+          "columnsFrom": [
+            "card_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cards": {
+      "name": "cards",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program_id": {
+          "name": "program_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "card_name": {
+          "name": "card_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_four": {
+          "name": "last_four",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issuer": {
+          "name": "issuer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_slug": {
+          "name": "image_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cards_user_id_users_id_fk": {
+          "name": "cards_user_id_users_id_fk",
+          "tableFrom": "cards",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cards_program_id_points_programs_id_fk": {
+          "name": "cards_program_id_points_programs_id_fk",
+          "tableFrom": "cards",
+          "tableTo": "points_programs",
+          "columnsFrom": [
+            "program_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.points_programs": {
+      "name": "points_programs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program_key": {
+          "name": "program_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_account_id": {
+          "name": "external_account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_label": {
+          "name": "owner_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "program_type": {
+          "name": "program_type",
+          "type": "program_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "points_programs_user_id_users_id_fk": {
+          "name": "points_programs_user_id_users_id_fk",
+          "tableFrom": "points_programs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uniq_user_program_external_account": {
+          "name": "uniq_user_program_external_account",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "program_key",
+            "external_account_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -422,11 +654,31 @@
     }
   },
   "enums": {
+    "public.balance_type": {
+      "name": "balance_type",
+      "schema": "public",
+      "values": [
+        "total",
+        "ytd_earned_on_card"
+      ]
+    },
+    "public.program_type": {
+      "name": "program_type",
+      "schema": "public",
+      "values": [
+        "bank_rewards",
+        "airline",
+        "hotel"
+      ]
+    },
     "public.provider": {
       "name": "provider",
       "schema": "public",
       "values": [
-        "amex_mr"
+        "amex",
+        "chase",
+        "capitalone",
+        "delta"
       ]
     }
   },

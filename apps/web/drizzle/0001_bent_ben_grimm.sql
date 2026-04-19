@@ -1,0 +1,1 @@
+ALTER TABLE "points_programs" ALTER COLUMN "owner_label" DROP NOT NULL;

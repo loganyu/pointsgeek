@@ -1,4 +1,4 @@
-import type { Provider } from "@points-geek/shared";
+import type { Provider, ProgramKey, BalanceType } from "@points-geek/shared";
 
 interface UserInfo {
   id: string;
@@ -7,16 +7,39 @@ interface UserInfo {
   image: string | null;
 }
 
-interface StoredBalance {
+/**
+ * Per-balance record kept in extension storage purely for the popup UI.
+ * The authoritative copy lives in Postgres via /api/balances — this cache
+ * exists so the popup has something to show instantly without a round-trip.
+ */
+export interface StoredBalance {
   provider: Provider;
+  programKey: ProgramKey;
+  externalAccountId: string;
+  /** Nullable — scrapers without a greeting leave this blank; UI hides. */
+  ownerLabel: string | null;
   balance: number;
-  cardInfo?: { cardName: string; lastFour?: string };
+  balanceType: BalanceType;
+  cardName?: string;
+  lastFour?: string;
   syncedAt: string;
 }
 
-function balanceKey(provider: string, cardInfo?: { cardName: string; lastFour?: string }): string {
-  if (!cardInfo) return provider;
-  return `${provider}|${cardInfo.cardName}${cardInfo.lastFour ? ` ${cardInfo.lastFour}` : ""}`;
+/** Composite key so multi-account / per-card entries don't collide. */
+export function balanceKey(b: {
+  provider: Provider;
+  programKey: ProgramKey;
+  externalAccountId: string;
+  cardName?: string;
+  lastFour?: string;
+}): string {
+  return [
+    b.provider,
+    b.programKey,
+    b.externalAccountId,
+    b.cardName ?? "",
+    b.lastFour ?? "",
+  ].join("|");
 }
 
 interface StoredState {
@@ -27,23 +50,12 @@ interface StoredState {
 }
 
 export async function getState(): Promise<StoredState> {
-  const result = await browser.storage.local.get([
+  return (await browser.storage.local.get([
     "token",
     "user",
     "balances",
-    "latestBalance",
     "lastError",
-  ]) as StoredState & { latestBalance?: StoredBalance };
-
-  // Migrate old single-balance format to multi-provider format
-  if (result.latestBalance && !result.balances) {
-    const balances = { [result.latestBalance.provider]: result.latestBalance };
-    await browser.storage.local.set({ balances });
-    await browser.storage.local.remove(["latestBalance"]);
-    result.balances = balances;
-  }
-
-  return result;
+  ])) as StoredState;
 }
 
 export async function setAuth(token: string, user: UserInfo): Promise<void> {
@@ -51,13 +63,15 @@ export async function setAuth(token: string, user: UserInfo): Promise<void> {
 }
 
 export async function clearAuth(): Promise<void> {
-  await browser.storage.local.remove(["token", "user"]);
+  await browser.storage.local.remove(["token", "user", "balances"]);
 }
 
-export async function setLatestBalance(balance: StoredBalance): Promise<void> {
+export async function upsertBalances(records: StoredBalance[]): Promise<void> {
+  if (records.length === 0) return;
   const { balances = {} } = await getState();
-  const key = balanceKey(balance.provider, balance.cardInfo);
-  balances[key] = balance;
+  for (const rec of records) {
+    balances[balanceKey(rec)] = rec;
+  }
   await browser.storage.local.set({ balances, lastError: undefined });
 }
 

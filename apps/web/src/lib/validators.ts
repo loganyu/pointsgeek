@@ -1,12 +1,37 @@
 import { z } from "zod";
-import { PROVIDERS } from "@points-geek/shared";
+import {
+  PROVIDERS,
+  BALANCE_TYPES,
+  PROGRAM_KEYS,
+} from "@points-geek/shared";
+
+const linkedCardSchema = z.object({
+  cardName: z.string().min(1),
+  lastFour: z.string().optional(),
+});
+
+const balanceRecordSchema = z.object({
+  programKey: z.enum(PROGRAM_KEYS),
+  balance: z.number().int().min(0),
+  balanceType: z.enum(BALANCE_TYPES),
+  linkedCard: linkedCardSchema.optional(),
+  externalAccountId: z.string().min(1).optional(),
+});
+
+const discoveredCardSchema = z.object({
+  cardName: z.string().min(1),
+  lastFour: z.string().optional(),
+  issuer: z.string().min(1),
+  programKey: z.enum(PROGRAM_KEYS).optional(),
+});
 
 export const balancePayloadSchema = z.object({
   provider: z.enum(PROVIDERS),
-  balance: z.number().int().min(0).optional(),
-  programId: z.string().uuid().optional(),
-  cardId: z.string().uuid().optional(),
+  externalAccountId: z.string().min(1).optional(),
+  ownerLabel: z.string().min(1).nullable().optional(),
   scrapedAt: z.string().datetime(),
+  balances: z.array(balanceRecordSchema),
+  cards: z.array(discoveredCardSchema).optional(),
   scrapeEvent: z.object({
     success: z.boolean(),
     durationMs: z.number().int().min(0),

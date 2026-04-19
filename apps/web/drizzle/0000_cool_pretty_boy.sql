@@ -1,4 +1,6 @@
-CREATE TYPE "public"."provider" AS ENUM('amex_mr');--> statement-breakpoint
+CREATE TYPE "public"."balance_type" AS ENUM('total', 'ytd_earned_on_card');--> statement-breakpoint
+CREATE TYPE "public"."program_type" AS ENUM('bank_rewards', 'airline', 'hotel');--> statement-breakpoint
+CREATE TYPE "public"."provider" AS ENUM('amex', 'chase', 'capitalone', 'delta');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"user_id" uuid NOT NULL,
 	"type" text NOT NULL,
@@ -14,26 +16,41 @@ CREATE TABLE "accounts" (
 	CONSTRAINT "accounts_provider_provider_account_id_pk" PRIMARY KEY("provider","provider_account_id")
 );
 --> statement-breakpoint
-CREATE TABLE "api_keys" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"key_hash" text NOT NULL,
-	"key_prefix" text NOT NULL,
-	"name" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"last_used_at" timestamp,
-	"revoked_at" timestamp,
-	CONSTRAINT "api_keys_key_hash_unique" UNIQUE("key_hash")
-);
---> statement-breakpoint
 CREATE TABLE "balance_snapshots" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" uuid NOT NULL,
 	"provider" "provider" NOT NULL,
+	"program_id" uuid,
+	"card_id" uuid,
 	"balance" bigint NOT NULL,
+	"balance_type" "balance_type" DEFAULT 'total' NOT NULL,
 	"scraped_at" timestamp NOT NULL,
 	"received_at" timestamp DEFAULT now() NOT NULL,
 	"metadata" text
+);
+--> statement-breakpoint
+CREATE TABLE "cards" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"program_id" uuid NOT NULL,
+	"card_name" text NOT NULL,
+	"last_four" text,
+	"issuer" text NOT NULL,
+	"image_slug" text,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "points_programs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"program_key" text NOT NULL,
+	"external_account_id" text NOT NULL,
+	"owner_label" text NOT NULL,
+	"program_type" "program_type" NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "uniq_user_program_external_account" UNIQUE("user_id","program_key","external_account_id")
 );
 --> statement-breakpoint
 CREATE TABLE "scrape_events" (
@@ -75,7 +92,11 @@ CREATE TABLE "verification_tokens" (
 );
 --> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "balance_snapshots" ADD CONSTRAINT "balance_snapshots_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "balance_snapshots" ADD CONSTRAINT "balance_snapshots_program_id_points_programs_id_fk" FOREIGN KEY ("program_id") REFERENCES "public"."points_programs"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "balance_snapshots" ADD CONSTRAINT "balance_snapshots_card_id_cards_id_fk" FOREIGN KEY ("card_id") REFERENCES "public"."cards"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cards" ADD CONSTRAINT "cards_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cards" ADD CONSTRAINT "cards_program_id_points_programs_id_fk" FOREIGN KEY ("program_id") REFERENCES "public"."points_programs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "points_programs" ADD CONSTRAINT "points_programs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scrape_events" ADD CONSTRAINT "scrape_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;

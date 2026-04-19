@@ -1,1 +1,0 @@
-ALTER TYPE "public"."provider" ADD VALUE 'chase_ur';

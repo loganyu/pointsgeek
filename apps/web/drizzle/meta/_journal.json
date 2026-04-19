@@ -5,57 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1775854430282,
-      "tag": "0000_gifted_silver_samurai",
+      "when": 1776540723111,
+      "tag": "0000_cool_pretty_boy",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1776118297633,
-      "tag": "0001_wet_rumiko_fujikawa",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776122752762,
-      "tag": "0002_flowery_infant_terrible",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776202197482,
-      "tag": "0003_past_the_initiative",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1776294280539,
-      "tag": "0004_amazing_the_professor",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1776300000000,
-      "tag": "0005_programs_and_cards",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1776400000000,
-      "tag": "0006_currency_to_text",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1776500000000,
-      "tag": "0007_add_delta_skymiles_provider",
+      "when": 1776558324740,
+      "tag": "0001_bent_ben_grimm",
       "breakpoints": true
     }
   ]

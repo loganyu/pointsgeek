@@ -1,4 +1,4 @@
-import type { ScrapeResult } from "@points-geek/shared";
+import type { BalanceExtraction } from "@points-geek/shared";
 import { SCRAPE_TIMEOUT_MS } from "@points-geek/shared";
 
 interface SelectorStrategy {
@@ -104,7 +104,7 @@ function parseBalance(text: string | null | undefined): number | null {
   return Number.isFinite(num) && num > 0 ? num : null;
 }
 
-export function extractDeltaBalance(doc: Document): ScrapeResult {
+export function extractDeltaBalance(doc: Document): BalanceExtraction {
   const start = performance.now();
   const selectorsAttempted: string[] = [];
 
@@ -140,7 +140,7 @@ export function extractDeltaBalance(doc: Document): ScrapeResult {
 export function waitForDeltaBalance(
   doc: Document,
   timeoutMs = SCRAPE_TIMEOUT_MS
-): Promise<ScrapeResult> {
+): Promise<BalanceExtraction> {
   const immediate = extractDeltaBalance(doc);
   if (immediate.success) return Promise.resolve(immediate);
 

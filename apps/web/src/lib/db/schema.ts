@@ -9,14 +9,29 @@ import {
   boolean,
   integer,
   primaryKey,
+  unique,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
 // --- Enums ---
 
-export const providerEnum = pgEnum("provider", ["amex_mr", "chase_ur", "capital_one", "delta_skymiles"]);
-export const programTypeEnum = pgEnum("program_type", ["bank_rewards", "airline", "hotel"]);
-// currency was previously a pgEnum("points","miles") — migrated to text in 0006
+export const providerEnum = pgEnum("provider", [
+  "amex",
+  "chase",
+  "capitalone",
+  "delta",
+]);
+
+export const programTypeEnum = pgEnum("program_type", [
+  "bank_rewards",
+  "airline",
+  "hotel",
+]);
+
+export const balanceTypeEnum = pgEnum("balance_type", [
+  "total",
+  "ytd_earned_on_card",
+]);
 
 // --- NextAuth tables ---
 
@@ -73,18 +88,37 @@ export const verificationTokens = pgTable(
 
 // --- App tables ---
 
-export const pointsPrograms = pgTable("points_programs", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  programType: programTypeEnum("program_type").notNull(),
-  name: text("name").notNull(),
-  currency: text("currency").notNull().default("points"),
-  issuer: text("issuer").notNull(),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-});
+/**
+ * A loyalty program *instance* for a user. One row per (user, program_key,
+ * external_account_id) — so a user with two Amex logins gets two `amex_mr`
+ * rows, each scoped by the Amex account identifier we scraped.
+ */
+export const pointsPrograms = pgTable(
+  "points_programs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Stable program identifier from shared/programs.ts PROGRAM_CATALOG. */
+    programKey: text("program_key").notNull(),
+    /** Scraped identifier for the external account (email, customer id, or fingerprint). */
+    externalAccountId: text("external_account_id").notNull(),
+    /** Display label for the owner ("Logan"). Nullable — falls back to
+     *  the loyalty number for airline/hotel programs, or nothing at all. */
+    ownerLabel: text("owner_label"),
+    programType: programTypeEnum("program_type").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique("uniq_user_program_external_account").on(
+      t.userId,
+      t.programKey,
+      t.externalAccountId
+    ),
+  ]
+);
 
 export const cards = pgTable("cards", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -96,7 +130,10 @@ export const cards = pgTable("cards", {
     .references(() => pointsPrograms.id, { onDelete: "cascade" }),
   cardName: text("card_name").notNull(),
   lastFour: text("last_four"),
+  /** Bank/issuer slug (amex, chase, capitalone). Distinct from program brand. */
   issuer: text("issuer").notNull(),
+  /** Key for /public/logos/cards/{slug}.png. Null → no per-card art. */
+  imageSlug: text("image_slug"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -107,13 +144,14 @@ export const balanceSnapshots = pgTable("balance_snapshots", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   provider: providerEnum("provider").notNull(),
-  balance: bigint("balance", { mode: "bigint" }).notNull(),
   programId: uuid("program_id").references(() => pointsPrograms.id, {
     onDelete: "set null",
   }),
   cardId: uuid("card_id").references(() => cards.id, {
     onDelete: "set null",
   }),
+  balance: bigint("balance", { mode: "bigint" }).notNull(),
+  balanceType: balanceTypeEnum("balance_type").notNull().default("total"),
   scrapedAt: timestamp("scraped_at", { mode: "date" }).notNull(),
   receivedAt: timestamp("received_at", { mode: "date" }).defaultNow().notNull(),
   metadata: text("metadata"),

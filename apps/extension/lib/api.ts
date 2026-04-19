@@ -1,4 +1,4 @@
-import type { BalancePayload, PointsProgram, Card } from "@points-geek/shared";
+import type { BalancePayload } from "@points-geek/shared";
 import { extLogger } from "./logger";
 
 const API_BASE = "http://localhost:3100";
@@ -10,12 +10,17 @@ function authHeaders(token: string) {
   };
 }
 
+/**
+ * Submit a multi-program balance payload. The server handles all program
+ * and card upserts, daily-dedup, and snapshot writes.
+ */
 export async function submitBalance(
   payload: BalancePayload,
   token: string
 ): Promise<{ ok: boolean; error?: string; status?: number }> {
   extLogger.info("api.request", {
     provider: payload.provider,
+    balanceCount: payload.balances.length,
     success: payload.scrapeEvent.success,
   });
 
@@ -37,39 +42,5 @@ export async function submitBalance(
   } catch (err) {
     extLogger.error("api.network_error", { error: String(err) });
     return { ok: false, error: "Network error" };
-  }
-}
-
-export async function findOrCreateProgram(
-  token: string,
-  data: { programType: string; name: string; currency: string; issuer: string }
-): Promise<PointsProgram | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/programs`, {
-      method: "POST",
-      headers: authHeaders(token),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-export async function findOrCreateCard(
-  token: string,
-  data: { programId: string; cardName: string; lastFour?: string; issuer: string }
-): Promise<Card | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/cards`, {
-      method: "POST",
-      headers: authHeaders(token),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
   }
 }

@@ -3,49 +3,63 @@
 import { useState } from "react";
 
 /**
- * Known issuers → bundled logo path + fallback branding.
+ * Known brand slugs → bundled logo path + fallback branding.
  *
- * Drop SVG files in `apps/web/public/logos/issuers/` matching the `logoPath`
- * below — they'll render automatically. Until then, the component falls back
- * to a brand-colored circle with the issuer's initial (Monarch-style).
+ * Used for both card issuers (amex, chase, capitalone) and loyalty program
+ * brands (delta, marriott, hyatt). One namespace — add new entries here
+ * and drop a matching PNG in `apps/web/public/logos/brands/`.
  */
-const ISSUER_META: Record<
+const BRAND_META: Record<
   string,
   { logoPath: string; bg: string; initial: string }
 > = {
   amex: {
-    logoPath: "/logos/issuers/amex.png",
-    bg: "#006FCF", // official Amex blue
+    logoPath: "/logos/brands/amex.png",
+    bg: "#006FCF",
     initial: "A",
   },
   chase: {
-    logoPath: "/logos/issuers/chase.png",
-    bg: "#117ACA", // Chase blue
+    logoPath: "/logos/brands/chase.png",
+    bg: "#117ACA",
     initial: "C",
   },
-  capital_one: {
-    logoPath: "/logos/issuers/capital-one.png",
-    bg: "#D03027", // Capital One red
+  capitalone: {
+    logoPath: "/logos/brands/capitalone.png",
+    bg: "#D03027",
     initial: "C",
   },
   delta: {
-    logoPath: "/logos/issuers/delta.png",
-    bg: "#E01933", // Delta red
+    logoPath: "/logos/brands/delta.png",
+    bg: "#E01933",
     initial: "D",
+  },
+  marriott: {
+    logoPath: "/logos/brands/marriott.png",
+    bg: "#2F3337",
+    initial: "M",
+  },
+  bilt: {
+    logoPath: "/logos/brands/bilt.png",
+    bg: "#0A0A0A",
+    initial: "B",
+  },
+  citi: {
+    logoPath: "/logos/brands/citi.png",
+    bg: "#003B70",
+    initial: "C",
   },
 };
 
-export function ProgramLogo({
-  issuer,
+export function BrandLogo({
+  slug,
   size = 32,
 }: {
-  issuer: string;
+  slug: string;
   size?: number;
 }) {
-  const meta = ISSUER_META[issuer];
+  const meta = BRAND_META[slug];
   const [imgBroken, setImgBroken] = useState(false);
 
-  // If we have a known issuer AND the image hasn't errored → render image
   if (meta && !imgBroken) {
     return (
       <div
@@ -63,10 +77,8 @@ export function ProgramLogo({
     );
   }
 
-  // Fallback: colored circle with an initial (known issuer = brand color,
-  // unknown issuer = neutral gray)
   const bg = meta?.bg ?? "#a6a39f";
-  const initial = meta?.initial ?? (issuer.charAt(0).toUpperCase() || "?");
+  const initial = meta?.initial ?? (slug.charAt(0).toUpperCase() || "?");
 
   return (
     <div

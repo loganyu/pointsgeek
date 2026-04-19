@@ -1,4 +1,4 @@
-import type { ScrapeResult } from "@points-geek/shared";
+import type { BalanceExtraction } from "@points-geek/shared";
 import { SCRAPE_TIMEOUT_MS } from "@points-geek/shared";
 
 interface SelectorStrategy {
@@ -74,7 +74,7 @@ function parseBalance(text: string | null | undefined): number | null {
   return Number.isFinite(num) && num > 0 ? num : null;
 }
 
-export function extractCapitalOneBalance(doc: Document): ScrapeResult {
+export function extractCapitalOneBalance(doc: Document): BalanceExtraction {
   const start = performance.now();
   const selectorsAttempted: string[] = [];
 
@@ -110,7 +110,7 @@ export function extractCapitalOneBalance(doc: Document): ScrapeResult {
 export function waitForCapitalOneBalance(
   doc: Document,
   timeoutMs = SCRAPE_TIMEOUT_MS
-): Promise<ScrapeResult> {
+): Promise<BalanceExtraction> {
   const immediate = extractCapitalOneBalance(doc);
   if (immediate.success) return Promise.resolve(immediate);
 
