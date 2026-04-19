@@ -14,16 +14,16 @@ import type {
  *   /xapi/myunited/CardMemberBenefits/myunited-card-details
  *     → Chase-issued United co-brands (name, last-four)
  *
- * Content scripts inherit the tab's cookies, so same-origin fetches are
- * automatically authenticated. This replaces the previous DOM scraping
- * (nav-bar drawer + /myunited heading parse) — strict upgrade:
- *   • no drawer click / UI flicker
- *   • resilient to United's hashed class names
- *   • always gets the MileagePlus number as a stable loyalty id
+ * These endpoints require BOTH a session cookie (which our content
+ * script inherits for same-origin fetches) AND a short-lived bearer
+ * token. United's SPA keeps the token in IndexedDB:
  *
- * Exits silently when the account-status call returns no data — that's
- * how United signals "not signed in" (the endpoint may respond 200 with
- * empty payload rather than 401).
+ *   localforage / keyvaluepairs / reduxPersist:global
+ *     → transit-js-encoded map containing
+ *         "apiToken": { hash: "DAAAA…", expiresAt: ISO, isAuthenticated }
+ *
+ * The token rotates every ~30 min, so we read it fresh on each scrape
+ * and skip when it's expired or missing (signed-out).
  */
 const ACCOUNT_STATUS_URL = "https://www.united.com/api/user/accountStatus";
 const CARD_DETAILS_URL =
@@ -36,9 +36,18 @@ export default defineContentScript({
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "united", url });
 
+    const bearer = await extractBearerFromReduxPersist();
+    if (!bearer) {
+      extLogger.info("scrape.skipped", {
+        provider: "united",
+        reason: "no_bearer_or_expired",
+      });
+      return;
+    }
+
     const [accountStatus, cardDetails] = await Promise.all([
-      fetchJson(ACCOUNT_STATUS_URL),
-      fetchJson(CARD_DETAILS_URL),
+      fetchJson(ACCOUNT_STATUS_URL, bearer),
+      fetchJson(CARD_DETAILS_URL, bearer),
     ]);
 
     const mp = accountStatus?.MileagePlus;
@@ -159,9 +168,15 @@ function extractCards(payload: unknown): DiscoveredCard[] {
   return out;
 }
 
-async function fetchJson(url: string): Promise<unknown> {
+async function fetchJson(url: string, bearer: string): Promise<unknown> {
   try {
-    const resp = await fetch(url, { credentials: "same-origin" });
+    const resp = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        accept: "application/json",
+        "x-authorization-api": `bearer ${bearer}`,
+      },
+    });
     if (!resp.ok) {
       extLogger.warn("scrape.fetch_non_ok", { url, status: resp.status });
       return null;
@@ -171,6 +186,109 @@ async function fetchJson(url: string): Promise<unknown> {
     extLogger.warn("scrape.fetch_error", { url, error: String(err) });
     return null;
   }
+}
+
+/**
+ * Pull the signed-in API bearer out of the redux-persist blob United
+ * stores in IndexedDB. Structure (transit-js-encoded):
+ *
+ *   ["~#iM", [
+ *     "flightStartDate", null,
+ *     …
+ *     "apiToken", ["^ ", "hash", "DAAAA…", "expiresAt", "…", "isAuthenticated", true],
+ *   ]]
+ *
+ * "~#iM" = immutable Map; pairs are alternating key/value. "^ " on a
+ * nested array means it's also a Map. We don't bring in a transit
+ * library — the shape is stable enough to walk manually.
+ *
+ * Returns null when unauthenticated, missing, or past `expiresAt`.
+ */
+async function extractBearerFromReduxPersist(): Promise<string | null> {
+  const raw = await readIdb("localforage", "keyvaluepairs", "reduxPersist:global");
+  if (typeof raw !== "string") return null;
+
+  let parsed: unknown = raw;
+  for (let i = 0; i < 3 && typeof parsed === "string"; i++) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(parsed) || parsed[0] !== "~#iM") return null;
+
+  const entries = parsed[1];
+  if (!Array.isArray(entries)) return null;
+
+  for (let i = 0; i < entries.length - 1; i += 2) {
+    if (entries[i] !== "apiToken") continue;
+    const token = entries[i + 1];
+    if (!Array.isArray(token) || token[0] !== "^ ") return null;
+
+    let hash: string | null = null;
+    let expiresAt: string | null = null;
+    for (let j = 1; j < token.length - 1; j += 2) {
+      if (token[j] === "hash" && typeof token[j + 1] === "string") {
+        hash = token[j + 1] as string;
+      } else if (
+        token[j] === "expiresAt" &&
+        typeof token[j + 1] === "string"
+      ) {
+        expiresAt = token[j + 1] as string;
+      }
+    }
+    if (!hash) return null;
+    if (expiresAt) {
+      const expMs = Date.parse(expiresAt);
+      // 5-second safety margin; skip if the token is about to expire.
+      if (Number.isFinite(expMs) && expMs <= Date.now() + 5_000) {
+        return null;
+      }
+    }
+    return hash;
+  }
+  return null;
+}
+
+function readIdb(
+  dbName: string,
+  storeName: string,
+  key: string
+): Promise<unknown> {
+  return new Promise((resolve) => {
+    let req: IDBOpenDBRequest;
+    try {
+      req = window.indexedDB.open(dbName);
+    } catch {
+      resolve(null);
+      return;
+    }
+    req.onerror = () => resolve(null);
+    req.onsuccess = () => {
+      const db = req.result;
+      try {
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.close();
+          resolve(null);
+          return;
+        }
+        const tx = db.transaction(storeName, "readonly");
+        const getReq = tx.objectStore(storeName).get(key);
+        getReq.onsuccess = () => {
+          db.close();
+          resolve(getReq.result);
+        };
+        getReq.onerror = () => {
+          db.close();
+          resolve(null);
+        };
+      } catch {
+        db.close();
+        resolve(null);
+      }
+    };
+  });
 }
 
 function send(payload: ScrapeResult) {
