@@ -1,0 +1,1 @@
+ALTER TYPE "public"."balance_type" ADD VALUE 'pending';

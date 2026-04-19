@@ -18,6 +18,7 @@ export default defineConfig({
       "https://www.americanexpress.com/*",
       "https://global.americanexpress.com/*",
       "https://ultimaterewardspoints.chase.com/*",
+      "https://chaseloyalty.chase.com/*",
       "https://secure.chase.com/*",
       "https://myaccounts.capitalone.com/*",
       "https://verified.capitalone.com/*",

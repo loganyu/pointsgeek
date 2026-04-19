@@ -15,6 +15,7 @@ import {
   PROGRAM_CATALOG,
   type ProgramKey,
   type BalanceRecord,
+  type BalanceType,
   type DiscoveredCard,
 } from "@points-geek/shared";
 
@@ -190,6 +191,30 @@ export async function POST(req: NextRequest) {
       insertedCount++;
     }
 
+    // 3d. For programs whose pool total = sum of per-card balances
+    //     (Chase UR), recompute the pool whenever a per-card balance
+    //     moves. Chase users freely transfer points between cards, and
+    //     the individual-card pages only report one card at a time —
+    //     without this step, visiting a single card's page would leave
+    //     the dashboard showing a stale pool total.
+    const programsToRecompute = new Set<string>();
+    for (const bal of balances) {
+      if (bal.programKey !== "chase_ur") continue;
+      if (bal.balanceType !== "total") continue; // pending / ytd don't move the pool
+      if (!bal.linkedCard) continue;
+      const programId = programIdByKey.get(bal.programKey);
+      if (programId) programsToRecompute.add(programId);
+    }
+    for (const programId of programsToRecompute) {
+      const recomputed = await recomputePoolTotal({
+        userId,
+        programId,
+        provider,
+        scrapedAt: scrapedAtDate,
+      });
+      if (recomputed) insertedCount++;
+    }
+
     logger.info(
       {
         userId,
@@ -358,7 +383,7 @@ async function shouldInsertSnapshot(args: {
   userId: string;
   programId: string;
   cardId: string | null;
-  balanceType: "total" | "ytd_earned_on_card";
+  balanceType: BalanceType;
   newBalance: number;
 }): Promise<boolean> {
   const { userId, programId, cardId, balanceType, newBalance } = args;
@@ -416,4 +441,74 @@ function inferIssuerFromProgram(
     return brand;
   }
   return provider;
+}
+
+/**
+ * For programs where the account total is the sum of per-card balances
+ * (currently Chase UR — users transfer points between cards freely),
+ * re-sum the latest per-card snapshot for every card and write a new
+ * pool-total snapshot if it changed.
+ *
+ * This keeps the dashboard's pool total in sync even when the user
+ * scrapes only one card at a time (via the individual-card page),
+ * rather than always going through /account-selector.
+ *
+ * Returns true if a new total snapshot was inserted, false if the
+ * daily-dedup rule said no-op.
+ */
+async function recomputePoolTotal(args: {
+  userId: string;
+  programId: string;
+  provider: "amex" | "chase" | "capitalone" | "delta";
+  scrapedAt: Date;
+}): Promise<boolean> {
+  const { userId, programId, provider, scrapedAt } = args;
+
+  const cardRows = await db
+    .select({ id: cards.id })
+    .from(cards)
+    .where(and(eq(cards.userId, userId), eq(cards.programId, programId)));
+
+  let sum = 0;
+  for (const card of cardRows) {
+    const latest = await db
+      .select({ balance: balanceSnapshots.balance })
+      .from(balanceSnapshots)
+      .where(
+        and(
+          eq(balanceSnapshots.userId, userId),
+          eq(balanceSnapshots.cardId, card.id),
+          eq(balanceSnapshots.balanceType, "total")
+        )
+      )
+      .orderBy(desc(balanceSnapshots.scrapedAt))
+      .limit(1);
+    if (latest[0]) sum += Number(latest[0].balance);
+  }
+
+  if (sum === 0) return false;
+
+  const shouldInsert = await shouldInsertSnapshot({
+    userId,
+    programId,
+    cardId: null,
+    balanceType: "total",
+    newBalance: sum,
+  });
+  if (!shouldInsert) return false;
+
+  await db.insert(balanceSnapshots).values({
+    userId,
+    provider,
+    programId,
+    cardId: null,
+    balance: BigInt(sum),
+    balanceType: "total",
+    scrapedAt,
+  });
+  logger.info(
+    { userId, programId, sum, cardCount: cardRows.length },
+    "Pool total recomputed"
+  );
+  return true;
 }

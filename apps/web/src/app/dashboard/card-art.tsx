@@ -40,7 +40,7 @@ export function CardArt({
   if (currentSrc) {
     return (
       <div
-        className="shrink-0 rounded-xs overflow-hidden bg-white border border-border"
+        className="shrink-0 rounded-sm overflow-hidden bg-white border border-border"
         style={{ width, height }}
       >
         <img

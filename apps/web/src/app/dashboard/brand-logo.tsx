@@ -48,6 +48,16 @@ export const BRAND_META: Record<
     bg: "#003B70",
     initial: "C",
   },
+  united: {
+    logoPath: "/logos/brands/united.png",
+    bg: "#002244", // United navy
+    initial: "U",
+  },
+  amazon: {
+    logoPath: "/logos/brands/amazon.png",
+    bg: "#FF9900", // Amazon orange
+    initial: "A",
+  },
 };
 
 export function BrandLogo({

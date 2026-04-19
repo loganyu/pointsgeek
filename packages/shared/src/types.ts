@@ -17,8 +17,16 @@ export type ProgramType = (typeof PROGRAM_TYPES)[number];
  * - `ytd_earned_on_card`: year-to-date points earned through one specific
  *   card (e.g. the Marriott Brilliant tile on Amex shows YTD earnings, not
  *   the Marriott account balance). Never rolled into program totals.
+ * - `pending`: points already earned but not yet posted to the available
+ *   balance — e.g. Chase UR cards show "Pending points" alongside the
+ *   available total on each card's detail page. Displayed as a sidecar
+ *   figure on card rows; never rolled into program totals.
  */
-export const BALANCE_TYPES = ["total", "ytd_earned_on_card"] as const;
+export const BALANCE_TYPES = [
+  "total",
+  "ytd_earned_on_card",
+  "pending",
+] as const;
 export type BalanceType = (typeof BALANCE_TYPES)[number];
 
 export interface PointsProgram {

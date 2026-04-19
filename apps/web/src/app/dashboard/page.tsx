@@ -78,22 +78,40 @@ export default async function DashboardPage() {
       const latestTotal = totalRows[0] ?? null;
       const latestYtd = ytdRows[0] ?? null;
 
-      // Cards attached to this program instance.
+      // Cards attached to this program instance. Fetch latest total and
+      // latest pending separately — pending is a sidecar figure on UR cards
+      // and must not mask the card's available total.
       const programCards = userCards.filter((c) => c.programId === p.id);
       const cardData: CardRowData[] = await Promise.all(
         programCards.map(async (c) => {
-          const balRows = await db
-            .select()
-            .from(balanceSnapshots)
-            .where(
-              and(
-                eq(balanceSnapshots.userId, userId),
-                eq(balanceSnapshots.cardId, c.id)
+          const [totalRows, pendingRows] = await Promise.all([
+            db
+              .select()
+              .from(balanceSnapshots)
+              .where(
+                and(
+                  eq(balanceSnapshots.userId, userId),
+                  eq(balanceSnapshots.cardId, c.id),
+                  eq(balanceSnapshots.balanceType, "total")
+                )
               )
-            )
-            .orderBy(desc(balanceSnapshots.scrapedAt))
-            .limit(1);
-          const latest = balRows[0] ?? null;
+              .orderBy(desc(balanceSnapshots.scrapedAt))
+              .limit(1),
+            db
+              .select()
+              .from(balanceSnapshots)
+              .where(
+                and(
+                  eq(balanceSnapshots.userId, userId),
+                  eq(balanceSnapshots.cardId, c.id),
+                  eq(balanceSnapshots.balanceType, "pending")
+                )
+              )
+              .orderBy(desc(balanceSnapshots.scrapedAt))
+              .limit(1),
+          ]);
+          const latestTotal = totalRows[0] ?? null;
+          const latestPending = pendingRows[0] ?? null;
           return {
             id: c.id,
             cardName: c.cardName,
@@ -101,12 +119,25 @@ export default async function DashboardPage() {
             issuer: c.issuer,
             imageSlug: c.imageSlug,
             imageUrl: c.imageUrl,
-            balance: latest ? Number(latest.balance) : null,
-            balanceType: (latest?.balanceType as BalanceType | undefined) ?? null,
-            lastUpdated: latest?.scrapedAt.toISOString() ?? null,
+            balance: latestTotal ? Number(latestTotal.balance) : null,
+            balanceType:
+              (latestTotal?.balanceType as BalanceType | undefined) ?? null,
+            lastUpdated: latestTotal?.scrapedAt.toISOString() ?? null,
+            pendingBalance: latestPending ? Number(latestPending.balance) : null,
           };
         })
       );
+
+      // Program-level pending = sum of per-card pending. Null when no card
+      // has any pending figure (most programs); a positive number rolls up
+      // into the program row's sidecar.
+      const cardsWithPending = cardData.filter(
+        (c) => c.pendingBalance !== null
+      );
+      const pendingSum =
+        cardsWithPending.length > 0
+          ? cardsWithPending.reduce((sum, c) => sum + (c.pendingBalance ?? 0), 0)
+          : null;
 
       return {
         programRowId: p.id, // db id; used only for react key
@@ -122,6 +153,7 @@ export default async function DashboardPage() {
         lastUpdated: latestTotal?.scrapedAt.toISOString() ?? null,
         ytdBalance: latestYtd ? Number(latestYtd.balance) : null,
         ytdLastUpdated: latestYtd?.scrapedAt.toISOString() ?? null,
+        pendingBalance: pendingSum,
         cards: cardData,
       } as ProgramRowData;
     })

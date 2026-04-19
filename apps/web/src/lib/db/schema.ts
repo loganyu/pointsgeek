@@ -31,6 +31,7 @@ export const programTypeEnum = pgEnum("program_type", [
 export const balanceTypeEnum = pgEnum("balance_type", [
   "total",
   "ytd_earned_on_card",
+  "pending",
 ]);
 
 // --- NextAuth tables ---

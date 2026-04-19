@@ -62,6 +62,26 @@ export const PROGRAM_CATALOG = {
     short: "MAR",
     primarySyncUrl: "https://www.marriott.com",
   },
+  united_mileageplus: {
+    programType: "airline",
+    brandSlug: "united",
+    currency: "miles",
+    displayName: "United MileagePlus",
+    short: "UA",
+    primarySyncUrl: "https://www.united.com/mileageplus/",
+  },
+  amazon_rewards: {
+    // Co-branded white-label points on the Chase Prime Visa; redeemable
+    // on Amazon. Not a travel program, not an issuer bank — calling it
+    // bank_rewards is a stretch but it's the closest bucket we have
+    // today. Reclassify later if we add a "merchant" category.
+    programType: "bank_rewards",
+    brandSlug: "amazon",
+    currency: "points",
+    displayName: "Amazon Rewards",
+    short: "AMZ",
+    primarySyncUrl: "https://secure.chase.com/web/auth/dashboard",
+  },
 } as const satisfies Record<
   string,
   {
