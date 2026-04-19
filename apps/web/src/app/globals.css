@@ -24,6 +24,11 @@
   --purple-hover: #6b4a9e;     /* links, primary hover, text accent */
   --purple-deep: #4a2f85;      /* accent buttons, selected states */
   --purple-darkest: #3a2569;   /* accent-button hover */
+
+  /* Brand chip used for the letter-fallback BrandLogo (unknown / missing
+   * art). Lavender reads well on the cream page background. */
+  --brand-default-chip: var(--purple-tint);
+  --brand-default-chip-fg: #ffffff;
 }
 
 /* Dark ("nocturnal") mode — deep warm-navy with a lighter aubergine accent */
@@ -40,6 +45,11 @@
   --text-tertiary: #6b6865;
   --text-accent: #a68ce0;      /* lavender — brighter aubergine for dark bg */
   --text-accent-hover: #c5b3ed;
+
+  /* Dark bg → use the mid aubergine for the fallback chip; lavender
+   * (the dark-mode accent) would clash with surrounding text. */
+  --brand-default-chip: var(--purple-hover);
+  --brand-default-chip-fg: #ffffff;
 }
 
 @theme inline {

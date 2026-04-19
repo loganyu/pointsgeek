@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Known brand slugs → bundled logo path + fallback branding.
@@ -68,9 +68,44 @@ export function BrandLogo({
   size?: number;
 }) {
   const meta = BRAND_META[slug];
-  const [imgBroken, setImgBroken] = useState(false);
+  // "loading" on the server / during preload → renders the letter. Only
+  // flip to "ok" once a real Image() preload confirms the file exists
+  // and decodes. This guarantees we NEVER commit a broken <img> to the
+  // DOM — Next.js's 404 returns a 200-style HTML body that some browsers
+  // don't raise `error` for, so onError/onLoad on the real element isn't
+  // reliable enough on its own.
+  const [status, setStatus] = useState<"loading" | "ok" | "broken">(
+    meta ? "loading" : "broken"
+  );
 
-  if (meta && !imgBroken) {
+  useEffect(() => {
+    if (!meta) {
+      reportMissingLogo(slug, "no_meta");
+      return;
+    }
+    let cancelled = false;
+    const probe = new Image();
+    probe.onload = () => {
+      if (cancelled) return;
+      if (probe.naturalWidth === 0 || probe.naturalHeight === 0) {
+        setStatus("broken");
+        reportMissingLogo(slug, "image_load_error");
+      } else {
+        setStatus("ok");
+      }
+    };
+    probe.onerror = () => {
+      if (cancelled) return;
+      setStatus("broken");
+      reportMissingLogo(slug, "image_load_error");
+    };
+    probe.src = meta.logoPath;
+    return () => {
+      cancelled = true;
+    };
+  }, [meta, slug]);
+
+  if (status === "ok" && meta) {
     return (
       <div
         className="shrink-0 rounded-full overflow-hidden bg-white border border-border flex items-center justify-center"
@@ -81,28 +116,56 @@ export function BrandLogo({
           alt=""
           aria-hidden="true"
           className="w-full h-full object-contain"
-          onError={() => setImgBroken(true)}
         />
       </div>
     );
   }
 
-  const bg = meta?.bg ?? "#a6a39f";
-  const initial = meta?.initial ?? (slug.charAt(0).toUpperCase() || "?");
+  // Fallback (also used during the brief preload): just the first letter
+  // on a brand-purple chip. Token flips between lavender (light) and
+  // mid aubergine (dark) via `--brand-default-chip` in globals.css.
+  const initial = (slug.charAt(0) || "?").toUpperCase();
 
   return (
     <div
-      className="shrink-0 rounded-full flex items-center justify-center font-semibold text-white"
+      className="shrink-0 rounded-full flex items-center justify-center font-semibold"
       style={{
         width: size,
         height: size,
-        backgroundColor: bg,
         fontSize: size * 0.42,
         lineHeight: 1,
+        backgroundColor: "var(--brand-default-chip)",
+        color: "var(--brand-default-chip-fg)",
       }}
       aria-hidden="true"
     >
       {initial}
     </div>
   );
+}
+
+type MissingLogoReason = "no_meta" | "image_load_error";
+
+/**
+ * Fire-and-forget telemetry for a brand slug we couldn't resolve to a
+ * logo. Deduped per slug per tab so we don't spam the endpoint if the
+ * same slug appears on many rows.
+ */
+function reportMissingLogo(slug: string, reason: MissingLogoReason) {
+  if (!slug) return;
+  const key = `pg-missing-logo:${reason}:${slug}`;
+  try {
+    if (window.sessionStorage.getItem(key)) return;
+    window.sessionStorage.setItem(key, "1");
+  } catch {
+    // Private mode / disabled storage — fall through and still report.
+  }
+  fetch("/api/telemetry/missing-asset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind: "brand-logo", slug, reason }),
+    keepalive: true,
+  }).catch(() => {
+    // Best-effort: never let a telemetry failure bubble into the UI.
+  });
 }
