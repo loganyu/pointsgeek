@@ -5,6 +5,7 @@ import type {
   ScrapeResult,
   BalanceRecord,
   DiscoveredCard,
+  ProgramKey,
 } from "@points-geek/shared";
 
 /**
@@ -18,8 +19,8 @@ import type {
  *   ultimaterewardspoints.chase.com/* (any other path, including
  *   /home and /home?AI=...)
  *     → combined scrape: header-stripe (current card's available +
- *       pending + image) PLUS side-panel (click-to-open lists every
- *       UR card's total). Both sources are merged into one payload.
+ *       image) PLUS side-panel (click-to-open lists every UR card's
+ *       total). Both sources are merged into one payload.
  *
  *   chaseloyalty.chase.com/*
  *     → individual card only (header-stripe). chaseloyalty doesn't
@@ -246,52 +247,57 @@ interface UrIndividualCard {
   cardName: string;
   lastFour?: string;
   available: number;
-  pending: number;
   imageUrl?: string;
 }
 
 /**
- * Parse the `<header-stripe>` block that every UR card-detail page
- * (and `chaseloyalty.chase.com/home?AI=...`) renders at the top.
- * Structure:
+ * Parse the `<header-stripe>` block. Two DOM shapes show up in the wild:
  *
- *   <header-stripe>
- *     <div class="card">
- *       <div class="card-img"><img alt="Chase Freedom® card" src="..."/></div>
- *       <div class="card-details">
- *         <div role="heading">Chase Freedom® (...1907)</div>
- *         <div class="points-balance">
- *           <div class="points">                     <!-- available -->
- *             <div class="mds-title-large"><span>0</span></div>
- *             <div class="points-available">Available points</div>
- *           </div>
- *           <div class="points">                     <!-- pending  -->
- *             <div class="mds-title-large"><span>0</span></div>
- *             <div class="pending">Pending points</div>
- *           </div>
- *         </div>
- *       </div>
- *     </div>
- *   </header-stripe>
+ *   ultimaterewardspoints.chase.com:
+ *     <header-stripe>
+ *       <div class="card">
+ *         <div class="card-img"><img/></div>
+ *         <div class="card-details">
+ *           <div role="heading">Chase Freedom® (...1907)</div>
+ *           <div class="points-balance">
+ *             <div class="points">
+ *               <div class="mds-title-large"><span>0</span></div>
+ *               <div class="points-available">Available points</div>
  *
- * The heading carries the card name AND last-four; the img alt is
- * "<name> card" (without the last-4), used as a fallback.
+ *   chaseloyalty.chase.com:
+ *     <header-stripe>
+ *       <mds-tile>
+ *         <div class="tile-content">
+ *           <div class="card-img"><img/></div>
+ *           <div class="card-details">
+ *             <div role="heading">Marriott Bonvoy Boundless™ Card (...1284)</div>
+ *             <div class="points-balance">
+ *               <div class="points">
+ *                 <div class="mds-title-large-heavier"><span>734,817</span></div>
+ *                 <div class="points-available"><span>Available points</span></div>
+ *
+ * We don't rely on the outer wrapper class — only on `.card-img`,
+ * `.card-details [role=heading]`, and `.points-balance .points` inside
+ * `header-stripe`. Waits on `.points-balance` to clear initial hydration.
  */
 async function extractHeaderStripeCard(
   timeoutMs: number
 ): Promise<UrIndividualCard | null> {
   const containers = await pollForElements(
-    () => Array.from(document.querySelectorAll("header-stripe .card")),
+    () =>
+      Array.from(document.querySelectorAll("header-stripe .points-balance")),
     timeoutMs
   );
   if (containers.length === 0) return null;
 
-  const card = containers[0];
-  const img = card.querySelector<HTMLImageElement>(".card-img img");
+  const root = document.querySelector("header-stripe");
+  if (!root) return null;
+
+  const img = root.querySelector<HTMLImageElement>(".card-img img");
   const imageUrl = img?.src || undefined;
 
-  const heading = card
-    .querySelector(".card-details [role='heading']")
+  const heading = root
+    .querySelector("[role='heading']")
     ?.textContent?.trim();
   const headingMatch = heading?.match(
     /^(.+?)\s*\(\s*\.{3}\s*(\d+)\s*\)\s*$/
@@ -303,28 +309,24 @@ async function extractHeaderStripeCard(
 
   if (!cardName) return null;
 
-  // The two `.points` blocks are ordered (available, pending). We don't
-  // rely on order though — we find each by its inner label class.
   let available: number | null = null;
-  let pending: number | null = null;
-  for (const block of card.querySelectorAll(".points-balance .points")) {
+  for (const block of root.querySelectorAll(".points-balance .points")) {
+    // UR uses `.mds-title-large`, chaseloyalty uses `.mds-title-large-heavier`.
     const raw =
-      block.querySelector(".mds-title-large span")?.textContent?.trim() ?? "";
+      block
+        .querySelector("[class^='mds-title-large'] span")
+        ?.textContent?.trim() ?? "";
     const num = parseInt(raw.replace(/[^0-9]/g, ""), 10);
     if (!Number.isFinite(num) || num < 0) continue;
-    if (block.querySelector(".points-available")) available = num;
-    else if (block.querySelector(".pending")) pending = num;
+    if (block.querySelector(".points-available")) {
+      available = num;
+      break;
+    }
   }
 
   if (available === null) return null;
 
-  return {
-    cardName,
-    lastFour,
-    available,
-    pending: pending ?? 0,
-    imageUrl,
-  };
+  return { cardName, lastFour, available, imageUrl };
 }
 
 /**
@@ -385,9 +387,9 @@ function cleanName(raw: string): string {
 /**
  * ultimaterewardspoints.chase.com/home (with or without `?AI=`).
  *
- * Runs header-stripe and side-panel extractions concurrently, merges
- * the results (side panel gives all cards' totals; header-stripe adds
- * pending for the focused card), and submits one payload.
+ * Runs header-stripe and side-panel extractions concurrently. Side panel
+ * gives all cards' totals; header-stripe adds the focused card if the
+ * panel didn't already cover it.
  */
 async function scrapeUrCombined() {
   const start = performance.now();
@@ -400,7 +402,6 @@ async function scrapeUrCombined() {
     provider: "chase",
     hasIndividual: !!individual,
     sidePanelCount: sidePanel?.length ?? 0,
-    pending: individual?.pending,
   });
 
   const balances: BalanceRecord[] = [];
@@ -448,17 +449,6 @@ async function scrapeUrCombined() {
         imageUrl: individual.imageUrl,
       });
     }
-    // Pending is new info regardless of whether the side panel already
-    // covered this card's total. Always emit it.
-    balances.push({
-      programKey: "chase_ur",
-      balance: individual.pending,
-      balanceType: "pending",
-      linkedCard: {
-        cardName: individual.cardName,
-        lastFour: individual.lastFour,
-      },
-    });
   }
 
   if (balances.length === 0) {
@@ -509,9 +499,16 @@ async function scrapeUrCombined() {
 }
 
 /**
- * chaseloyalty.chase.com/* — no side panel here, so we read whatever
- * single card the page renders in `<header-stripe>` and submit just
- * that (one total + one pending record for the focused card).
+ * chaseloyalty.chase.com/* — co-branded partner cards (Marriott Boundless,
+ * United Gateway, etc.) The balance on these pages is denominated in the
+ * PARTNER program's currency (Marriott points, United miles), not UR. We
+ * infer the partner from the card art/name, emit the balance against that
+ * loyalty program (no linkedCard, since hotel/airline totals live at the
+ * account level), and register the card under the same program.
+ *
+ * Marriott pages expose the loyalty number inline (".partner-member-id"
+ * → "Marriott Bonvoy #264636152"); we stamp it as `loyalty:<n>` so the
+ * same program dedupes across scrapers. United's page doesn't show one.
  */
 async function scrapeIndividualCardOnly() {
   const start = performance.now();
@@ -535,22 +532,37 @@ async function scrapeIndividualCardOnly() {
     return;
   }
 
-  const linkedCard = {
-    cardName: individual.cardName,
-    lastFour: individual.lastFour,
-  };
+  const programKey = inferChaseLoyaltyProgram(individual);
+  if (!programKey) {
+    extLogger.warn("scrape.failed", {
+      provider: "chase",
+      mode: "individual-card",
+      reason: "unknown_partner_brand",
+      cardName: individual.cardName,
+      imageUrl: individual.imageUrl,
+    });
+    send({
+      success: false,
+      error: {
+        code: "UNKNOWN_PROGRAM",
+        message: `Unrecognized chaseloyalty brand: ${individual.cardName}`,
+      },
+      durationMs: Math.round(performance.now() - start),
+      selectorsAttempted: ["header-stripe .card"],
+    });
+    return;
+  }
+
+  const loyaltyNumber = extractPartnerMemberId(document);
+
   const balances: BalanceRecord[] = [
     {
-      programKey: "chase_ur",
+      programKey,
       balance: individual.available,
       balanceType: "total",
-      linkedCard,
-    },
-    {
-      programKey: "chase_ur",
-      balance: individual.pending,
-      balanceType: "pending",
-      linkedCard,
+      ...(loyaltyNumber
+        ? { externalAccountId: `loyalty:${loyaltyNumber}` }
+        : {}),
     },
   ];
   const cards: DiscoveredCard[] = [
@@ -558,7 +570,7 @@ async function scrapeIndividualCardOnly() {
       cardName: individual.cardName,
       lastFour: individual.lastFour,
       issuer: "chase",
-      programKey: "chase_ur",
+      programKey,
       imageUrl: individual.imageUrl,
     },
   ];
@@ -567,10 +579,11 @@ async function scrapeIndividualCardOnly() {
   extLogger.info("scrape.success", {
     provider: "chase",
     mode: "individual-card",
+    programKey,
     cardName: individual.cardName,
     lastFour: individual.lastFour,
     available: individual.available,
-    pending: individual.pending,
+    loyaltyNumber: loyaltyNumber ?? null,
   });
   send({
     success: true,
@@ -583,6 +596,33 @@ async function scrapeIndividualCardOnly() {
     selectorsAttempted: ["header-stripe .card"],
     matchedSelector: "header-stripe .card",
   });
+}
+
+/**
+ * Map a chaseloyalty card to the loyalty program it earns into. The
+ * card's image path (e.g. `/unified-assets/digital-cards/marriott/...`)
+ * is the cleanest signal; fall back to the card name.
+ */
+function inferChaseLoyaltyProgram(
+  card: { cardName: string; imageUrl?: string }
+): ProgramKey | null {
+  const hay = `${card.cardName} ${card.imageUrl ?? ""}`.toLowerCase();
+  if (hay.includes("marriott")) return "marriott_bonvoy";
+  if (hay.includes("united")) return "united_mileageplus";
+  return null;
+}
+
+/**
+ * Chase renders the partner loyalty number for *some* brands inline:
+ *   <div class="partner-member-id"><span>Marriott Bonvoy #264636152</span></div>
+ * Returns just the number, or null when the brand doesn't surface one
+ * (United doesn't, on the page we've seen).
+ */
+function extractPartnerMemberId(doc: Document): string | null {
+  const span = doc.querySelector(".partner-member-id span");
+  if (!span) return null;
+  const m = span.textContent?.match(/#\s*(\d+)/);
+  return m?.[1] ?? null;
 }
 
 /**

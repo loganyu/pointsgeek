@@ -19,8 +19,6 @@ export interface CardRowData {
   balance: number | null;
   balanceType: BalanceType | null;
   lastUpdated: string | null;
-  /** Points earned but not yet posted (Chase UR "Pending points"). */
-  pendingBalance: number | null;
 }
 
 export interface ProgramRowData {
@@ -38,8 +36,6 @@ export interface ProgramRowData {
   /** YTD earnings from an account-level scrape (e.g. Amex Marriott tile). */
   ytdBalance: number | null;
   ytdLastUpdated: string | null;
-  /** Sum of per-card pending balances (Chase UR). Null if no card has one. */
-  pendingBalance: number | null;
   cards: CardRowData[];
 }
 
@@ -206,23 +202,10 @@ function CardRow({
         </div>
       </div>
       <div className="text-right shrink-0 pl-4">
-        {card.balance !== null ||
-        (card.pendingBalance !== null && card.pendingBalance > 0) ? (
-          <div className="flex items-baseline justify-end gap-2">
-            <span className="text-sm tabular-nums text-text-primary">
-              {card.balance !== null
-                ? formatBalance(card.balance, currency)
-                : "—"}
-            </span>
-            {card.pendingBalance !== null && card.pendingBalance > 0 && (
-              <span className="text-xs tabular-nums text-text-secondary">
-                {formatBalance(card.pendingBalance, currency)}{" "}
-                <span className="uppercase tracking-wide text-text-tertiary">
-                  Pending
-                </span>
-              </span>
-            )}
-          </div>
+        {card.balance !== null ? (
+          <span className="text-sm tabular-nums text-text-primary">
+            {formatBalance(card.balance, currency)}
+          </span>
         ) : (
           <span className="text-sm text-text-tertiary">—</span>
         )}
@@ -238,8 +221,6 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
   const hasCards = program.cards.length > 0;
   const hasTotal = program.totalBalance !== null;
   const hasYtd = program.ytdBalance !== null;
-  const hasPending =
-    program.pendingBalance !== null && program.pendingBalance > 0;
   const hasAnyBalance = hasTotal || hasYtd;
 
   // Prefer the total's timestamp; fall back to YTD's if that's the only
@@ -284,14 +265,6 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
                     {formatBalance(program.ytdBalance!, program.currency)}{" "}
                     <span className="uppercase tracking-wide text-text-tertiary">
                       YTD
-                    </span>
-                  </div>
-                )}
-                {hasPending && (
-                  <div className="text-xs tabular-nums text-text-secondary">
-                    {formatBalance(program.pendingBalance!, program.currency)}{" "}
-                    <span className="uppercase tracking-wide text-text-tertiary">
-                      Pending
                     </span>
                   </div>
                 )}

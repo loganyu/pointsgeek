@@ -15,7 +15,6 @@ import {
   PROGRAM_CATALOG,
   type ProgramKey,
   type BalanceRecord,
-  type BalanceType,
   type DiscoveredCard,
 } from "@points-geek/shared";
 
@@ -200,7 +199,6 @@ export async function POST(req: NextRequest) {
     const programsToRecompute = new Set<string>();
     for (const bal of balances) {
       if (bal.programKey !== "chase_ur") continue;
-      if (bal.balanceType !== "total") continue; // pending / ytd don't move the pool
       if (!bal.linkedCard) continue;
       const programId = programIdByKey.get(bal.programKey);
       if (programId) programsToRecompute.add(programId);
@@ -383,7 +381,7 @@ async function shouldInsertSnapshot(args: {
   userId: string;
   programId: string;
   cardId: string | null;
-  balanceType: BalanceType;
+  balanceType: "total" | "ytd_earned_on_card";
   newBalance: number;
 }): Promise<boolean> {
   const { userId, programId, cardId, balanceType, newBalance } = args;
