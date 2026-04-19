@@ -356,7 +356,10 @@ async function resolveProgramId(args: {
       match.currentExternalId,
       externalAccountId
     );
-    const nextOwnerLabel = match.currentOwnerLabel ?? ownerLabel ?? null;
+    const nextOwnerLabel = preferOwnerLabel(
+      match.currentOwnerLabel,
+      ownerLabel
+    );
     if (
       nextExternalId !== match.currentExternalId ||
       nextOwnerLabel !== match.currentOwnerLabel
@@ -499,6 +502,27 @@ function preferExternalAccountId(
   return current;
 }
 
+/**
+ * Upgrade owner label when a scraper supplies a longer one.
+ *
+ * Providers' APIs differ on how much name they hand us — Marriott's
+ * /userDetails gives just "Logan" while /session adds the last name for
+ * "Logan Yu"; Amex's greeting is usually first-name only. Picking the
+ * longer string lets a later fuller-name scrape replace an earlier
+ * short one, while a later short-name scrape leaves the full name
+ * alone. Blank / null on either side keeps whichever is present.
+ */
+function preferOwnerLabel(
+  current: string | null,
+  incoming: string | null | undefined
+): string | null {
+  const cur = current?.trim() || null;
+  const inc = incoming?.trim() || null;
+  if (!inc) return cur;
+  if (!cur) return inc;
+  return inc.length > cur.length ? inc : cur;
+}
+
 async function upsertProgramByExternalId(
   userId: string,
   programKey: ProgramKey,
@@ -506,7 +530,10 @@ async function upsertProgramByExternalId(
   ownerLabel: string | null | undefined
 ): Promise<string> {
   const existing = await db
-    .select({ id: pointsPrograms.id })
+    .select({
+      id: pointsPrograms.id,
+      ownerLabel: pointsPrograms.ownerLabel,
+    })
     .from(pointsPrograms)
     .where(
       and(
@@ -517,7 +544,17 @@ async function upsertProgramByExternalId(
     )
     .limit(1);
 
-  if (existing.length > 0) return existing[0].id;
+  if (existing.length > 0) {
+    const row = existing[0];
+    const nextOwnerLabel = preferOwnerLabel(row.ownerLabel, ownerLabel);
+    if (nextOwnerLabel !== row.ownerLabel) {
+      await db
+        .update(pointsPrograms)
+        .set({ ownerLabel: nextOwnerLabel })
+        .where(eq(pointsPrograms.id, row.id));
+    }
+    return row.id;
+  }
 
   const meta = PROGRAM_CATALOG[programKey];
   const inserted = await db

@@ -12,6 +12,7 @@ export const PROVIDERS = [
   "capitalone",
   "delta",
   "united",
+  "marriott",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
 

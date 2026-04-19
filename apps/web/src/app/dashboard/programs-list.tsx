@@ -40,23 +40,22 @@ export interface ProgramRowData {
 }
 
 /**
- * Choose the sub-line label to render beside the currency in a row.
- *
- * - Airline / hotel programs: the loyalty account number (e.g. "264636152").
- * - Bank-rewards programs: the owner's name ("Logan") when we have one.
- * - Fallback: nothing — we never display the legacy "Account" placeholder.
+ * Sub-line label beside a program row. When we have both an owner and a
+ * loyalty number (e.g. Marriott: "Logan Yu" + "264636152"), both show,
+ * joined by a middot. Falls back to whichever piece we have.
  */
 function programIdentityLabel(p: ProgramRowData): string | null {
-  if (p.programType === "airline" || p.programType === "hotel") {
-    // external_account_id is formatted "loyalty:<number>" for these programs
-    if (p.externalAccountId.startsWith("loyalty:")) {
-      return p.externalAccountId.slice("loyalty:".length);
-    }
-  }
+  const parts: string[] = [];
   if (p.ownerLabel && p.ownerLabel !== "Account") {
-    return p.ownerLabel;
+    parts.push(p.ownerLabel);
   }
-  return null;
+  if (
+    (p.programType === "airline" || p.programType === "hotel") &&
+    p.externalAccountId.startsWith("loyalty:")
+  ) {
+    parts.push(p.externalAccountId.slice("loyalty:".length));
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 /* ── Formatting helpers ──────────────────────────────────── */

@@ -60,7 +60,9 @@ export const PROGRAM_CATALOG = {
     currency: "points",
     displayName: "Marriott Bonvoy",
     short: "MAR",
-    primarySyncUrl: "https://www.marriott.com",
+    // Home page — our content script opens the signed-in account drawer,
+    // reads the points balance, then closes it again.
+    primarySyncUrl: "https://www.marriott.com/default.mi",
   },
   united_mileageplus: {
     programType: "airline",

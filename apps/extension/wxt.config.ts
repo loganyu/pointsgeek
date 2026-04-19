@@ -24,6 +24,7 @@ export default defineConfig({
       "https://verified.capitalone.com/*",
       "https://www.delta.com/*",
       "https://www.united.com/*",
+      "https://www.marriott.com/*",
     ],
   },
 });

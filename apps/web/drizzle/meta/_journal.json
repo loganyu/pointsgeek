@@ -43,6 +43,13 @@
       "when": 1776572019779,
       "tag": "0005_add_united_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776574138548,
+      "tag": "0006_add_marriott_provider",
+      "breakpoints": true
     }
   ]
 }
