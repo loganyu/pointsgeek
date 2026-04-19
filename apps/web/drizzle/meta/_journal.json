@@ -15,6 +15,13 @@
       "when": 1776558324740,
       "tag": "0001_bent_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776559545463,
+      "tag": "0002_big_sauron",
+      "breakpoints": true
     }
   ]
 }

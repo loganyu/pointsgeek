@@ -7,6 +7,7 @@ import type {
   BalanceType,
 } from "@points-geek/shared";
 import { BrandLogo } from "./brand-logo";
+import { CardArt } from "./card-art";
 
 export interface CardRowData {
   id: string;
@@ -14,6 +15,7 @@ export interface CardRowData {
   lastFour: string | null;
   issuer: string;
   imageSlug: string | null;
+  imageUrl: string | null;
   balance: number | null;
   balanceType: BalanceType | null;
   lastUpdated: string | null;
@@ -176,7 +178,13 @@ function CardRow({
   return (
     <div className="flex items-center justify-between py-2.5 pl-16 pr-4 border-b border-border-light last:border-b-0 bg-surface-secondary/40">
       <div className="flex items-center gap-3 min-w-0">
-        <BrandLogo slug={card.issuer} size={24} />
+        <CardArt
+          imageUrl={card.imageUrl}
+          imageSlug={card.imageSlug}
+          issuer={card.issuer}
+          width={40}
+          height={25}
+        />
         <div className="min-w-0">
           <div className="text-sm text-text-primary truncate">
             {card.cardName}

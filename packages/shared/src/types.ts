@@ -38,6 +38,7 @@ export interface Card {
   lastFour?: string;
   issuer: string;
   imageSlug?: string;
+  imageUrl?: string;
   active: boolean;
 }
 
@@ -47,6 +48,10 @@ export interface DiscoveredCard {
   lastFour?: string;
   issuer: string;            // bank slug: amex, chase, capitalone
   programKey?: ProgramKey;   // primary program this card earns into
+  /** Scraped CDN URL for the card's art (Amex NUS URL, Chase picker image, etc.). */
+  imageUrl?: string;
+  /** Local-asset override keyed by filename — `/logos/cards/{slug}.png`. */
+  imageSlug?: string;
 }
 
 export interface BalanceRecord {

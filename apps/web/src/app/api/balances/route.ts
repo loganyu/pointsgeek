@@ -289,7 +289,7 @@ async function upsertCard(
   // where last_four is also null to prevent accidental collision with a
   // fully-numbered duplicate.
   const existing = await db
-    .select({ id: cards.id })
+    .select({ id: cards.id, imageUrl: cards.imageUrl, imageSlug: cards.imageSlug })
     .from(cards)
     .where(
       and(
@@ -303,7 +303,18 @@ async function upsertCard(
     )
     .limit(1);
 
-  if (existing.length > 0) return existing[0].id;
+  if (existing.length > 0) {
+    // Backfill a scraped image URL if we've learned one since the card was
+    // first created. Never overwrite a user-set slug.
+    const row = existing[0];
+    if (card.imageUrl && !row.imageUrl) {
+      await db
+        .update(cards)
+        .set({ imageUrl: card.imageUrl })
+        .where(eq(cards.id, row.id));
+    }
+    return row.id;
+  }
 
   const inserted = await db
     .insert(cards)
@@ -313,11 +324,19 @@ async function upsertCard(
       cardName: card.cardName,
       lastFour: card.lastFour ?? null,
       issuer: card.issuer,
+      imageSlug: card.imageSlug ?? null,
+      imageUrl: card.imageUrl ?? null,
     })
     .returning({ id: cards.id });
 
   logger.info(
-    { userId, programId, cardName: card.cardName, lastFour: card.lastFour },
+    {
+      userId,
+      programId,
+      cardName: card.cardName,
+      lastFour: card.lastFour,
+      hasImageUrl: !!card.imageUrl,
+    },
     "Card created"
   );
   return inserted[0].id;

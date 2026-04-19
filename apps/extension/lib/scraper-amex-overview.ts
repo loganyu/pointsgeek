@@ -65,7 +65,11 @@ interface TileExtraction {
   programKey: ProgramKey;
   balance: number;
   balanceType: "total" | "ytd_earned_on_card";
-  linkedCards: Array<{ cardName: string; lastFour?: string }>;
+  linkedCards: Array<{
+    cardName: string;
+    lastFour?: string;
+    imageUrl?: string;
+  }>;
   /** Per-program stable id when Amex includes one (Delta SkyMiles #, Marriott Bonvoy #). */
   loyaltyAccountNumber: string | null;
 }
@@ -160,13 +164,15 @@ function extractTile(tile: Element): TileExtraction | null {
   // (not inside the product-title button itself), so the caller is
   // responsible for scoping us correctly — but we also check inside just
   // in case Amex nests them.
-  const linkedCards: Array<{ cardName: string; lastFour?: string }> = [];
+  const linkedCards: TileExtraction["linkedCards"] = [];
   const cardTitleEls = tile.querySelectorAll(
     '[data-locator-id="loyalty-card-title"]'
   );
   for (const el of cardTitleEls) {
     const parsed = parseCardTitle(el.textContent);
-    if (parsed) linkedCards.push(parsed);
+    if (parsed) {
+      linkedCards.push({ ...parsed, imageUrl: findNearbyCardImage(el) });
+    }
   }
 
   return {
@@ -215,6 +221,24 @@ function cleanCardName(raw: string): string {
 }
 
 /**
+ * Walk up from a `loyalty-card-title` span (or any card-bearing element)
+ * looking for the nearest Amex-static card-art image. Each rewards tile
+ * puts `<img src="https://www.aexp-static.com/...">` right next to the
+ * card title in a tiny card-art slot.
+ */
+function findNearbyCardImage(cardEl: Element): string | undefined {
+  let ancestor: Element | null = cardEl.parentElement;
+  for (let d = 0; d < 5 && ancestor; d++) {
+    const img = ancestor.querySelector<HTMLImageElement>(
+      'img[src*="aexp-static"]'
+    );
+    if (img?.src) return img.src;
+    ancestor = ancestor.parentElement;
+  }
+  return undefined;
+}
+
+/**
  * Walk up from a product-title element until we find the biggest ancestor
  * that still owns ONLY this tile (no other `loyalty-product-title-*` inside).
  * That ancestor is the tile's visual container — it holds the
@@ -257,7 +281,12 @@ function extractAllTiles(doc: Document): TileExtraction[] {
         );
         for (const el of cardTitleEls) {
           const parsed = parseCardTitle(el.textContent);
-          if (parsed) extracted.linkedCards.push(parsed);
+          if (parsed) {
+            extracted.linkedCards.push({
+              ...parsed,
+              imageUrl: findNearbyCardImage(el),
+            });
+          }
         }
       }
 
@@ -271,20 +300,26 @@ function extractAllTiles(doc: Document): TileExtraction[] {
 
 /* ── Product tile extraction (all cards) ─────────────────── */
 
+interface ProductCard {
+  cardName: string;
+  lastFour?: string;
+  imageUrl?: string;
+}
+
 /**
  * Parse the card-grid at the top of the overview page.
  *
  *   [data-locator-id="credo_card_name"]      → "Platinum Card®"
  *   [data-locator-id="credo_card_acct_num"]  → " ••••81002"
+ *   img.src containing "aexp-static.com" → the NUS card-art URL
  *
  * Walk up from each card-name to find the nearest container that also
  * holds the account-number element so the pairing stays stable across
- * layout tweaks.
+ * layout tweaks. While we're up there, also pick up the nearest Amex
+ * static image so each card carries its art URL into the payload.
  */
-function extractProductCards(
-  doc: Document
-): Array<{ cardName: string; lastFour?: string }> {
-  const out: Array<{ cardName: string; lastFour?: string }> = [];
+function extractProductCards(doc: Document): ProductCard[] {
+  const out: ProductCard[] = [];
   const nameEls = doc.querySelectorAll(
     '[data-locator-id="credo_card_name"]'
   );
@@ -297,19 +332,28 @@ function extractProductCards(
     if (!cardName) continue;
 
     let lastFour: string | undefined;
+    let imageUrl: string | undefined;
     let ancestor: Element | null = nameEl.parentElement;
     for (let d = 0; d < 6 && ancestor; d++) {
-      const acct = ancestor.querySelector(
-        '[data-locator-id="credo_card_acct_num"]'
-      );
-      if (acct) {
-        const digits = (acct.textContent ?? "").replace(/[^0-9]/g, "");
-        lastFour = digits ? digits.slice(-4) : undefined;
-        break;
+      if (!lastFour) {
+        const acct = ancestor.querySelector(
+          '[data-locator-id="credo_card_acct_num"]'
+        );
+        if (acct) {
+          const digits = (acct.textContent ?? "").replace(/[^0-9]/g, "");
+          lastFour = digits ? digits.slice(-4) : undefined;
+        }
       }
+      if (!imageUrl) {
+        const img = ancestor.querySelector<HTMLImageElement>(
+          'img[src*="aexp-static"]'
+        );
+        if (img?.src) imageUrl = img.src;
+      }
+      if (lastFour && imageUrl) break;
       ancestor = ancestor.parentElement;
     }
-    out.push({ cardName, lastFour });
+    out.push({ cardName, lastFour, imageUrl });
   }
 
   return out;
@@ -342,24 +386,32 @@ function snapshot(doc: Document): ScrapeResult {
   // determined by which tile linked to it (by name+lastFour match). If a
   // card wasn't linked to any tile it stays unassigned — we default to
   // amex_mr since that's the overwhelmingly common case for Amex cards.
+  //
+  // We also build a tile → image-url side map. The tile footer often
+  // carries a cleaner thumbnail (NUS static URL) than the grid does,
+  // so it's a good fallback when `ProductCard.imageUrl` is missing.
   const cardToProgram = new Map<string, ProgramKey>();
+  const cardToTileImage = new Map<string, string>();
   for (const tile of tiles) {
     for (const lc of tile.linkedCards) {
       const k = cardKey(lc.cardName, lc.lastFour);
-      // If two tiles claim the same card (shouldn't happen on Amex overview
-      // in practice), the last one wins — fine.
       cardToProgram.set(k, tile.programKey);
+      if (lc.imageUrl && !cardToTileImage.has(k)) {
+        cardToTileImage.set(k, lc.imageUrl);
+      }
     }
   }
 
   const cards: DiscoveredCard[] = productCards.map((c) => {
     const k = cardKey(c.cardName, c.lastFour);
     const programKey = cardToProgram.get(k) ?? "amex_mr";
+    const imageUrl = c.imageUrl ?? cardToTileImage.get(k);
     return {
       cardName: c.cardName,
       lastFour: c.lastFour,
       issuer: "amex",
       programKey,
+      imageUrl,
     };
   });
 

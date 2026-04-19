@@ -54,6 +54,7 @@ export default defineContentScript({
       lastFour: c.lastFour,
       issuer: "chase",
       programKey: "chase_ur",
+      imageUrl: c.imageUrl,
     }));
 
     const balances: BalanceRecord[] = [
@@ -104,7 +105,7 @@ function sendResult(payload: ScrapeResult) {
 async function extractCardsFromPicker(
   doc: Document,
   timeoutMs = 10_000
-): Promise<Array<{ cardName: string; lastFour?: string }>> {
+): Promise<PickerItem[]> {
   const immediate = extractItems(doc);
   if (immediate.length > 0) return immediate;
 
@@ -149,10 +150,14 @@ async function extractCardsFromPicker(
   return results;
 }
 
-function extractItems(
-  root: Document | Element | ShadowRoot
-): Array<{ cardName: string; lastFour?: string }> {
-  const out: Array<{ cardName: string; lastFour?: string }> = [];
+interface PickerItem {
+  cardName: string;
+  lastFour?: string;
+  imageUrl?: string;
+}
+
+function extractItems(root: Document | Element | ShadowRoot): PickerItem[] {
+  const out: PickerItem[] = [];
   const items = root.querySelectorAll(
     'mds-list[list-type="quick-select"] mds-list-item'
   );
@@ -163,14 +168,21 @@ function extractItems(
     const label = item.getAttribute("label") ?? "";
     const lastFourMatch = label.match(/\.{3}(\d{4})/);
     const lastFour = lastFourMatch ? lastFourMatch[1] : undefined;
-    out.push({ cardName, lastFour });
+
+    // Chase's mds-list-item carries its card art as `image-src` (or
+    // sometimes `image`). Fall back to a nested <img> if neither is set.
+    const imageUrl =
+      item.getAttribute("image-src") ??
+      item.getAttribute("image") ??
+      item.querySelector<HTMLImageElement>("img")?.src ??
+      undefined;
+
+    out.push({ cardName, lastFour, imageUrl });
   }
   return out;
 }
 
-function extractItemsDeep(
-  doc: Document
-): Array<{ cardName: string; lastFour?: string }> {
+function extractItemsDeep(doc: Document): PickerItem[] {
   const allElements = doc.querySelectorAll("*");
   for (const el of allElements) {
     if (el.shadowRoot) {

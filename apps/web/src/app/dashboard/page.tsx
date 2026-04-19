@@ -100,6 +100,7 @@ export default async function DashboardPage() {
             lastFour: c.lastFour,
             issuer: c.issuer,
             imageSlug: c.imageSlug,
+            imageUrl: c.imageUrl,
             balance: latest ? Number(latest.balance) : null,
             balanceType: (latest?.balanceType as BalanceType | undefined) ?? null,
             lastUpdated: latest?.scrapedAt.toISOString() ?? null,

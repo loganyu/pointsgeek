@@ -132,8 +132,18 @@ export const cards = pgTable("cards", {
   lastFour: text("last_four"),
   /** Bank/issuer slug (amex, chase, capitalone). Distinct from program brand. */
   issuer: text("issuer").notNull(),
-  /** Key for /public/logos/cards/{slug}.png. Null → no per-card art. */
+  /**
+   * Local card-art override keyed by filename — resolves to
+   * `/logos/cards/{slug}.png`. Set by the user in settings, takes
+   * precedence over `image_url` when both exist.
+   */
   imageSlug: text("image_slug"),
+  /**
+   * Scraped card-art CDN URL (Amex `aexp-static.com`, Chase, Cap One).
+   * Captured during normal scrapes; renders when no `image_slug` override
+   * is set. Null means we haven't seen the card's art yet.
+   */
+  imageUrl: text("image_url"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });

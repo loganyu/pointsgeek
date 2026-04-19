@@ -62,7 +62,9 @@ export default defineContentScript({
           programKey: "capitalone_miles",
           balance: extraction.balance,
           balanceType: "total",
-          linkedCard: cardInfo,
+          linkedCard: cardInfo
+            ? { cardName: cardInfo.cardName, lastFour: cardInfo.lastFour }
+            : undefined,
         },
       ];
       if (cardInfo) {
@@ -72,6 +74,7 @@ export default defineContentScript({
             lastFour: cardInfo.lastFour,
             issuer: "capitalone",
             programKey: "capitalone_miles",
+            imageUrl: cardInfo.imageUrl,
           },
         ];
       }
@@ -93,6 +96,7 @@ export default defineContentScript({
         lastFour: c.lastFour,
         issuer: "capitalone",
         programKey: "capitalone_miles",
+        imageUrl: c.imageUrl,
       }));
 
       // Per-card miles from the card-picker dialog
@@ -159,7 +163,7 @@ function sendResult(payload: ScrapeResult) {
 
 function extractCardInfoFromRewardsPage(
   doc: Document
-): { cardName: string; lastFour?: string } | undefined {
+): { cardName: string; lastFour?: string; imageUrl?: string } | undefined {
   const logoImg = doc.querySelector(
     ".c1-ease-account-details-global-nav-bar-container img[alt]"
   ) as HTMLImageElement | null;
@@ -170,16 +174,21 @@ function extractCardInfoFromRewardsPage(
 
   const lastFourText = lastFourEl?.textContent?.trim();
   const lastFour = lastFourText?.replace(/[^0-9]/g, "") || undefined;
+  const imageUrl = logoImg?.src || undefined;
 
-  return { cardName, lastFour };
+  return { cardName, lastFour, imageUrl };
 }
 
 /* ── Account Summary card discovery ──────────────────────── */
 
-function extractCardsNow(
-  doc: Document
-): Array<{ cardName: string; lastFour?: string }> {
-  const cards: Array<{ cardName: string; lastFour?: string }> = [];
+interface DiscoveredSummaryCard {
+  cardName: string;
+  lastFour?: string;
+  imageUrl?: string;
+}
+
+function extractCardsNow(doc: Document): DiscoveredSummaryCard[] {
+  const cards: DiscoveredSummaryCard[] = [];
   const tiles = doc.querySelectorAll("c1-ease-account-tile");
   for (const tile of tiles) {
     const logoImg = tile.querySelector(
@@ -192,7 +201,9 @@ function extractCardsNow(
     );
     const acctNumText = acctNumEl?.textContent?.trim() ?? "";
     const lastFour = acctNumText.replace(/[^0-9]/g, "") || undefined;
-    cards.push({ cardName, lastFour });
+    // The tile's <img> IS the card art — grab its resolved URL.
+    const imageUrl = logoImg.src || undefined;
+    cards.push({ cardName, lastFour, imageUrl });
   }
   return cards;
 }
@@ -200,7 +211,7 @@ function extractCardsNow(
 function waitForCardsFromSummary(
   doc: Document,
   timeoutMs = 10_000
-): Promise<Array<{ cardName: string; lastFour?: string }>> {
+): Promise<DiscoveredSummaryCard[]> {
   const immediate = extractCardsNow(doc);
   if (immediate.length > 0) return Promise.resolve(immediate);
 

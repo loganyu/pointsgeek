@@ -23,6 +23,8 @@ const discoveredCardSchema = z.object({
   lastFour: z.string().optional(),
   issuer: z.string().min(1),
   programKey: z.enum(PROGRAM_KEYS).optional(),
+  imageUrl: z.string().url().optional(),
+  imageSlug: z.string().min(1).optional(),
 });
 
 export const balancePayloadSchema = z.object({

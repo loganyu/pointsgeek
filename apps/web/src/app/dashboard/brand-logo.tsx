@@ -9,7 +9,7 @@ import { useState } from "react";
  * brands (delta, marriott, hyatt). One namespace — add new entries here
  * and drop a matching PNG in `apps/web/public/logos/brands/`.
  */
-const BRAND_META: Record<
+export const BRAND_META: Record<
   string,
   { logoPath: string; bg: string; initial: string }
 > = {
