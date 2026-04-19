@@ -143,7 +143,7 @@ function LastUpdated({ iso, url }: { iso: string; url: string }) {
         target="_blank"
         rel="noreferrer"
         onClick={(e) => e.stopPropagation()}
-        aria-label="Log in to refresh"
+        aria-label="Log in to sync data"
         className="group/tip relative inline-flex items-center justify-center p-1 -m-1 rounded text-text-tertiary hover:text-text-primary transition-colors"
       >
         <RefreshIcon />
@@ -151,7 +151,7 @@ function LastUpdated({ iso, url }: { iso: string; url: string }) {
           role="tooltip"
           className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-md bg-[var(--text-primary)] text-[var(--background)] px-2.5 py-1.5 text-xs font-medium shadow-lg opacity-0 transition-opacity duration-100 group-hover/tip:opacity-100"
         >
-          Log in to refresh
+          Log in to sync data
           <span
             aria-hidden="true"
             className="absolute top-full right-2 h-0 w-0 border-4 border-transparent border-t-[var(--text-primary)]"

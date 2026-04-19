@@ -19,6 +19,7 @@ import ProgramsList, {
 } from "./programs-list";
 import { ThemeToggle } from "./theme-toggle";
 import { Wordmark } from "../wordmark";
+import { AddProgramButton } from "./add-program-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -154,6 +155,7 @@ export default async function DashboardPage() {
           >
             Settings
           </a>
+          <AddProgramButton />
         </div>
       </div>
 

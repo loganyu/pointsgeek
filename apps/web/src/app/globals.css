@@ -74,3 +74,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Tailwind v4's preflight removes the user-agent `cursor: pointer` on
+ * interactive controls, so we put it back for buttons that aren't
+ * disabled. Kept outside `@layer base` on purpose — the previous layered
+ * version didn't win against preflight in practice. `[role="button"]`
+ * covers the div-button patterns we use on expandable rows. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
