@@ -1,33 +1,44 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { Wordmark } from "../wordmark";
 
 export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/api/auth/signin");
 
   return (
-    <main className="max-w-2xl mx-auto p-8">
+    <main className="max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <a href="/dashboard" className="text-sm text-blue-600 hover:underline">
+        <h1 className="sr-only">Settings</h1>
+        <Wordmark />
+        <a
+          href="/dashboard"
+          className="text-sm text-text-accent hover:text-text-accent-hover transition-colors"
+        >
           Dashboard
         </a>
       </div>
 
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Account</h2>
-        <div className="border rounded-lg p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <h2 className="text-lg font-semibold text-text-primary mb-4">Account</h2>
+      <section className="rounded-xl border border-border bg-surface p-6 mb-8">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             {session.user.image && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={session.user.image}
                 alt=""
-                className="w-10 h-10 rounded-full"
+                aria-hidden="true"
+                className="w-10 h-10 rounded-full border border-border bg-surface-secondary"
               />
             )}
-            <div>
-              <p className="font-medium">{session.user.name}</p>
-              <p className="text-sm text-gray-500">{session.user.email}</p>
+            <div className="min-w-0">
+              <p className="font-medium text-text-primary truncate">
+                {session.user.name}
+              </p>
+              <p className="text-sm text-text-secondary truncate">
+                {session.user.email}
+              </p>
             </div>
           </div>
           <form
@@ -38,19 +49,21 @@ export default async function SettingsPage() {
           >
             <button
               type="submit"
-              className="text-sm text-red-600 hover:underline"
+              className="text-sm text-text-accent hover:text-text-accent-hover transition-colors"
             >
-              Sign Out
+              Sign out
             </button>
           </form>
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-4">Chrome Extension</h2>
-        <p className="text-sm text-gray-500">
-          Install the Chrome extension and sign in with the same Google account
-          to sync your balances automatically.
+      <h2 className="text-lg font-semibold text-text-primary mb-4">
+        Chrome Extension
+      </h2>
+      <section className="rounded-xl border border-border bg-surface p-6">
+        <p className="text-sm text-text-secondary">
+          Install the Chrome extension and sign in with the same Google
+          account to sync your balances automatically.
         </p>
       </section>
     </main>

@@ -1,69 +1,95 @@
+/* PointsGeek — Extension popup styles.
+ * Mirrors the tokens from apps/web/src/app/globals.css.
+ * Geist variable fonts are self-hosted from /public/fonts so the popup
+ * works offline (extensions can't reliably load remote fonts).
+ */
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist[wght].woff2") format("woff2-variations"),
+       url("/fonts/Geist[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Italic[wght].woff2") format("woff2-variations"),
+       url("/fonts/Geist-Italic[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono[wght].woff2") format("woff2-variations"),
+       url("/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* fresh-air (light) */
+  --background: #f5f2ed;
+  --surface: #ffffff;
+  --surface-secondary: #efece6;
+  --border: #e3ded3;
+  --border-light: #ebe6db;
+  --text-primary: #22201d;
+  --text-secondary: #5f5d5a;
+  --text-tertiary: #a6a39f;
+  --text-accent: #6b4a9e;
+  --text-accent-hover: #4a2f85;
+
+  --purple-primary: #8b6dd6;
+  --purple-hover: #6b4a9e;
+
+  --status-stale: #eab308;
+  --status-error-fg: #991b1b;
+  --status-error-bg: #fef2f2;
+  --status-error-border: #fecaca;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #13161f;
+    --surface: #1c2030;
+    --surface-secondary: #2a2f42;
+    --border: #2d3246;
+    --border-light: #262b3d;
+    --text-primary: #f0ede6;
+    --text-secondary: #a6a39f;
+    --text-tertiary: #6b6865;
+    --text-accent: #a68ce0;
+    --text-accent-hover: #c5b3ed;
+    --purple-primary: #a68ce0;
+    --purple-hover: #8b6dd6;
+    --status-error-bg: #331818;
+    --status-error-fg: #fca5a5;
+    --status-error-border: #5a1f1f;
+  }
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
-  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-primary);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+#root {
+  width: 320px;
 }

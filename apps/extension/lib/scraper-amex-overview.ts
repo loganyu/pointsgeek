@@ -190,9 +190,10 @@ function extractTile(tile: Element): TileExtraction | null {
  *   "Marriott Bonvoy Brilliant® American Express® Card ••••91007"
  *   "Blue Cash Everyday® ••••33002"
  *
- * We split on the bullet run and take the trailing digits (up to 5 — Amex
- * often shows 5 digits; we keep the last 4 as the `lastFour` since that's
- * what the product-tile card grid also exposes).
+ * Amex renders 5 digits here, but other Amex surfaces sometimes hand us
+ * only 4 (e.g. an Amex-issued card shown on a cobranded partner page).
+ * Storing 5 produced duplicates across sources, so we always trim to
+ * the trailing 4 — the same last-four every issuer exposes.
  */
 function parseCardTitle(
   raw: string | null | undefined
@@ -204,10 +205,8 @@ function parseCardTitle(
   const match = trimmed.match(/^(.+?)\s*[•·]+\s*(\d{3,})\s*$/);
   if (match) {
     const cardName = cleanCardName(match[1]);
-    // Keep all trailing digits as-is — Amex exposes 5 (e.g. "81002"),
-    // Chase/Cap One expose 4. The column is named `last_four` for
-    // historical reasons but stores whatever the issuer shows.
-    const lastFour = match[2];
+    const digits = match[2];
+    const lastFour = digits.length >= 4 ? digits.slice(-4) : digits;
     if (cardName) return { cardName, lastFour };
   }
 
@@ -344,8 +343,9 @@ function extractProductCards(doc: Document): ProductCard[] {
         );
         if (acct) {
           const digits = (acct.textContent ?? "").replace(/[^0-9]/g, "");
-          // Store Amex's full 5-digit suffix (e.g. "81002"), not slice-4.
-          lastFour = digits || undefined;
+          // Trim to trailing 4 — Amex shows 5 here, other surfaces show 4,
+          // and matching-by-last-four keeps them as one card.
+          lastFour = digits.length >= 4 ? digits.slice(-4) : digits || undefined;
         }
       }
       if (!imageUrl) {

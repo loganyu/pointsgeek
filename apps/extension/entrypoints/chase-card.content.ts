@@ -30,15 +30,30 @@ import type {
 export default defineContentScript({
   matches: ["https://secure.chase.com/web/auth/dashboard*"],
   async main() {
-    await scrapeIfCardPage();
+    await route();
     window.addEventListener("hashchange", () => {
-      // Fire-and-forget — each hashchange is an independent scrape
-      void scrapeIfCardPage();
+      void route();
     });
   },
 });
 
 const CARD_HASH_PATTERN = /#\/dashboard\/summary\/(\d+)\/CARD\/BAC/;
+const TRAVEL_HASH_PATTERN = /#\/dashboard\/travel/;
+
+/**
+ * Dispatch on the URL hash. Each branch self-guards on its pattern, so
+ * calling them in sequence is safe — only the matching one runs.
+ */
+async function route(): Promise<void> {
+  const hash = window.location.hash;
+  if (CARD_HASH_PATTERN.test(hash)) {
+    await scrapeIfCardPage();
+    return;
+  }
+  if (TRAVEL_HASH_PATTERN.test(hash)) {
+    await scrapeTravelSidebar();
+  }
+}
 
 async function scrapeIfCardPage(): Promise<void> {
   const hash = window.location.hash;
@@ -193,6 +208,260 @@ async function scrapeIfCardPage(): Promise<void> {
   });
 
   sendResult(result);
+}
+
+/**
+ * `secure.chase.com/web/auth/dashboard#/dashboard/travel` — the Chase
+ * Travel portal has a multi-card selector (the "Choose account" drawer)
+ * that lists every Chase card with its balance and art. Clicking the
+ * main card chip toggles the drawer open.
+ *
+ * We click to open (skip if already open), walk every `<li role="option">`
+ * under `#card-selector-list`, map each card to its program by image-path
+ * + name, emit per-card UR balances (triggers server-side pool recompute)
+ * and program-level balances for cobrand cards, then click the Close
+ * button so we don't leave the drawer sitting open for the user.
+ */
+async function scrapeTravelSidebar(): Promise<void> {
+  const url = window.location.href;
+  const start = performance.now();
+  extLogger.info("scrape.start", {
+    provider: "chase",
+    mode: "travel-sidebar",
+    url,
+  });
+
+  // Fast path: drawer already populated.
+  let items = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      '#card-selector-list li[role="option"]'
+    )
+  );
+  let openedByUs = false;
+
+  if (items.length === 0) {
+    const selectorBtn = await waitForElement<HTMLElement>(
+      document,
+      "#new-multi-card-selector",
+      15_000
+    );
+    if (!selectorBtn) {
+      extLogger.warn("scrape.failed", {
+        provider: "chase",
+        mode: "travel-sidebar",
+        reason: "no_card_selector_button",
+      });
+      sendResult({
+        success: false,
+        error: {
+          code: "ELEMENT_NOT_FOUND",
+          message: "Travel card-selector button did not render",
+        },
+        durationMs: Math.round(performance.now() - start),
+        selectorsAttempted: ["#new-multi-card-selector"],
+      });
+      return;
+    }
+    selectorBtn.click();
+    openedByUs = true;
+
+    // Wait for at least one option to render — the drawer shell + list
+    // arrive before the items, so waiting on the shell alone is too early.
+    const firstItem = await waitForElement<HTMLElement>(
+      document,
+      '#card-selector-list li[role="option"]',
+      10_000
+    );
+
+    if (!firstItem) {
+      const list = document.querySelector<HTMLElement>("#card-selector-list");
+      extLogger.warn("scrape.failed", {
+        provider: "chase",
+        mode: "travel-sidebar",
+        reason: "no_card_options",
+        listFound: list !== null,
+        listChildCount: list?.children.length ?? 0,
+        listInnerSample: list?.innerHTML?.slice(0, 400) ?? null,
+      });
+      closeTravelSidebar(document);
+      sendResult({
+        success: false,
+        error: {
+          code: "ELEMENT_NOT_FOUND",
+          message: "Travel card list rendered but had no options",
+        },
+        durationMs: Math.round(performance.now() - start),
+        selectorsAttempted: ['#card-selector-list li[role="option"]'],
+      });
+      return;
+    }
+
+    items = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '#card-selector-list li[role="option"]'
+      )
+    );
+  }
+
+  const balances: BalanceRecord[] = [];
+  const cards: DiscoveredCard[] = [];
+
+  for (const item of items) {
+    const parsed = parseTravelSidebarItem(item);
+    if (!parsed) continue;
+
+    // Always register the card, even without a balance — the row tells us
+    // it exists and carries card art we may not have captured elsewhere.
+    cards.push({
+      cardName: parsed.cardName,
+      lastFour: parsed.lastFour,
+      issuer: "chase",
+      programKey: parsed.programKey ?? "chase_ur",
+      imageUrl: parsed.imageUrl,
+    });
+
+    if (parsed.programKey && parsed.balance !== null) {
+      if (parsed.programKey === "chase_ur") {
+        // Per-card UR balance — server recomputes the pool total from the
+        // latest per-card snapshots.
+        balances.push({
+          programKey: "chase_ur",
+          balance: parsed.balance,
+          balanceType: "total",
+          linkedCard: {
+            cardName: parsed.cardName,
+            lastFour: parsed.lastFour,
+          },
+        });
+      } else {
+        // Cobrand program-level total (no linkedCard), same pattern as
+        // the card-detail scraper for Marriott / United / Amazon.
+        balances.push({
+          programKey: parsed.programKey,
+          balance: parsed.balance,
+          balanceType: "total",
+        });
+      }
+    }
+  }
+
+  if (openedByUs) closeTravelSidebar(document);
+
+  if (cards.length === 0 && balances.length === 0) {
+    extLogger.warn("scrape.failed", {
+      provider: "chase",
+      mode: "travel-sidebar",
+      reason: "empty_list",
+    });
+    sendResult({
+      success: false,
+      error: {
+        code: "PARSE_FAILED",
+        message: "Travel sidebar rendered but no cards parsed",
+      },
+      durationMs: Math.round(performance.now() - start),
+      selectorsAttempted: ['li[role="option"]'],
+    });
+    return;
+  }
+
+  const ident = resolveIdentifier(document);
+
+  extLogger.info("scrape.success", {
+    provider: "chase",
+    mode: "travel-sidebar",
+    cardCount: cards.length,
+    balanceCount: balances.length,
+    externalAccountId: ident.externalAccountId,
+    ownerLabel: ident.ownerLabel,
+  });
+
+  sendResult({
+    success: true,
+    externalAccountId: ident.externalAccountId,
+    ownerLabel: ident.ownerLabel,
+    identifierSource: ident.source,
+    balances,
+    cards,
+    durationMs: Math.round(performance.now() - start),
+    selectorsAttempted: ["#new-multi-card-selector", "#card-selector-list"],
+    matchedSelector: "#card-selector-list",
+  });
+}
+
+/**
+ * Parse one `<li role="option">` row from the travel sidebar.
+ * Shape:
+ *   <li role="option">
+ *     <img src="https://static2.chasecdn.com/.../unified-assets/digital-cards/chase-sapphire-reserve/..." alt="Sapphire Reserve" />
+ *     .card-selector-title span   → "Sapphire Reserve (...8575)"
+ *     .card-selector-description span → "331,283 pts"   (or empty)
+ *   </li>
+ */
+function parseTravelSidebarItem(item: Element): {
+  cardName: string;
+  lastFour?: string;
+  balance: number | null;
+  imageUrl?: string;
+  programKey: ProgramKey | null;
+} | null {
+  const img = item.querySelector<HTMLImageElement>("img");
+  const imageUrl = img?.src || undefined;
+  const imgAlt = img?.alt?.trim() ?? "";
+
+  const title =
+    item
+      .querySelector(".card-selector-title span")
+      ?.textContent?.trim() ?? "";
+  const desc =
+    item
+      .querySelector(".card-selector-description span")
+      ?.textContent?.trim() ?? "";
+
+  // "Sapphire Reserve (...8575)" → name + last4
+  const m = title.match(/^(.+?)\s*\(\s*\.{3}\s*(\d+)\s*\)\s*$/);
+  const cardName = cleanText(m?.[1] ?? imgAlt ?? title);
+  const lastFour = m?.[2];
+  if (!cardName) return null;
+
+  const balance = parseInteger(desc.replace(/\s*pts\s*$/i, ""));
+  const programKey = inferChaseCardProgram(imageUrl, cardName);
+
+  return { cardName, lastFour, balance, imageUrl, programKey };
+}
+
+/**
+ * Map a Chase card to its earning program using image URL path first
+ * (stable across name wording drifts), then falling back to the card
+ * name. Chase's static CDN groups card art under `/unified-assets/
+ * digital-cards/{brand}/...` which is a reliable brand signal.
+ */
+function inferChaseCardProgram(
+  imageUrl: string | undefined,
+  cardName: string
+): ProgramKey | null {
+  const hay = `${imageUrl ?? ""} ${cardName}`.toLowerCase();
+  if (/chase-sapphire|\bsapphire\b/.test(hay)) return "chase_ur";
+  if (/chase-freedom|\bfreedom\b/.test(hay)) return "chase_ur";
+  if (/chase-ink|\bink\b/.test(hay)) return "chase_ur";
+  if (/amazon-prime|\bprime visa\b/.test(hay)) return "amazon_rewards";
+  if (/\bmarriott\b/.test(hay)) return "marriott_bonvoy";
+  if (/united-airlines|\bunited\b/.test(hay)) return "united_mileageplus";
+  if (/\bskymiles\b|\bdelta\b/.test(hay)) return "delta";
+  return null;
+}
+
+function closeTravelSidebar(doc: Document) {
+  const btn = doc.querySelector<HTMLButtonElement>(
+    'button[aria-label="Close"][data-testid="slide-in-panel-modal-top-modal-button"]'
+  );
+  if (btn) {
+    btn.click();
+    return;
+  }
+  doc.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+  );
 }
 
 /**

@@ -36,11 +36,15 @@ export default defineContentScript({
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "united", url });
 
-    const bearer = await extractBearerFromReduxPersist();
+    // The page stores its API bearer in IndexedDB after the user signs
+    // in. If the user's still on a signed-out page (or we just landed
+    // before redux-persist hydrated), fall back to a polling retry
+    // with exponential backoff — they might log in while we wait.
+    const bearer = await waitForBearer();
     if (!bearer) {
       extLogger.info("scrape.skipped", {
         provider: "united",
-        reason: "no_bearer_or_expired",
+        reason: "no_bearer_after_retries",
       });
       return;
     }
@@ -189,6 +193,68 @@ async function fetchJson(url: string, bearer: string): Promise<unknown> {
 }
 
 /**
+ * Wait for a valid bearer to appear in the page's redux-persist IDB,
+ * with exponential backoff.
+ *
+ * - Immediate probe first — no wait when the user is already signed in.
+ * - Then 1s, 2s, 4s, 8s, 16s, 30s, 30s, 30s, … (capped at 30s/step).
+ * - Total budget ≈ 3 minutes. Covers "user is about to log in" and
+ *   "token just expired, page is refreshing it" without burning the
+ *   tab indefinitely.
+ *
+ * The content script lives for the life of the page, so if the user
+ * navigates away or closes the tab the timers die with it automatically.
+ */
+async function waitForBearer(): Promise<string | null> {
+  const MAX_TOTAL_MS = 3 * 60_000;
+  const MAX_STEP_MS = 30_000;
+  const startedAt = Date.now();
+  let delayMs = 1_000;
+  let attempt = 0;
+
+  while (true) {
+    const bearer = await extractBearerFromReduxPersist();
+    if (bearer) {
+      if (attempt > 0) {
+        extLogger.info("scrape.bearer_acquired", {
+          provider: "united",
+          attempts: attempt + 1,
+          elapsedMs: Date.now() - startedAt,
+        });
+      }
+      return bearer;
+    }
+
+    const elapsed = Date.now() - startedAt;
+    const remaining = MAX_TOTAL_MS - elapsed;
+    if (remaining <= 0) {
+      extLogger.warn("scrape.bearer_timeout", {
+        provider: "united",
+        attempts: attempt + 1,
+        elapsedMs: elapsed,
+      });
+      return null;
+    }
+
+    if (attempt === 0) {
+      extLogger.info("scrape.awaiting_bearer", {
+        provider: "united",
+        reason: "no_bearer_yet",
+      });
+    }
+
+    const wait = Math.min(delayMs, remaining);
+    await sleep(wait);
+    delayMs = Math.min(delayMs * 2, MAX_STEP_MS);
+    attempt++;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Pull the signed-in API bearer out of the redux-persist blob United
  * stores in IndexedDB. Structure (transit-js-encoded):
  *
@@ -228,6 +294,7 @@ async function extractBearerFromReduxPersist(): Promise<string | null> {
 
     let hash: string | null = null;
     let expiresAt: string | null = null;
+    let isAuthenticated = false;
     for (let j = 1; j < token.length - 1; j += 2) {
       if (token[j] === "hash" && typeof token[j + 1] === "string") {
         hash = token[j + 1] as string;
@@ -236,9 +303,14 @@ async function extractBearerFromReduxPersist(): Promise<string | null> {
         typeof token[j + 1] === "string"
       ) {
         expiresAt = token[j + 1] as string;
+      } else if (token[j] === "isAuthenticated") {
+        isAuthenticated = token[j + 1] === true;
       }
     }
-    if (!hash) return null;
+    // Redux keeps the last token in storage even after sign-out, so we
+    // MUST honour `isAuthenticated` — otherwise we'd send a stale bearer
+    // and the server rejects the request with an unauthenticated reply.
+    if (!hash || !isAuthenticated) return null;
     if (expiresAt) {
       const expMs = Date.parse(expiresAt);
       // 5-second safety margin; skip if the token is about to expire.

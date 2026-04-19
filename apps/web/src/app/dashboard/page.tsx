@@ -18,6 +18,7 @@ import ProgramsList, {
   type CardRowData,
 } from "./programs-list";
 import { ThemeToggle } from "./theme-toggle";
+import { Wordmark } from "../wordmark";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -143,7 +144,8 @@ export default async function DashboardPage() {
   return (
     <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">Points Geek</h1>
+        <h1 className="sr-only">PointsGeek</h1>
+        <Wordmark />
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <a

@@ -1,21 +1,55 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({
+// Self-hosted Geist variable fonts. One .woff2 per family covers every
+// weight, which plays well with a future offline/PWA story.
+const geistSans = localFont({
+  src: [
+    {
+      path: "../../public/fonts/Geist[wght].woff2",
+      style: "normal",
+      weight: "100 900",
+    },
+    {
+      path: "../../public/fonts/Geist-Italic[wght].woff2",
+      style: "italic",
+      weight: "100 900",
+    },
+  ],
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: [
+    {
+      path: "../../public/fonts/GeistMono[wght].woff2",
+      style: "normal",
+      weight: "100 900",
+    },
+    {
+      path: "../../public/fonts/GeistMono-Italic[wght].woff2",
+      style: "italic",
+      weight: "100 900",
+    },
+  ],
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Points Geek",
+  title: "PointsGeek",
   description: "Track your credit card points and miles",
+  icons: {
+    icon: [
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/brand/favicon-mono.svg", type: "image/svg+xml" },
+    ],
+    apple: "/brand/icon-128.png",
+  },
 };
 
 export default function RootLayout({

@@ -15,11 +15,18 @@
   --text-primary: #22201d;     /* same as foreground */
   --text-secondary: #5f5d5a;   /* warm medium gray */
   --text-tertiary: #a6a39f;    /* warm light gray */
-  --text-accent: #ff692d;      /* orange */
-  --text-accent-hover: #eb5519;/* darker orange on hover */
+  --text-accent: #6b4a9e;      /* aubergine — locked-in brand accent */
+  --text-accent-hover: #4a2f85;/* deeper aubergine on hover */
+
+  /* Purple scale — derived from the brand accent. */
+  --purple-tint: #a68ce0;      /* lavender — tints, dark-mode accent */
+  --purple-primary: #8b6dd6;   /* primary buttons */
+  --purple-hover: #6b4a9e;     /* links, primary hover, text accent */
+  --purple-deep: #4a2f85;      /* accent buttons, selected states */
+  --purple-darkest: #3a2569;   /* accent-button hover */
 }
 
-/* Dark ("nocturnal") mode — deep warm-navy with the same orange accent */
+/* Dark ("nocturnal") mode — deep warm-navy with a lighter aubergine accent */
 .dark {
   --background: #13161f;       /* deep navy */
   --foreground: #f0ede6;       /* warm off-white text */
@@ -31,8 +38,8 @@
   --text-primary: #f0ede6;
   --text-secondary: #a6a39f;
   --text-tertiary: #6b6865;
-  --text-accent: #ff7a47;      /* slightly brighter orange for dark bg */
-  --text-accent-hover: #ff9466;
+  --text-accent: #a68ce0;      /* lavender — brighter aubergine for dark bg */
+  --text-accent-hover: #c5b3ed;
 }
 
 @theme inline {
