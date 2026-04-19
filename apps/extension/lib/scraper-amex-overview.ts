@@ -204,7 +204,10 @@ function parseCardTitle(
   const match = trimmed.match(/^(.+?)\s*[•·]+\s*(\d{3,})\s*$/);
   if (match) {
     const cardName = cleanCardName(match[1]);
-    const lastFour = match[2].slice(-4);
+    // Keep all trailing digits as-is — Amex exposes 5 (e.g. "81002"),
+    // Chase/Cap One expose 4. The column is named `last_four` for
+    // historical reasons but stores whatever the issuer shows.
+    const lastFour = match[2];
     if (cardName) return { cardName, lastFour };
   }
 
@@ -341,7 +344,8 @@ function extractProductCards(doc: Document): ProductCard[] {
         );
         if (acct) {
           const digits = (acct.textContent ?? "").replace(/[^0-9]/g, "");
-          lastFour = digits ? digits.slice(-4) : undefined;
+          // Store Amex's full 5-digit suffix (e.g. "81002"), not slice-4.
+          lastFour = digits || undefined;
         }
       }
       if (!imageUrl) {

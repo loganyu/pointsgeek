@@ -285,20 +285,27 @@ async function upsertCard(
   programId: string,
   card: DiscoveredCard
 ): Promise<string> {
-  // Match on (programId, cardName, lastFour). If lastFour is null, match rows
-  // where last_four is also null to prevent accidental collision with a
-  // fully-numbered duplicate.
+  // When we know the card's trailing digits, match on
+  // (userId, programId, lastFour) alone — card names vary slightly
+  // between scrape sources (e.g. Chase's /home says "Freedom Flex"
+  // while /account-selector says "Chase Freedom FlexSM"), and the
+  // digits are the reliable identity. When lastFour is unknown, fall
+  // back to matching on the name plus a NULL last_four so we don't
+  // collide with a fully-numbered duplicate.
   const existing = await db
-    .select({ id: cards.id, imageUrl: cards.imageUrl, imageSlug: cards.imageSlug })
+    .select({
+      id: cards.id,
+      imageUrl: cards.imageUrl,
+      imageSlug: cards.imageSlug,
+    })
     .from(cards)
     .where(
       and(
         eq(cards.userId, userId),
         eq(cards.programId, programId),
-        eq(cards.cardName, card.cardName),
         card.lastFour
           ? eq(cards.lastFour, card.lastFour)
-          : isNull(cards.lastFour)
+          : and(eq(cards.cardName, card.cardName), isNull(cards.lastFour))
       )
     )
     .limit(1);
