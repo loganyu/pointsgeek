@@ -68,7 +68,9 @@ export const PROGRAM_CATALOG = {
     currency: "miles",
     displayName: "United MileagePlus",
     short: "UA",
-    primarySyncUrl: "https://www.united.com/mileageplus/",
+    // /myunited surfaces account number, miles, and card info in one view,
+    // and the content script can read all of them directly off the DOM.
+    primarySyncUrl: "https://www.united.com/en/us/myunited",
   },
   amazon_rewards: {
     // Co-branded white-label points on the Chase Prime Visa; redeemable

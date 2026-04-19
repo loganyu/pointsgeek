@@ -23,6 +23,7 @@ export default defineConfig({
       "https://myaccounts.capitalone.com/*",
       "https://verified.capitalone.com/*",
       "https://www.delta.com/*",
+      "https://www.united.com/*",
     ],
   },
 });

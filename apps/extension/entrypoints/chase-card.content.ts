@@ -84,6 +84,12 @@ async function scrapeIfCardPage(): Promise<void> {
 
   const imageUrl = cardArtImg.src || undefined;
 
+  // Rewards populate from a separate API call a beat after card-art.
+  // The rewards container renders early as an empty shell, so we wait
+  // for the numeric value itself to appear inside `dataItem-value`. A
+  // miss here (Chase UR cards, timeout) is fine — we proceed card-only.
+  await pollUntil(() => extractProgramAndBalance(document).balance !== null, 8_000);
+
   // The navigation-bar holds the card name *with* the last-4, formatted
   // like "United Gateway (...8072)". It's exposed three ways:
   //   1. `<mds-navigation-bar page-name="...">`          — attribute on the web component
@@ -292,6 +298,27 @@ function waitForElement<T extends Element = Element>(
       } else if (elapsed >= timeoutMs) {
         clearInterval(timer);
         resolve(null);
+      }
+    }, intervalMs);
+  });
+}
+
+function pollUntil(
+  predicate: () => boolean,
+  timeoutMs: number,
+  intervalMs = 300
+): Promise<boolean> {
+  if (predicate()) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += intervalMs;
+      if (predicate()) {
+        clearInterval(timer);
+        resolve(true);
+      } else if (elapsed >= timeoutMs) {
+        clearInterval(timer);
+        resolve(false);
       }
     }, intervalMs);
   });

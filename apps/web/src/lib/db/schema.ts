@@ -20,6 +20,7 @@ export const providerEnum = pgEnum("provider", [
   "chase",
   "capitalone",
   "delta",
+  "united",
 ]);
 
 export const programTypeEnum = pgEnum("program_type", [

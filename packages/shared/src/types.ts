@@ -6,7 +6,13 @@ import type { ProgramKey } from "./programs";
  * several programs — the Amex overview reports amex_mr, delta, marriott_bonvoy,
  * and amex_reward_dollars in a single scrape.
  */
-export const PROVIDERS = ["amex", "chase", "capitalone", "delta"] as const;
+export const PROVIDERS = [
+  "amex",
+  "chase",
+  "capitalone",
+  "delta",
+  "united",
+] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const PROGRAM_TYPES = ["bank_rewards", "airline", "hotel"] as const;
