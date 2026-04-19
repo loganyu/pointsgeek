@@ -380,7 +380,7 @@ function snapshot(doc: Document): ScrapeResult {
     };
   }
 
-  const ident = resolveIdentifier(doc, productCards);
+  const ident = resolveIdentifier(doc);
 
   // Build the cards[] list. Each product card's primary programKey is
   // determined by which tile linked to it (by name+lastFour match). If a
@@ -462,6 +462,11 @@ export function waitForAmexOverview(
   doc: Document,
   timeoutMs = SCRAPE_TIMEOUT_MS
 ): Promise<ScrapeResult> {
+  // DOM scrape: walk the rewards tiles, product grid, and linked card
+  // spans to assemble a multi-program result. Per-program loyalty
+  // numbers (Delta, Marriott, Reward Dollars) come from aria-labels;
+  // MR doesn't expose a number in its aria-label so it falls back to
+  // the scrape-wide externalAccountId.
   const immediate = snapshot(doc);
   if (
     immediate.success &&

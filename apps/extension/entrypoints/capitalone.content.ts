@@ -125,7 +125,7 @@ export default defineContentScript({
       ];
     }
 
-    const ident = resolveIdentifier(document, cards);
+    const ident = resolveIdentifier(document);
 
     const result: ScrapeResult = {
       success: true,

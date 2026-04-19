@@ -4,10 +4,13 @@ import { extLogger } from "../lib/logger";
 /**
  * Amex content script.
  *
- * Runs on any americanexpress.com page. The overview URL is rich with data
- * (all cards + all loyalty programs in one shot), so the scraper targets
- * that layout. On other Amex pages the extraction may come back empty —
- * that's fine, we emit the scrape event and stop.
+ * Walks the overview page DOM (rewards tiles, product-card grid, linked
+ * card spans) to pull every balance, card, and loyalty-account number
+ * the page exposes. The page's `window.__INITIAL_STATE__` would be a
+ * richer source, but by the time a regular content script runs, the
+ * value has been hydrated and removed from both the DOM and `window`
+ * — and a MAIN-world capture script didn't load reliably enough to
+ * justify the complexity. DOM parsing is more than good enough.
  */
 export default defineContentScript({
   matches: [
@@ -28,6 +31,7 @@ export default defineContentScript({
         externalAccountId: result.externalAccountId,
         identifierSource: result.identifierSource,
         durationMs: result.durationMs,
+        matchedSelector: result.matchedSelector,
       });
     } else {
       extLogger.warn("scrape.failed", {

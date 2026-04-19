@@ -42,7 +42,7 @@ export default defineContentScript({
     // of the default "Account".
     const greetingName = extractDeltaGreeting(document);
 
-    const ident = resolveIdentifier(document, [], {
+    const ident = resolveIdentifier(document, {
       customerId: skyMilesNumber,
       greetingName,
     });

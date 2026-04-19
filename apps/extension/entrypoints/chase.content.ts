@@ -141,7 +141,7 @@ function buildSuccess(
     imageUrl: c.imageUrl,
   }));
 
-  const ident = resolveIdentifier(doc, cards);
+  const ident = resolveIdentifier(doc);
 
   return {
     success: true,
@@ -373,7 +373,7 @@ async function scrapeHomeHeader(start: number) {
     return;
   }
 
-  const ident = resolveIdentifier(document, []);
+  const ident = resolveIdentifier(document);
 
   extLogger.info("scrape.success", {
     provider: "chase",

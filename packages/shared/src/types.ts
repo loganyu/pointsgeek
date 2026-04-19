@@ -103,7 +103,7 @@ export interface ScrapeResult {
   externalAccountId?: string;
   /** Null when we couldn't extract a name — UI renders nothing. */
   ownerLabel?: string | null;
-  identifierSource?: "email" | "customer_id" | "greeting_name" | "fingerprint";
+  identifierSource?: "email" | "customer_id" | "greeting_name" | "default";
   balances?: BalanceRecord[];
   cards?: DiscoveredCard[];
   error?: { code: string; message: string };
