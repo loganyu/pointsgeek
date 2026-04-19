@@ -34,7 +34,9 @@ export const PROGRAM_CATALOG = {
     currency: "points",
     displayName: "Ultimate Rewards",
     short: "UR",
-    primarySyncUrl: "https://ultimaterewardspoints.chase.com",
+    // /account-selector shows per-card balances + card art in a clean list,
+    // no picker clicking required — strictly better than the UR home page.
+    primarySyncUrl: "https://ultimaterewardspoints.chase.com/account-selector",
   },
   capitalone_miles: {
     programType: "bank_rewards",
