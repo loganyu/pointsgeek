@@ -30,10 +30,11 @@
 }
 
 :root {
-  /* fresh-air (light) */
+  /* fresh-air (light) — default */
   --background: #f5f2ed;
   --surface: #ffffff;
   --surface-secondary: #efece6;
+  --surface-hover: #faf7f1;
   --border: #e3ded3;
   --border-light: #ebe6db;
   --text-primary: #22201d;
@@ -55,7 +56,7 @@
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -63,33 +64,38 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #13161f;
-    --surface: #1c2030;
-    --surface-secondary: #2a2f42;
-    --border: #2d3246;
-    --border-light: #262b3d;
-    --text-primary: #f0ede6;
-    --text-secondary: #a6a39f;
-    --text-tertiary: #6b6865;
-    --text-accent: #a68ce0;
-    --text-accent-hover: #c5b3ed;
-    --purple-primary: #a68ce0;
-    --purple-hover: #8b6dd6;
-    --status-error-bg: #331818;
-    --status-error-fg: #fca5a5;
-    --status-error-border: #5a1f1f;
-  }
+/* nocturnal (dark) — class-based so the popup toggle can drive it
+ * regardless of the OS `prefers-color-scheme` setting. */
+.dark {
+  --background: #13161f;
+  --surface: #1c2030;
+  --surface-secondary: #2a2f42;
+  --surface-hover: #232839;
+  --border: #2d3246;
+  --border-light: #262b3d;
+  --text-primary: #f0ede6;
+  --text-secondary: #a6a39f;
+  --text-tertiary: #6b6865;
+  --text-accent: #a68ce0;
+  --text-accent-hover: #c5b3ed;
+  --purple-primary: #a68ce0;
+  --purple-hover: #8b6dd6;
+  --status-error-bg: #331818;
+  --status-error-fg: #fca5a5;
+  --status-error-border: #5a1f1f;
+  color-scheme: dark;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   background: var(--background);
   color: var(--text-primary);
 }
 
 #root {
-  width: 320px;
+  width: 300px;
 }

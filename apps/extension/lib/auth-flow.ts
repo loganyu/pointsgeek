@@ -11,7 +11,7 @@ import { extLogger } from "./logger";
  * The popup talks to this via `browser.runtime.sendMessage({type:"SIGN_IN_REQUEST"})`.
  */
 
-const API_BASE = "http://localhost:3100";
+const API_BASE = "http://localhost:3000";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export interface AuthFlowResult {

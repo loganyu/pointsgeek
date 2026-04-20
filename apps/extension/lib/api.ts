@@ -1,7 +1,7 @@
 import type { BalancePayload } from "@points-geek/shared";
 import { extLogger } from "./logger";
 
-const API_BASE = "http://localhost:3100";
+const API_BASE = "http://localhost:3000";
 
 function authHeaders(token: string) {
   return {

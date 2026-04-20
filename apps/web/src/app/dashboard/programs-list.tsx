@@ -320,18 +320,22 @@ function CategorySection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
-  // Only sum programs whose currency matches what we can aggregate.
-  // Mixing points + miles + cents would be nonsense, so the category
-  // header only shows a total when every program shares a currency.
-  const programsWithData = programs.filter((p) => p.totalBalance !== null);
-  const currencies = new Set(programsWithData.map((p) => p.currency));
-  const sameCurrency =
-    programsWithData.length > 0 && currencies.size === 1
-      ? programsWithData[0].currency
-      : null;
-  const total = sameCurrency
-    ? programsWithData.reduce((sum, p) => sum + (p.totalBalance ?? 0), 0)
-    : null;
+  // Same hierarchy as the main headline: points + miles get aggregated
+  // on the primary line, cash (usd_cents) drops to a "+$X cash" subtitle.
+  // Matters for Banks, which mixes Ultimate Rewards / Membership Rewards
+  // points with Amex Reward Dollars (cents).
+  const pointsMilesTotal = programs
+    .filter(
+      (p) =>
+        p.totalBalance !== null &&
+        (p.currency === "points" || p.currency === "miles")
+    )
+    .reduce((sum, p) => sum + (p.totalBalance ?? 0), 0);
+  const cashCentsTotal = programs
+    .filter((p) => p.totalBalance !== null && p.currency === "usd_cents")
+    .reduce((sum, p) => sum + (p.totalBalance ?? 0), 0);
+  const hasPointsMiles = pointsMilesTotal > 0;
+  const hasCash = cashCentsTotal > 0;
   const programCount = programs.length;
 
   return (
@@ -350,9 +354,29 @@ function CategorySection({
           )}
         </div>
         <div className="text-right">
-          {total !== null && sameCurrency ? (
-            <div className="text-xl font-semibold tabular-nums text-text-primary">
-              {formatBalance(total, sameCurrency)}
+          {hasPointsMiles || hasCash ? (
+            <div>
+              {hasPointsMiles && (
+                <div className="text-xl font-semibold tabular-nums text-text-primary">
+                  {pointsMilesTotal.toLocaleString()}
+                </div>
+              )}
+              {hasCash && (
+                <div
+                  className={
+                    hasPointsMiles
+                      ? "text-xs text-text-secondary mt-0.5 tabular-nums"
+                      : "text-xl font-semibold tabular-nums text-text-primary"
+                  }
+                >
+                  {hasPointsMiles ? "+ " : ""}
+                  {(cashCentsTotal / 100).toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  })}
+                  {hasPointsMiles ? " cash" : ""}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-sm text-text-tertiary">—</div>

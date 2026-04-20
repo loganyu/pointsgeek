@@ -1,11 +1,7 @@
 import { useState, useEffect, CSSProperties } from "react";
 import { getState, type StoredBalance } from "../../lib/storage";
 import { signInWithGoogle, signOut } from "../../lib/auth";
-import {
-  PROGRAM_CATALOG,
-  STALE_THRESHOLD_MS,
-  type ProgramKey,
-} from "@points-geek/shared";
+import { PROGRAM_CATALOG, type ProgramKey } from "@points-geek/shared";
 
 interface UserInfo {
   name: string | null;
@@ -13,11 +9,29 @@ interface UserInfo {
   image: string | null;
 }
 
+// Web app base URL. Will become env-driven once the staging deploy lands.
+const WEB_BASE = "http://localhost:3000";
+
+type Theme = "light" | "dark";
+const THEME_STORAGE_KEY = "pg-theme";
+
 export default function App() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [balances, setBalances] = useState<Record<string, StoredBalance>>({});
   const [lastError, setLastError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => readInitialTheme());
+
+  // Apply theme to <html> so the `.dark` class flips the CSS variables
+  // in `style.css`.
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // storage disabled — still applies for this session
+    }
+  }, [theme]);
 
   useEffect(() => {
     loadState();
@@ -57,12 +71,9 @@ export default function App() {
 
   async function handleSignIn() {
     setSigningIn(true);
-    const success = await signInWithGoogle();
+    await signInWithGoogle();
     await loadState();
     setSigningIn(false);
-    if (!success) {
-      // loadState pulls in any lastError signInWithGoogle set.
-    }
   }
 
   async function handleSignOut() {
@@ -72,10 +83,19 @@ export default function App() {
     setLastError(null);
   }
 
+  function toggleTheme() {
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+  }
+
   if (!user) {
     return (
       <div style={styles.container}>
-        <Wordmark />
+        <div style={styles.topRow}>
+          <OpenAppButton />
+          <div style={styles.rightControls}>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          </div>
+        </div>
         <p style={styles.lede}>
           Sign in to start tracking your points and miles.
         </p>
@@ -106,18 +126,22 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <Wordmark />
-        <button onClick={handleSignOut} style={styles.signOutButton}>
-          Sign out
-        </button>
+      <div style={styles.topRow}>
+        <OpenAppButton />
+        <div style={styles.rightControls}>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <button
+            onClick={handleSignOut}
+            style={styles.signOutButton}
+            title="Sign out"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
-      <div style={styles.userRow}>
-        {user.image && (
-          <img src={user.image} alt="" aria-hidden="true" style={styles.avatar} />
-        )}
-        <span style={styles.userEmail}>{user.email}</span>
+      <div style={styles.email} title={user.email}>
+        {user.email}
       </div>
 
       {lastError && <ErrorAlert message={lastError} />}
@@ -127,9 +151,13 @@ export default function App() {
           Visit your bank's site to sync your first program.
         </div>
       ) : (
-        <div style={styles.cardStack}>
-          {pooledTotals.map((b) => (
-            <ProgramCard key={`${b.programKey}|${b.externalAccountId}`} b={b} />
+        <div style={styles.table}>
+          {pooledTotals.map((b, i) => (
+            <ProgramRow
+              key={`${b.programKey}|${b.externalAccountId}`}
+              b={b}
+              isLast={i === pooledTotals.length - 1}
+            />
           ))}
         </div>
       )}
@@ -139,21 +167,53 @@ export default function App() {
 
 /* ── Sub-components ──────────────────────────────────────── */
 
-function Wordmark() {
+/**
+ * Clickable header that both identifies the popup and launches the web
+ * dashboard. "Geek" renders in the brand accent — same 2-tone treatment
+ * as the web wordmark.
+ */
+function OpenAppButton() {
   return (
-    <div style={styles.wordmark}>
+    <a
+      href={`${WEB_BASE}/dashboard`}
+      target="_blank"
+      rel="noreferrer"
+      style={styles.openAppButton}
+    >
       <img
         src="/icon/48.png"
         alt=""
         aria-hidden="true"
-        width={28}
-        height={28}
-        style={styles.wordmarkIcon}
+        width={22}
+        height={22}
+        style={styles.openAppIcon}
       />
-      <span style={styles.wordmarkText}>
-        Points<span style={styles.wordmarkAccent}>Geek</span>
+      <span style={styles.openAppLabel}>
+        Open Points<span style={styles.openAppAccent}>Geek</span>
       </span>
-    </div>
+      <span aria-hidden="true" style={styles.openAppArrow}>
+        →
+      </span>
+    </a>
+  );
+}
+
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: Theme;
+  onToggle: () => void;
+}) {
+  const isDark = theme === "dark";
+  return (
+    <button
+      onClick={onToggle}
+      title={isDark ? "Switch to light" : "Switch to dark"}
+      style={styles.iconButton}
+    >
+      {isDark ? <MoonIcon /> : <SunIcon />}
+    </button>
   );
 }
 
@@ -161,39 +221,69 @@ function ErrorAlert({ message }: { message: string }) {
   return <div style={styles.errorAlert}>{message}</div>;
 }
 
-function ProgramCard({ b }: { b: StoredBalance }) {
+function ProgramRow({
+  b,
+  isLast,
+}: {
+  b: StoredBalance;
+  isLast: boolean;
+}) {
   const meta = getMeta(b.programKey);
-  const stale = isStale(b.syncedAt);
+  const sub = identityLabel(b);
   return (
-    <div style={styles.programCard}>
-      <div style={styles.programCardHeader}>
-        <span style={styles.programName}>{meta.displayName}</span>
-        <a
-          href={meta.primarySyncUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={styles.refreshButton}
-        >
-          Refresh
-        </a>
+    <div
+      style={{
+        ...styles.row,
+        borderBottom: isLast ? "none" : "1px solid var(--border-light)",
+      }}
+    >
+      <div style={styles.rowLeft}>
+        <div style={styles.rowName}>{meta.displayName}</div>
+        {sub && <div style={styles.rowSub}>{sub}</div>}
       </div>
-      <div style={styles.programCardBody}>
-        <div style={styles.balance}>
-          {formatBalance(b.balance, b.programKey)}
-        </div>
-        <span
-          style={{
-            ...styles.lastUpdated,
-            color: stale ? "var(--status-stale)" : "var(--text-tertiary)",
-          }}
-        >
-          {timeAgo(b.syncedAt)}
-        </span>
+      <div style={styles.rowBalance}>
+        {formatBalance(b.balance, b.programKey)}
       </div>
-      {identityLabel(b) && (
-        <div style={styles.identityLabel}>{identityLabel(b)}</div>
-      )}
     </div>
+  );
+}
+
+/* ── Icons ───────────────────────────────────────────────── */
+
+function SunIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+    </svg>
   );
 }
 
@@ -224,145 +314,152 @@ function GoogleIcon() {
 
 const styles: Record<string, CSSProperties> = {
   container: {
-    width: 320,
-    padding: 16,
+    width: 300,
+    padding: 12,
     background: "var(--background)",
     color: "var(--text-primary)",
     fontFamily: "var(--font-sans)",
   },
-  header: {
+  topRow: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    gap: 6,
+    marginBottom: 6,
   },
-  wordmark: {
+  rightControls: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
-    userSelect: "none",
-  },
-  wordmarkIcon: {
-    borderRadius: 6,
+    gap: 4,
     flexShrink: 0,
   },
-  wordmarkText: {
-    fontSize: 18,
-    fontWeight: 700,
-    whiteSpace: "nowrap",
+  openAppButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 10px",
+    background: "var(--surface)",
     color: "var(--text-primary)",
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 600,
+    userSelect: "none",
+    lineHeight: 1,
+  },
+  openAppIcon: {
+    borderRadius: 5,
+    flexShrink: 0,
+  },
+  openAppLabel: {
+    whiteSpace: "nowrap",
     letterSpacing: "-0.01em",
   },
-  wordmarkAccent: {
+  openAppAccent: {
     color: "var(--text-accent)",
+  },
+  openAppArrow: {
+    fontSize: 14,
+    color: "var(--text-tertiary)",
+    lineHeight: 1,
+  },
+  iconButton: {
+    width: 26,
+    height: 26,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    background: "var(--surface-secondary)",
+    color: "var(--text-secondary)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    cursor: "pointer",
   },
   signOutButton: {
     fontSize: 11,
     color: "var(--text-tertiary)",
     background: "none",
     border: "none",
-    padding: 0,
+    padding: "4px 4px",
     cursor: "pointer",
     fontFamily: "inherit",
+  },
+  email: {
+    fontSize: 11,
+    color: "var(--text-secondary)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    marginBottom: 10,
   },
   lede: {
     fontSize: 13,
     color: "var(--text-secondary)",
-    margin: "12px 0",
+    margin: "10px 0",
     lineHeight: 1.4,
   },
-  userRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: "50%",
-    border: "1px solid var(--border)",
-    background: "var(--surface-secondary)",
-  },
-  userEmail: {
-    fontSize: 12,
-    color: "var(--text-secondary)",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
   errorAlert: {
-    fontSize: 12,
+    fontSize: 11,
     color: "var(--status-error-fg)",
     background: "var(--status-error-bg)",
     border: "1px solid var(--status-error-border)",
-    padding: "8px 10px",
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: "6px 8px",
+    borderRadius: 6,
+    marginBottom: 8,
     wordBreak: "break-word",
   },
   emptyState: {
-    fontSize: 13,
+    fontSize: 12,
     color: "var(--text-tertiary)",
     lineHeight: 1.4,
+    padding: "8px 0",
   },
-  cardStack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  programCard: {
+  table: {
     border: "1px solid var(--border)",
+    borderRadius: 10,
     background: "var(--surface)",
-    borderRadius: 12,
-    padding: 12,
-  },
-  programCardHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-    gap: 8,
-  },
-  programName: {
-    fontSize: 12,
-    color: "var(--text-secondary)",
-    fontWeight: 500,
     overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
   },
-  refreshButton: {
-    fontSize: 11,
-    color: "#ffffff",
-    background: "var(--purple-primary)",
-    padding: "3px 10px",
-    borderRadius: 6,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
-    fontWeight: 500,
-  },
-  programCardBody: {
+  row: {
     display: "flex",
     alignItems: "baseline",
     justifyContent: "space-between",
     gap: 8,
+    padding: "8px 10px",
   },
-  balance: {
-    fontSize: 22,
-    fontWeight: 700,
+  rowLeft: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+    gap: 1,
+  },
+  rowName: {
+    fontSize: 12,
+    fontWeight: 500,
+    color: "var(--text-primary)",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    lineHeight: 1.25,
+  },
+  rowSub: {
+    fontSize: 10,
+    color: "var(--text-tertiary)",
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    lineHeight: 1.2,
+  },
+  rowBalance: {
+    fontSize: 13,
+    fontWeight: 600,
     fontVariantNumeric: "tabular-nums",
     color: "var(--text-primary)",
+    whiteSpace: "nowrap",
     letterSpacing: "-0.01em",
-  },
-  lastUpdated: {
-    fontSize: 11,
-  },
-  identityLabel: {
-    marginTop: 4,
-    fontSize: 11,
-    color: "var(--text-secondary)",
-    fontVariantNumeric: "tabular-nums",
   },
   googleButton: {
     width: "100%",
@@ -379,20 +476,45 @@ const styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    marginTop: 8,
   },
 };
 
-/* ── Helpers (unchanged) ─────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────── */
 
+function readInitialTheme(): Theme {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    // storage disabled
+  }
+  // Fall back to OS preference for the first-ever open.
+  if (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
+}
+
+/**
+ * Sub-line under a program name. Combines owner + loyalty number with a
+ * middot, same pattern as the web dashboard. Kept compact — two atoms
+ * max, no timestamps (those live on the web app now).
+ */
 function identityLabel(b: StoredBalance): string | null {
   const meta = PROGRAM_CATALOG[b.programKey];
-  if (meta?.programType === "airline" || meta?.programType === "hotel") {
-    if (b.externalAccountId.startsWith("loyalty:")) {
-      return b.externalAccountId.slice("loyalty:".length);
-    }
+  const parts: string[] = [];
+  if (b.ownerLabel && b.ownerLabel !== "Account") parts.push(b.ownerLabel);
+  if (
+    (meta?.programType === "airline" || meta?.programType === "hotel") &&
+    b.externalAccountId.startsWith("loyalty:")
+  ) {
+    parts.push(b.externalAccountId.slice("loyalty:".length));
   }
-  if (b.ownerLabel && b.ownerLabel !== "Account") return b.ownerLabel;
-  return null;
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 function getMeta(key: ProgramKey) {
@@ -414,20 +536,4 @@ function formatBalance(n: number, programKey: ProgramKey) {
     });
   }
   return n.toLocaleString();
-}
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
-}
-
-function isStale(syncedAt: string) {
-  return Date.now() - new Date(syncedAt).getTime() > STALE_THRESHOLD_MS;
 }
