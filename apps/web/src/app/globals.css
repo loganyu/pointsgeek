@@ -29,6 +29,23 @@
    * art). Lavender reads well on the cream page background. */
   --brand-default-chip: var(--purple-tint);
   --brand-default-chip-fg: #ffffff;
+
+  /* Sidebar metrics — consumed by the AppShell gutter and Sidebar width.
+   * `--sidebar-gutter` is what the main content reserves (always the
+   * collapsed width when unpinned, so hover-expand floats over content).
+   * `--sidebar-width` is the sidebar's own rendered width. Both flip
+   * via the `html[data-sidebar-pinned="false"]` rule below. */
+  --sidebar-collapsed: 56px;
+  --sidebar-expanded: 220px;
+  --sidebar-gutter: var(--sidebar-expanded);
+  --sidebar-width: var(--sidebar-expanded);
+}
+
+/* Unpinned: content gutter shrinks; sidebar itself collapses until
+ * JS-driven hover re-expands it (handled via inline style on <aside>). */
+html[data-sidebar-pinned="false"] {
+  --sidebar-gutter: var(--sidebar-collapsed);
+  --sidebar-width: var(--sidebar-collapsed);
 }
 
 /* Dark ("nocturnal") mode — deep warm-navy with a lighter aubergine accent */

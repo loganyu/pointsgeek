@@ -17,9 +17,8 @@ import ProgramsList, {
   type ProgramRowData,
   type CardRowData,
 } from "./programs-list";
-import { ThemeToggle } from "./theme-toggle";
-import { Wordmark } from "../wordmark";
 import { AddProgramButton } from "./add-program-button";
+import { AppShell } from "../app-shell";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -143,23 +142,21 @@ export default async function DashboardPage() {
   const hotels = validRows.filter((r) => r.programType === "hotel");
 
   return (
-    <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="sr-only">PointsGeek</h1>
-        <Wordmark />
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <a
-            href="/settings"
-            className="text-sm text-text-accent hover:text-text-accent-hover transition-colors"
-          >
-            Settings
-          </a>
+    <AppShell
+      user={{
+        name: session.user.name,
+        email: session.user.email!,
+        image: session.user.image,
+      }}
+    >
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
           <AddProgramButton />
         </div>
-      </div>
 
-      <ProgramsList banks={banks} airlines={airlines} hotels={hotels} />
-    </main>
+        <ProgramsList banks={banks} airlines={airlines} hotels={hotels} />
+      </main>
+    </AppShell>
   );
 }
