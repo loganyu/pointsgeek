@@ -1,4 +1,5 @@
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type {
   ScrapeResult,
   BalanceRecord,
@@ -49,6 +50,12 @@ export default defineContentScript({
       return;
     }
 
+    // Only mount the widget once we know the user is signed in — the
+    // bearer poll above can run for up to 3 min on a signed-out page,
+    // and we don't want to show "Syncing United…" for that long on a
+    // login screen.
+    syncWidget.start({ label: "United" });
+
     const [accountStatus, cardDetails] = await Promise.all([
       fetchJson(ACCOUNT_STATUS_URL, bearer),
       fetchJson(CARD_DETAILS_URL, bearer),
@@ -63,6 +70,7 @@ export default defineContentScript({
         provider: "united",
         reason: "not_authenticated",
       });
+      syncWidget.destroy();
       return;
     }
 
@@ -364,6 +372,14 @@ function readIdb(
 }
 
 function send(payload: ScrapeResult) {
+  if (payload.success) {
+    syncWidget.success("Miles synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "united",

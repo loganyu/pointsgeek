@@ -84,6 +84,30 @@ export async function POST(req: NextRequest) {
       userAgent: req.headers.get("user-agent"),
     });
 
+    // 1b. On failure, flag any programs this account owns as failed so the
+    //     web app can surface a per-row "sync failed" badge. Best-effort:
+    //     we match on (userId, externalAccountId) which covers the common
+    //     case but may miss programs whose id was later upgraded to a
+    //     `loyalty:...` fingerprint — acceptable for the v1 indicator.
+    if (!scrapeEvent.success && externalAccountId) {
+      await db
+        .update(pointsPrograms)
+        .set({
+          lastSyncAt: new Date(),
+          lastSyncStatus: "failed",
+          lastSyncError:
+            scrapeEvent.errorCode ??
+            scrapeEvent.errorMessage ??
+            "unknown_error",
+        })
+        .where(
+          and(
+            eq(pointsPrograms.userId, userId),
+            eq(pointsPrograms.externalAccountId, externalAccountId)
+          )
+        );
+    }
+
     // 2. Nothing to persist if the scrape failed or carried neither
     //    balances nor cards. A partial success (cards but no balances)
     //    still falls through — we want the cards+program rows even if
@@ -182,6 +206,22 @@ export async function POST(req: NextRequest) {
       programIdByKey.set(programKey, id);
     }
 
+    // Mark every program this scrape touched as successfully synced. The
+    // snapshot write below may still dedupe (same balance as today), but
+    // we still want to stamp "we heard from this program just now" so the
+    // UI stops showing a stale/failed indicator.
+    const touchedProgramIds = Array.from(new Set(programIdByKey.values()));
+    if (touchedProgramIds.length > 0) {
+      await db
+        .update(pointsPrograms)
+        .set({
+          lastSyncAt: new Date(scrapedAt),
+          lastSyncStatus: "ok",
+          lastSyncError: null,
+        })
+        .where(inArray(pointsPrograms.id, touchedProgramIds));
+    }
+
     // 3b. Upsert all discovered cards (idempotent; safe to call repeatedly)
     for (const card of discoveredCards ?? []) {
       if (!card.programKey) continue; // can't place it without a program
@@ -210,7 +250,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      const shouldInsert = await shouldInsertSnapshot({
+      const decision = await computeSnapshotAction({
         userId,
         programId,
         cardId,
@@ -218,7 +258,13 @@ export async function POST(req: NextRequest) {
         newBalance: bal.balance,
       });
 
-      if (!shouldInsert) {
+      if (decision.action === "bump") {
+        // Same-day, same-balance. Bump the latest row so the dashboard
+        // shows a fresh "last updated" timestamp instead of staleness.
+        await db
+          .update(balanceSnapshots)
+          .set({ scrapedAt: scrapedAtDate, receivedAt: new Date() })
+          .where(eq(balanceSnapshots.id, decision.rowId));
         skippedDedupCount++;
         continue;
       }
@@ -645,21 +691,30 @@ async function upsertCard(
 }
 
 /**
- * Daily-dedup: skip insert if the most recent snapshot for the same
- * (user, program, card, balanceType) is from today (UTC) and carries the
- * same balance. Insert otherwise.
+ * Decide what to do with an incoming snapshot:
+ *
+ *   `insert` — no prior row for this balance key, OR the latest is from
+ *   a different UTC day, OR the balance has changed.
+ *
+ *   `bump` — same UTC day + same balance as the latest row. Caller
+ *   should bump that row's `scrapedAt`/`receivedAt` instead of inserting
+ *   a duplicate. This keeps row count efficient while still advancing
+ *   the dashboard's "last updated" timestamp — without this, stable
+ *   programs like Marriott would look stale between daily visits even
+ *   when a scrape actually happened.
  */
-async function shouldInsertSnapshot(args: {
+async function computeSnapshotAction(args: {
   userId: string;
   programId: string;
   cardId: string | null;
   balanceType: "total" | "ytd_earned_on_card";
   newBalance: number;
-}): Promise<boolean> {
+}): Promise<{ action: "insert" } | { action: "bump"; rowId: number }> {
   const { userId, programId, cardId, balanceType, newBalance } = args;
 
   const latest = await db
     .select({
+      id: balanceSnapshots.id,
       balance: balanceSnapshots.balance,
       scrapedAt: balanceSnapshots.scrapedAt,
     })
@@ -677,12 +732,15 @@ async function shouldInsertSnapshot(args: {
     .orderBy(desc(balanceSnapshots.scrapedAt))
     .limit(1);
 
-  if (latest.length === 0) return true;
+  if (latest.length === 0) return { action: "insert" };
 
   const row = latest[0];
   const sameDayUtc = isSameUtcDay(row.scrapedAt, new Date());
   const sameBalance = BigInt(row.balance) === BigInt(newBalance);
-  return !(sameDayUtc && sameBalance);
+  if (sameDayUtc && sameBalance) {
+    return { action: "bump", rowId: row.id };
+  }
+  return { action: "insert" };
 }
 
 function isSameUtcDay(a: Date, b: Date): boolean {
@@ -758,14 +816,22 @@ async function recomputePoolTotal(args: {
 
   if (sum === 0) return false;
 
-  const shouldInsert = await shouldInsertSnapshot({
+  const decision = await computeSnapshotAction({
     userId,
     programId,
     cardId: null,
     balanceType: "total",
     newBalance: sum,
   });
-  if (!shouldInsert) return false;
+  if (decision.action === "bump") {
+    // Same-day, same sum: bump the pool-total row's timestamp so the
+    // dashboard reflects the fresh scrape instead of yesterday's time.
+    await db
+      .update(balanceSnapshots)
+      .set({ scrapedAt, receivedAt: new Date() })
+      .where(eq(balanceSnapshots.id, decision.rowId));
+    return false;
+  }
 
   await db.insert(balanceSnapshots).values({
     userId,

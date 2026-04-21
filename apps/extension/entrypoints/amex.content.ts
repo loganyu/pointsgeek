@@ -1,5 +1,6 @@
 import { waitForAmexOverview } from "../lib/scraper-amex-overview";
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 
 /**
  * Amex content script.
@@ -13,13 +14,16 @@ import { extLogger } from "../lib/logger";
  * justify the complexity. DOM parsing is more than good enough.
  */
 export default defineContentScript({
-  matches: [
-    "https://www.americanexpress.com/*",
-    "https://global.americanexpress.com/*",
-  ],
+  // Narrow to just the authenticated overview page. Broader patterns like
+  // `*.americanexpress.com/*` would fire on the public marketing pages
+  // and login flow, which flashes a useless "Syncing Amex…" pill.
+  // Chrome match patterns ignore query strings and fragments, so this
+  // correctly covers `/overview?...` variants too.
+  matches: ["https://global.americanexpress.com/overview"],
   async main() {
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "amex", url });
+    syncWidget.start({ label: "Amex" });
 
     const result = await waitForAmexOverview(document);
 
@@ -42,6 +46,14 @@ export default defineContentScript({
       });
     }
 
+    if (result.success) {
+      syncWidget.success("Points synced");
+    } else {
+      syncWidget.fail({
+        code: result.error?.code,
+        message: result.error?.message,
+      });
+    }
     browser.runtime.sendMessage({
       type: result.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
       provider: "amex",

@@ -123,6 +123,8 @@ export default async function DashboardPage() {
         lastUpdated: latestTotal?.scrapedAt.toISOString() ?? null,
         ytdBalance: latestYtd ? Number(latestYtd.balance) : null,
         ytdLastUpdated: latestYtd?.scrapedAt.toISOString() ?? null,
+        lastSyncStatus: p.lastSyncStatus ?? null,
+        lastSyncError: p.lastSyncError ?? null,
         cards: cardData,
       } as ProgramRowData;
     })

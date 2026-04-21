@@ -1,6 +1,7 @@
 import { waitForDeltaBalance } from "../lib/scraper-delta";
 import { resolveIdentifier } from "../lib/identifier";
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type { ScrapeResult } from "@points-geek/shared";
 
 /**
@@ -15,6 +16,23 @@ export default defineContentScript({
   async main() {
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "delta", url });
+
+    // Don't flash the widget on the signed-out delta.com homepage.
+    // Our content script runs on every delta.com page, and the balance
+    // scraper below polls for up to ~15s before giving up — showing
+    // "Syncing Delta…" that whole time (then "Sync failed") on a
+    // marketing page the user didn't expect to sync is noisy. Probe
+    // briefly for any authenticated element; if nothing shows up,
+    // silently skip without mounting the widget.
+    const signedIn = await waitForSignedIn(document, 3_000);
+    if (!signedIn) {
+      extLogger.info("scrape.skipped", {
+        provider: "delta",
+        reason: "not_signed_in",
+      });
+      return;
+    }
+    syncWidget.start({ label: "Delta" });
 
     const extraction = await waitForDeltaBalance(document);
 
@@ -81,7 +99,42 @@ export default defineContentScript({
   },
 });
 
+/**
+ * Poll briefly for any Delta element that only renders when the user
+ * is signed in. Three selectors cover the spots a balance-or-miles
+ * figure can appear:
+ *   - `.pax-miles` in the global header/flyout (any logged-in page)
+ *   - `.skymiles-medallion-banner` on the landing page
+ *   - `.skymiles-landing-page-tracker__container` on the dashboard
+ */
+async function waitForSignedIn(
+  doc: Document,
+  timeoutMs: number
+): Promise<boolean> {
+  const selectors = [
+    ".pax-miles",
+    ".skymiles-medallion-banner",
+    ".skymiles-landing-page-tracker__container",
+  ];
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() < deadline) {
+    for (const sel of selectors) {
+      if (doc.querySelector(sel)) return true;
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  return false;
+}
+
 function sendResult(payload: ScrapeResult) {
+  if (payload.success) {
+    syncWidget.success("Miles synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "delta",

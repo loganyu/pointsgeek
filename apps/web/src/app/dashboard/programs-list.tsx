@@ -59,6 +59,11 @@ export interface ProgramRowData {
   /** YTD earnings from an account-level scrape (e.g. Amex Marriott tile). */
   ytdBalance: number | null;
   ytdLastUpdated: string | null;
+  /** Denormalized from `points_programs.last_sync_*`. When the most
+   *  recent scrape attempt failed, `lastSyncStatus` is "failed" and the
+   *  row surfaces a red "Sync failed" badge next to the timestamp. */
+  lastSyncStatus: "ok" | "failed" | null;
+  lastSyncError: string | null;
   cards: CardRowData[];
 }
 
@@ -361,10 +366,32 @@ function RefreshIcon({ size = 12 }: { size?: number }) {
 /**
  * Last-scraped timestamp + refresh link. Clicking the icon opens the
  * program's primary sync URL so the content script can pick up fresh data.
+ *
+ * When `syncFailed` is true, the timestamp is preceded by a red
+ * "Sync failed" badge. The hover title shows the server-side error code
+ * / message so the user (and we, during support) can diagnose quickly.
  */
-function LastUpdated({ iso, url }: { iso: string; url: string }) {
+function LastUpdated({
+  iso,
+  url,
+  syncFailed = false,
+  syncError = null,
+}: {
+  iso: string;
+  url: string;
+  syncFailed?: boolean;
+  syncError?: string | null;
+}) {
   return (
     <div className="flex items-center gap-1 justify-end">
+      {syncFailed && (
+        <span
+          className="text-xs font-medium text-red-600 dark:text-red-400"
+          title={syncError ?? "Last sync attempt failed"}
+        >
+          Sync failed ·
+        </span>
+      )}
       <span className="text-xs text-text-tertiary">{timeAgo(iso)}</span>
       <a
         href={url}
@@ -491,7 +518,15 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
           {hasAnyBalance ? (
             <>
               <div className="flex items-baseline justify-end gap-2">
-                {hasYtd && (
+                {/* When BOTH total and YTD exist, YTD sits to the left of
+                 *  the total in smaller text so the right edge of every
+                 *  row aligns on the total. When only YTD is available
+                 *  (e.g. Marriott via the Amex overview tile, before a
+                 *  direct marriott.com scrape has happened), YTD takes
+                 *  the rightmost primary slot instead of leaving an
+                 *  em-dash there — otherwise the figure drifts left and
+                 *  breaks column alignment. */}
+                {hasTotal && hasYtd && (
                   <div className="text-xs tabular-nums text-text-secondary">
                     {formatBalance(program.ytdBalance!, program.currency)}{" "}
                     <span className="uppercase tracking-wide text-text-tertiary">
@@ -500,9 +535,18 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
                   </div>
                 )}
                 <div className="text-base font-semibold tabular-nums text-text-primary">
-                  {hasTotal
-                    ? formatBalance(program.totalBalance!, program.currency)
-                    : "—"}
+                  {hasTotal ? (
+                    formatBalance(program.totalBalance!, program.currency)
+                  ) : hasYtd ? (
+                    <>
+                      {formatBalance(program.ytdBalance!, program.currency)}
+                      <span className="ml-1.5 text-xs font-normal uppercase tracking-wide text-text-tertiary">
+                        YTD
+                      </span>
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </div>
               </div>
               {displayedLastUpdated && (
@@ -510,6 +554,8 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
                   <LastUpdated
                     iso={displayedLastUpdated}
                     url={program.syncUrl}
+                    syncFailed={program.lastSyncStatus === "failed"}
+                    syncError={program.lastSyncError}
                   />
                 </div>
               )}

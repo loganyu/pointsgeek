@@ -1,6 +1,7 @@
 import { waitForChaseBalance } from "../lib/scraper-chase";
 import { resolveIdentifier } from "../lib/identifier";
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type {
   ScrapeResult,
   BalanceRecord,
@@ -40,9 +41,31 @@ export default defineContentScript({
   async main() {
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "chase", url });
+    syncWidget.start({ label: "Chase" });
 
     const parsed = new URL(url);
     const host = parsed.hostname;
+
+    // Visual-test escape hatch: `?pg_test=fail|success|syncing` on any
+    // matching Chase URL short-circuits the scrape and drives the widget
+    // straight into the requested state. Useful because real failures
+    // only fire when a scraper actually breaks.
+    const testMode = parsed.searchParams.get("pg_test");
+    if (testMode) {
+      if (testMode === "fail") {
+        setTimeout(() => {
+          syncWidget.fail({
+            code: "TEST_FAILURE",
+            message:
+              "Please report issue to help us fix this.",
+          });
+        }, 900);
+      } else if (testMode === "success") {
+        setTimeout(() => syncWidget.success("Points synced"), 900);
+      }
+      // testMode === "syncing" → leave the pill in its initial syncing state.
+      return;
+    }
 
     if (parsed.pathname.includes("/account-selector")) {
       await scrapeAccountSelector();
@@ -109,6 +132,18 @@ function pollForElements(
 }
 
 function send(payload: ScrapeResult) {
+  // Drive the on-page widget alongside the background submit. The widget
+  // only cares about the scrape outcome, not the backend round-trip —
+  // we'll promote to a server-verified success later if we ever need to
+  // distinguish "scraped but upload failed" in the UI.
+  if (payload.success) {
+    syncWidget.success("Points synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "chase",

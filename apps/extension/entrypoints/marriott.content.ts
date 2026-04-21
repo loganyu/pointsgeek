@@ -1,4 +1,5 @@
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type { ScrapeResult, BalanceRecord } from "@points-geek/shared";
 
 /**
@@ -28,6 +29,10 @@ export default defineContentScript({
     const start = performance.now();
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "marriott", url });
+    // Don't mount the widget until we've confirmed the user is signed
+    // in — otherwise visiting marriott.com while logged out would flash
+    // a "Syncing Marriott…" pill that we'd silently tear down, which
+    // looks like the extension is malfunctioning.
 
     const [session, userDetails] = await Promise.all([
       fetchJson(SESSION_URL),
@@ -41,6 +46,8 @@ export default defineContentScript({
       });
       return;
     }
+
+    syncWidget.start({ label: "Marriott" });
 
     const rewardsId: string | undefined = session?.cacheData?.data?.rewardsId;
     const firstName: string | undefined = session?.cacheData?.data?.firstName;
@@ -134,6 +141,14 @@ async function fetchJson(url: string): Promise<any> {
 }
 
 function send(payload: ScrapeResult) {
+  if (payload.success) {
+    syncWidget.success("Points synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "marriott",

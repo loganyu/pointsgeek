@@ -1,6 +1,7 @@
 import { waitForCapitalOneBalance } from "../lib/scraper-capitalone";
 import { resolveIdentifier } from "../lib/identifier";
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type {
   ScrapeResult,
   BalanceRecord,
@@ -34,6 +35,7 @@ export default defineContentScript({
       isRewardsPage,
       isSummaryPage,
     });
+    syncWidget.start({ label: "Capital One" });
 
     const extraction = await waitForCapitalOneBalance(document);
 
@@ -152,6 +154,14 @@ export default defineContentScript({
 });
 
 function sendResult(payload: ScrapeResult) {
+  if (payload.success) {
+    syncWidget.success("Miles synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "capitalone",

@@ -1,5 +1,6 @@
 import { resolveIdentifier } from "../lib/identifier";
 import { extLogger } from "../lib/logger";
+import { syncWidget } from "../lib/sync-widget";
 import type {
   ScrapeResult,
   BalanceRecord,
@@ -46,11 +47,17 @@ const TRAVEL_HASH_PATTERN = /#\/dashboard\/travel/;
  */
 async function route(): Promise<void> {
   const hash = window.location.hash;
+  // Only mount the widget once a hash matches a scrape target — the Chase
+  // dashboard is a big SPA and most hashes aren't ours (transfers, offers,
+  // rewards catalog, etc.). Mounting early would flash "Syncing Chase…"
+  // on every route change.
   if (CARD_HASH_PATTERN.test(hash)) {
+    syncWidget.start({ label: "Chase" });
     await scrapeIfCardPage();
     return;
   }
   if (TRAVEL_HASH_PATTERN.test(hash)) {
+    syncWidget.start({ label: "Chase" });
     await scrapeTravelSidebar();
   }
 }
@@ -134,6 +141,9 @@ async function scrapeIfCardPage(): Promise<void> {
       mode: "card-detail",
       reason: "no_card_name",
     });
+    // Silent scrape skip → don't leave the pill spinning. This path
+    // fires when the nav bar hasn't rendered its page-name attr yet.
+    syncWidget.destroy();
     return;
   }
 
@@ -594,6 +604,14 @@ function pollUntil(
 }
 
 function sendResult(payload: ScrapeResult) {
+  if (payload.success) {
+    syncWidget.success("Points synced");
+  } else {
+    syncWidget.fail({
+      code: payload.error?.code,
+      message: payload.error?.message,
+    });
+  }
   browser.runtime.sendMessage({
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "chase",
