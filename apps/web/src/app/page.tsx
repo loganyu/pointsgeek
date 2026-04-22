@@ -1,24 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export default async function Home() {
+/**
+ * Root route has no UI of its own — the marketing/landing page lives
+ * on a separate site (Squarespace etc.) so the web app can stay
+ * focused. Authed visitors go to the dashboard; everyone else lands
+ * on the login page.
+ */
+export default async function RootPage() {
   const session = await auth();
-  if (session?.user) redirect("/dashboard");
-
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center">
-      <main className="text-center space-y-6">
-        <h1 className="text-4xl font-bold">Points Geek</h1>
-        <p className="text-lg text-text-secondary max-w-md">
-          Track your credit card points and miles across all your accounts.
-        </p>
-        <a
-          href="/api/auth/signin"
-          className="inline-block bg-text-accent text-white px-6 py-3 rounded-lg hover:bg-text-accent-hover transition-colors"
-        >
-          Sign In
-        </a>
-      </main>
-    </div>
-  );
+  redirect(session?.user ? "/dashboard" : "/login");
 }

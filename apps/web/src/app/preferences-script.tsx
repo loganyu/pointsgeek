@@ -1,22 +1,27 @@
 import { ALL_BOOLEAN_PREFERENCES } from "@/lib/preferences";
 
 /**
- * Blocking inline script that mirrors persisted preferences from
- * localStorage onto `<html>` data attributes *before* React hydrates.
+ * Inline blocking-script source: mirrors persisted preferences from
+ * localStorage onto `<html>` data attributes *before* React hydrates,
+ * so CSS (see `globals.css`) can key layout vars off those attributes
+ * and avoid a first-paint flicker.
  *
- * CSS (see `globals.css`) keys layout vars off those attributes, so the
- * first paint already reflects the user's saved state — no flicker from
- * an SSR default being overwritten in `useEffect`.
+ * Exported as a string and rendered as an inline `<script>` in the
+ * root layout's `<head>`. Why not `next/script` with
+ * `beforeInteractive`? In Next 16 it still triggers React's
+ * "scripts inside components are never executed" warning, which
+ * cascades into hydration mismatches on the body tree. Putting the
+ * `<script>` directly inside `<head>` sidesteps that: React doesn't
+ * hydrate head children, so no warning and no cascade.
  *
- * Keep the generated JS tiny and defensive: it runs synchronously in the
- * document head, and a thrown exception would block rendering.
+ * Keep the generated JS tiny and defensive: it runs synchronously in
+ * the document head, and a thrown exception would block rendering.
  */
-export function PreferencesScript() {
+export const PREFERENCES_SCRIPT_SRC: string = (() => {
   const body = ALL_BOOLEAN_PREFERENCES.map(
     (p) =>
       `v=localStorage.getItem(${JSON.stringify(p.storageKey)});` +
       `if(v!==null)d.dataset[${JSON.stringify(p.datasetKey)}]=v;`
   ).join("");
-  const src = `(function(){try{var d=document.documentElement,v;${body}}catch(e){}})();`;
-  return <script dangerouslySetInnerHTML={{ __html: src }} />;
-}
+  return `(function(){try{var d=document.documentElement,v;${body}}catch(e){}})();`;
+})();

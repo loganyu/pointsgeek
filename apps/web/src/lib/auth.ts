@@ -18,6 +18,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       from: process.env.AUTH_EMAIL_FROM || "noreply@example.com",
     }),
   ],
+  pages: {
+    // Custom routes replace NextAuth's default pages so we can brand
+    // them and show the magic-link flow clearly. `/login` doubles as
+    // NextAuth's sign-in screen; `/signup` is just new-user copy on
+    // the same magic-link plumbing.
+    signIn: "/login",
+  },
   session: { strategy: "jwt" },
   callbacks: {
     jwt({ token, user }) {

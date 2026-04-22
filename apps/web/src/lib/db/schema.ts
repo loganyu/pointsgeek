@@ -4,6 +4,7 @@ import {
   uuid,
   text,
   timestamp,
+  date,
   bigint,
   serial,
   boolean,
@@ -49,7 +50,31 @@ export const syncReportStatusEnum = pgEnum("sync_report_status", [
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
+  /** Full-name string written by NextAuth on OAuth sign-in; kept for
+   *  backwards compat with the adapter. Prefer `firstName`/`lastName`
+   *  for display since those are user-edited in the welcome flow. */
   name: text("name"),
+  /** Collected in the `/welcome` onboarding form. Gates access to the
+   *  dashboard/accounts/settings pages — users without a `firstName`
+   *  are redirected into onboarding. Editable in Settings. */
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  /** "Do you manage finances with a partner?" — null = not asked /
+   *  answered, true/false = their choice. Captured for a future
+   *  partner-accounts feature; no behavior attached yet. */
+  hasPartner: boolean("has_partner"),
+  /** Birthday as a calendar date (`YYYY-MM-DD`). Optional in both
+   *  onboarding and Settings — stored in PG's `date` type so it has
+   *  no timezone semantics. */
+  birthday: date("birthday", { mode: "string" }),
+  /** IANA timezone string, e.g. "America/New_York". Captured in the
+   *  welcome form (pre-filled to the browser's detected zone) and
+   *  editable in Settings. */
+  timezone: text("timezone"),
+  /** Profile picture stored as a base64 data URL (`data:image/...`).
+   *  Good enough for the alpha — upgrade to object storage (R2 / Vercel
+   *  Blob) once deployed so the DB doesn't inflate with large blobs. */
+  profileImage: text("profile_image"),
   email: text("email").unique().notNull(),
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),

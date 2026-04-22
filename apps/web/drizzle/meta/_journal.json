@@ -57,6 +57,27 @@
       "when": 1776720358720,
       "tag": "0007_lumpy_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776783922457,
+      "tag": "0008_salty_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776786167324,
+      "tag": "0009_secret_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776789592238,
+      "tag": "0010_first_shriek",
+      "breakpoints": true
     }
   ]
 }

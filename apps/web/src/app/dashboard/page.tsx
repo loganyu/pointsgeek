@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { requireCompletedProfile } from "@/lib/onboarding";
 import { db } from "@/lib/db";
 import {
   balanceSnapshots,
@@ -22,9 +23,10 @@ import { AppShell } from "../app-shell";
 
 export default async function DashboardPage() {
   const session = await auth();
-  if (!session?.user) redirect("/api/auth/signin");
+  if (!session?.user) redirect("/login");
 
   const userId = session.user.id!;
+  await requireCompletedProfile(userId);
 
   // Fetch every loyalty-program instance + card for this user.
   const [userPrograms, userCards] = await Promise.all([

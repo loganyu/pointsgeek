@@ -1,10 +1,12 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { requireCompletedProfile } from "@/lib/onboarding";
 import { AppShell } from "../app-shell";
 
 export default async function AccountsPage() {
   const session = await auth();
-  if (!session?.user) redirect("/api/auth/signin");
+  if (!session?.user) redirect("/login");
+  await requireCompletedProfile(session.user.id!);
 
   return (
     <AppShell

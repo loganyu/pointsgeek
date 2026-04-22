@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "./theme-provider";
-import { PreferencesScript } from "./preferences-script";
+import { PREFERENCES_SCRIPT_SRC } from "./preferences-script";
 import "./globals.css";
 
 // Self-hosted Geist variable fonts. One .woff2 per family covers every
@@ -64,8 +64,15 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Inline preference-mirroring script lives in <head> so it
+         *  executes before the body renders and React doesn't try to
+         *  hydrate it — sidesteps both the "script inside component"
+         *  warning and the cascading hydration mismatch that warning
+         *  produces. */}
+        <script dangerouslySetInnerHTML={{ __html: PREFERENCES_SCRIPT_SRC }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <PreferencesScript />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
