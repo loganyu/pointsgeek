@@ -23,7 +23,9 @@ import { AppShell } from "../app-shell";
 
 export default async function DashboardPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  // Preserve the intended destination (Monarch-style `?route=...`) so
+  // the user lands back on /dashboard the moment they finish signing in.
+  if (!session?.user) redirect("/login?route=%2Fdashboard");
 
   const userId = session.user.id!;
   await requireCompletedProfile(userId);

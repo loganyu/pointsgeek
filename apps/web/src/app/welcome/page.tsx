@@ -18,7 +18,7 @@ export const metadata = {
  */
 export default async function WelcomePage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/login?route=%2Fwelcome");
 
   const userId = session.user.id!;
   const [user] = await db

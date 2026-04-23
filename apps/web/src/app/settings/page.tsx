@@ -13,7 +13,7 @@ const MAX_IMAGE_BYTES = 500 * 1024;
 
 export default async function SettingsPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/login?route=%2Fsettings");
   const userId = session.user.id!;
   await requireCompletedProfile(userId);
 

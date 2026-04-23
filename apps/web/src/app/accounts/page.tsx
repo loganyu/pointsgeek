@@ -5,7 +5,7 @@ import { AppShell } from "../app-shell";
 
 export default async function AccountsPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/login?route=%2Faccounts");
   await requireCompletedProfile(session.user.id!);
 
   return (
