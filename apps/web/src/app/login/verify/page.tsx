@@ -1,31 +1,36 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { AuthForm } from "../login/auth-form";
+import { VerifyForm } from "./verify-form";
 
 export const metadata = {
-  title: "Sign up — PointsGeek",
+  title: "Verify code — PointsGeek",
 };
 
 /**
- * New-user Sign Up page. Identical plumbing to /login — Google OAuth
- * or email magic link — but the copy targets people creating an
- * account for the first time. NextAuth's `pages.signIn` still points
- * at `/login`; this route exists purely so the "Sign up" CTA has a
- * natural home with new-user framing.
+ * Code-entry page after the user submits their email on /login or
+ * /signup. Lands here with `?email=<addr>&route=<dest>` so we can
+ * pre-fill the form and forward the post-sign-in destination on
+ * through to NextAuth's callback.
  *
- * Supports the same `?route=/path` param as /login so a deep link
- * can carry its intended destination through the signup flow too.
+ * The same 6-digit code that appears in the email also makes up the
+ * `token` query param on the magic link, so the user can either
+ * click the link in their inbox or type the code here — both end up
+ * at /api/auth/callback/resend with identical params.
  */
-export default async function SignUpPage({
+export default async function VerifyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ route?: string }>;
+  searchParams: Promise<{ email?: string; route?: string }>;
 }) {
   const session = await auth();
-  const { route } = await searchParams;
+  const { email, route } = await searchParams;
   const callbackUrl = sanitizeRoute(route);
   if (session?.user) redirect(callbackUrl);
+
+  // No email in the URL means the user landed here directly without
+  // going through /login. Bounce them back so they can request a code.
+  if (!email) redirect(routeToLogin(route));
 
   return (
     <main className="min-h-screen flex items-start justify-center bg-background px-4 pt-16 pb-12 sm:pt-24">
@@ -45,29 +50,23 @@ export default async function SignUpPage({
           </span>
         </div>
         <div className="rounded-xl border border-border bg-surface p-6">
-          <h1 className="text-xl font-bold text-text-primary mb-1">Sign Up</h1>
+          <h1 className="text-xl font-bold text-text-primary mb-1">
+            Check your email
+          </h1>
           <p className="text-sm text-text-secondary mb-5">
-            Track your credit card rewards in one place. No password — continue
-            with Google or we&apos;ll email you a 6-digit sign-up code.
+            We sent a 6-digit code to{" "}
+            <span className="font-semibold text-text-primary">{email}</span>.
+            Enter it below to sign in.
           </p>
-          <AuthForm
-            emailButtonLabel="Sign up with email"
-            callbackUrl={callbackUrl}
-          />
-          <p className="mt-5 text-xs text-text-tertiary text-center">
-            By continuing you agree to PointsGeek&apos;s terms of use and
-            privacy policy.
-          </p>
+          <VerifyForm email={email} callbackUrl={callbackUrl} />
         </div>
         <p className="text-sm text-text-secondary text-center mt-5">
-          Already have an account?{" "}
+          Didn&apos;t get a code?{" "}
           <Link
-            href={
-              route ? `/login?route=${encodeURIComponent(route)}` : "/login"
-            }
+            href={routeToLogin(route)}
             className="font-semibold text-text-accent hover:text-text-accent-hover transition-colors"
           >
-            Log in
+            Try a different email
           </Link>
         </p>
       </div>
@@ -75,13 +74,12 @@ export default async function SignUpPage({
   );
 }
 
-/**
- * Accepts only same-origin paths. Matches `/login`'s sanitizer so
- * cross-referenced routes (e.g. "Already have an account? Log in")
- * carry identical safety rules.
- */
 function sanitizeRoute(route: string | undefined): string {
   if (!route) return "/dashboard";
   if (!route.startsWith("/") || route.startsWith("//")) return "/dashboard";
   return route;
+}
+
+function routeToLogin(route: string | undefined): string {
+  return route ? `/login?route=${encodeURIComponent(route)}` : "/login";
 }

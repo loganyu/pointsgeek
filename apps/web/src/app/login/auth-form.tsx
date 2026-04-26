@@ -1,28 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 /**
  * Shared sign-in form for /login and /signup. Same plumbing, different
- * copy: Google OAuth button + email magic link. After the user
- * submits their email, we show a "check your inbox" confirmation and
- * hide the form — the magic link lands them back in the app.
+ * copy: Google OAuth button + email code. After the user submits their
+ * email we trigger the Resend provider (which mails them a 6-digit
+ * code that doubles as the magic-link token) and forward them to
+ * /login/verify to enter the code. The link still works as a fallback.
  */
 export function AuthForm({
   emailButtonLabel,
-  sentMessage,
   callbackUrl = "/dashboard",
 }: {
   emailButtonLabel: string;
-  sentMessage: string;
   /** Where NextAuth should send the user after successful sign-in.
    *  Typically the `?route=` param captured on /login and /signup. */
   callbackUrl?: string;
 }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function onGoogle() {
@@ -35,12 +35,13 @@ export function AuthForm({
 
   async function onEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!email.trim()) return;
+    const trimmed = email.trim();
+    if (!trimmed) return;
     setSubmitting(true);
     setError(null);
     try {
       const result = await signIn("resend", {
-        email: email.trim(),
+        email: trimmed,
         redirect: false,
         callbackUrl,
       });
@@ -48,33 +49,21 @@ export function AuthForm({
         setError("We couldn't send the sign-in email. Try again in a moment.");
         return;
       }
-      setSent(true);
+      // Hand off to the code-entry page. The user gets the code via
+      // email; we pre-fill their address so they only have to type
+      // the digits. `route` carries the original post-sign-in target
+      // through to NextAuth's callback.
+      const verifyUrl = new URL("/login/verify", window.location.origin);
+      verifyUrl.searchParams.set("email", trimmed);
+      if (callbackUrl && callbackUrl !== "/dashboard") {
+        verifyUrl.searchParams.set("route", callbackUrl);
+      }
+      router.push(verifyUrl.pathname + verifyUrl.search);
     } catch {
       setError("We couldn't send the sign-in email. Try again in a moment.");
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="rounded-lg border border-border bg-background p-4 text-center">
-        <p className="text-sm font-medium text-text-primary">{sentMessage}</p>
-        <p className="mt-1 text-xs text-text-tertiary">
-          Sent to {email}. The link is good for a short time.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setSent(false);
-            setEmail("");
-          }}
-          className="mt-3 text-sm font-semibold text-text-accent hover:text-text-accent-hover transition-colors"
-        >
-          Use a different email
-        </button>
-      </div>
-    );
   }
 
   return (

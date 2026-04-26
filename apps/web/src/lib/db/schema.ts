@@ -119,6 +119,13 @@ export const verificationTokens = pgTable(
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
     expires: timestamp("expires", { mode: "date" }).notNull(),
+    /** Failed verification attempts for the row's `(identifier, token)`.
+     *  Used by our custom `useVerificationToken` wrapper to lock the
+     *  6-digit code after 5 wrong tries — small enough to make brute
+     *  force infeasible without aggressive rate limiting. NextAuth's
+     *  default email provider doesn't read this column; only our
+     *  wrapper does. */
+    attempts: integer("attempts").notNull().default(0),
   },
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
 );

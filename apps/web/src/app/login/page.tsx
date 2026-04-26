@@ -20,12 +20,17 @@ export const metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ route?: string }>;
+  searchParams: Promise<{ route?: string; error?: string }>;
 }) {
   const session = await auth();
-  const { route } = await searchParams;
+  const { route, error } = await searchParams;
   const callbackUrl = sanitizeRoute(route);
   if (session?.user) redirect(callbackUrl);
+
+  // NextAuth bounces here with `?error=Verification` after a wrong or
+  // expired code. Show a friendly inline message so the user knows
+  // why they were kicked back instead of getting silent re-entry.
+  const errorMessage = errorCopy(error);
 
   return (
     <main className="min-h-screen flex items-start justify-center bg-background px-4 pt-16 pb-12 sm:pt-24">
@@ -47,12 +52,16 @@ export default async function LoginPage({
         <div className="rounded-xl border border-border bg-surface p-6">
           <h1 className="text-xl font-bold text-text-primary mb-1">Log In</h1>
           <p className="text-sm text-text-secondary mb-5">
-            Welcome back. Continue with Google or we&apos;ll email you a magic
-            sign-in link.
+            Welcome back. Continue with Google or we&apos;ll email you a 6-digit
+            sign-in code.
           </p>
+          {errorMessage && (
+            <div className="mb-4 rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2.5 text-xs text-red-700 dark:text-red-300">
+              {errorMessage}
+            </div>
+          )}
           <AuthForm
-            emailButtonLabel="Send magic link"
-            sentMessage="Check your inbox — we sent a sign-in link."
+            emailButtonLabel="Send sign-in code"
             callbackUrl={callbackUrl}
           />
         </div>
@@ -81,4 +90,17 @@ function sanitizeRoute(route: string | undefined): string {
   if (!route) return "/dashboard";
   if (!route.startsWith("/") || route.startsWith("//")) return "/dashboard";
   return route;
+}
+
+/**
+ * Map NextAuth's error codes to user-facing copy. We mostly care about
+ * `Verification` (wrong/expired code) — other auth errors are rare
+ * enough to share a generic catch-all.
+ */
+function errorCopy(error: string | undefined): string | null {
+  if (!error) return null;
+  if (error === "Verification") {
+    return "That code was invalid or has expired. Enter your email below to get a new one.";
+  }
+  return "Something went wrong signing you in. Please try again.";
 }

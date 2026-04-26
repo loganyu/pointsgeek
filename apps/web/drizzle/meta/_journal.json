@@ -78,6 +78,13 @@
       "when": 1776789592238,
       "tag": "0010_first_shriek",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777236600165,
+      "tag": "0011_wealthy_thor",
+      "breakpoints": true
     }
   ]
 }
