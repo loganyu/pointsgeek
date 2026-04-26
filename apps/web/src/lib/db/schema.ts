@@ -17,6 +17,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 // --- Enums ---
 
 export const providerEnum = pgEnum("provider", [
+  "aa",
   "amex",
   "chase",
   "capitalone",
@@ -169,11 +170,18 @@ export const pointsPrograms = pgTable(
     lastSyncError: text("last_sync_error"),
   },
   (t) => [
-    unique("uniq_user_program_external_account").on(
-      t.userId,
-      t.programKey,
-      t.externalAccountId
-    ),
+    // One row per (user, program). We deliberately don't include
+    // `externalAccountId` in the key so multiple scrapers reporting the
+    // same program (Citi cobrand AA card + AA.com graphql) collapse to
+    // a single row. The `externalAccountId` becomes informational only —
+    // upgraded over time to a `loyalty:<id>` form when an authoritative
+    // scraper learns the loyalty number, but never used for dedupe.
+    //
+    // Tradeoff: we don't support a user having two distinct accounts in
+    // the same program (e.g. their own AAdvantage and a partner's). If
+    // we ever need that, add an `account_label` column and key on
+    // (user, program_key, account_label) instead.
+    unique("uniq_user_program").on(t.userId, t.programKey),
   ]
 );
 

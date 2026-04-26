@@ -14,7 +14,6 @@ import { logger } from "@/lib/logger";
 import {
   PROGRAM_CATALOG,
   type ProgramKey,
-  type BalanceRecord,
   type DiscoveredCard,
   type Provider,
 } from "@points-geek/shared";
@@ -25,8 +24,11 @@ import {
  *   1. Always write a `scrape_events` row for telemetry.
  *   2. If the scrape failed or carries no balances, stop there.
  *   3. Otherwise:
- *      a) upsert a `points_programs` row for every distinct
- *         (user, programKey, externalAccountId) combo.
+ *      a) upsert one `points_programs` row per (user, programKey).
+ *         The first scraper to report a program creates it; later
+ *         scrapers find it and (optionally) upgrade its
+ *         `externalAccountId` from a fingerprint like `name:logan`
+ *         to a `loyalty:<id>` form once we learn the loyalty number.
  *      b) upsert every discovered `cards` row under its program.
  *      c) for each balance, resolve (programId, cardId), apply the
  *         daily-dedup rule (skip if latest row on UTC today has the
@@ -151,57 +153,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Collect payload-side last-fours per programKey so we can dedup against
-    // an existing program via card identity. Chase's partner page reports
-    // the same card (e.g. United Gateway ...8072) as united.com/myunited;
-    // without this step the two scrapers would spawn separate
-    // `united_mileageplus` rows since only united.com knows the
-    // MileagePlus number.
-    const lastFoursByProgramKey = new Map<ProgramKey, Set<string>>();
-    for (const c of discoveredCards ?? []) {
-      if (!c.programKey || !c.lastFour) continue;
-      if (!lastFoursByProgramKey.has(c.programKey)) {
-        lastFoursByProgramKey.set(c.programKey, new Set());
-      }
-      lastFoursByProgramKey.get(c.programKey)!.add(c.lastFour);
-    }
-    for (const b of balances) {
-      const lf = b.linkedCard?.lastFour;
-      if (!lf) continue;
-      if (!lastFoursByProgramKey.has(b.programKey)) {
-        lastFoursByProgramKey.set(b.programKey, new Set());
-      }
-      lastFoursByProgramKey.get(b.programKey)!.add(lf);
-    }
-
-    // Program-level total balances per programKey — the landing-page flow
-    // (united.com nav-bar) has a miles figure but no cards, so card-based
-    // dedup can't help it converge with a program that was first created
-    // by the chaseloyalty scraper. Matching on the most recent program
-    // total is the secondary signal. Per-card balances are excluded — they
-    // can coincide across accounts for a given card and aren't a reliable
-    // account identifier.
-    const programTotalsByKey = new Map<ProgramKey, number[]>();
-    for (const b of balances) {
-      if (b.linkedCard) continue;
-      if (b.balanceType !== "total") continue;
-      if (!programTotalsByKey.has(b.programKey)) {
-        programTotalsByKey.set(b.programKey, []);
-      }
-      programTotalsByKey.get(b.programKey)!.push(b.balance);
-    }
-
     const programIdByKey = new Map<ProgramKey, string>();
     for (const [programKey, accountId] of accountByProgramKey) {
-      const lastFours = Array.from(lastFoursByProgramKey.get(programKey) ?? []);
-      const programTotals = programTotalsByKey.get(programKey) ?? [];
       const id = await resolveProgramId({
         userId,
         programKey,
         externalAccountId: accountId,
         ownerLabel,
-        payloadLastFours: lastFours,
-        payloadProgramTotals: programTotals,
       });
       programIdByKey.set(programKey, id);
     }
@@ -363,138 +321,25 @@ export async function GET() {
  *      last-four already belongs to a card under an existing program
  *      (same user + programKey), reuse that program. Covers
  *      chaseloyalty + /myunited agreeing on "Gateway …8072".
- *   2. Program-level total balance — when no card overlap is possible
- *      (e.g., the united.com landing page reports miles but no card),
- *      reuse an existing program whose most recent program-level total
- *      equals a balance in this payload. Zero-balance doesn't count
- *      (two fresh accounts would falsely merge). Implicit assumption:
- *      the user hasn't spent points between the two scrapes.
- *   3. Fall back to (user, programKey, externalAccountId) and insert
- *      if nothing exists.
  *
- * Whenever a match is found, we opportunistically upgrade the existing
- * program's `externalAccountId` to a `loyalty:…` id when the payload
- * supplies one, and fill in a missing `ownerLabel`.
+ * Under the one-row-per-(user, program) model the dedupe logic is
+ * trivial: SELECT by (user_id, program_key), upgrade `externalAccountId`
+ * to a `loyalty:…` form when the payload supplies one, fill in a
+ * better `ownerLabel`, otherwise INSERT.
  */
 async function resolveProgramId(args: {
   userId: string;
   programKey: ProgramKey;
   externalAccountId: string;
   ownerLabel: string | null | undefined;
-  payloadLastFours: string[];
-  payloadProgramTotals: number[];
 }): Promise<string> {
-  const {
-    userId,
-    programKey,
-    externalAccountId,
-    ownerLabel,
-    payloadLastFours,
-    payloadProgramTotals,
-  } = args;
+  const { userId, programKey, externalAccountId, ownerLabel } = args;
 
-  const match =
-    (await findProgramByCardLastFour(userId, programKey, payloadLastFours)) ??
-    (await findProgramByLatestTotal(userId, programKey, payloadProgramTotals));
-
-  if (match) {
-    const nextExternalId = preferExternalAccountId(
-      match.currentExternalId,
-      externalAccountId
-    );
-    const nextOwnerLabel = preferOwnerLabel(
-      match.currentOwnerLabel,
-      ownerLabel
-    );
-    if (
-      nextExternalId !== match.currentExternalId ||
-      nextOwnerLabel !== match.currentOwnerLabel
-    ) {
-      await db
-        .update(pointsPrograms)
-        .set({
-          externalAccountId: nextExternalId,
-          ownerLabel: nextOwnerLabel,
-        })
-        .where(eq(pointsPrograms.id, match.programId));
-      logger.info(
-        {
-          userId,
-          programKey,
-          via: match.via,
-          from: match.currentExternalId,
-          to: nextExternalId,
-        },
-        "Program consolidated"
-      );
-    }
-    return match.programId;
-  }
-
-  return upsertProgramByExternalId(
-    userId,
-    programKey,
-    externalAccountId,
-    ownerLabel
-  );
-}
-
-interface ExistingProgramMatch {
-  programId: string;
-  currentExternalId: string;
-  currentOwnerLabel: string | null;
-  via: "card_last4" | "latest_total";
-}
-
-async function findProgramByCardLastFour(
-  userId: string,
-  programKey: ProgramKey,
-  lastFours: string[]
-): Promise<ExistingProgramMatch | null> {
-  if (lastFours.length === 0) return null;
-  const rows = await db
-    .select({
-      programId: cards.programId,
-      currentExternalId: pointsPrograms.externalAccountId,
-      currentOwnerLabel: pointsPrograms.ownerLabel,
-    })
-    .from(cards)
-    .innerJoin(pointsPrograms, eq(cards.programId, pointsPrograms.id))
-    .where(
-      and(
-        eq(cards.userId, userId),
-        eq(pointsPrograms.programKey, programKey),
-        inArray(cards.lastFour, lastFours)
-      )
-    )
-    .limit(1);
-  const row = rows[0];
-  if (!row) return null;
-  return { ...row, via: "card_last4" };
-}
-
-/**
- * Look for an existing program whose most recent program-level total
- * matches any balance in the payload. Used as the tie-breaker when no
- * card overlap is available (e.g. the united.com landing page scrape,
- * which reports miles but no Chase card list).
- *
- * Only non-zero balances qualify — matching at zero would merge two
- * brand-new accounts that simply haven't earned miles yet.
- */
-async function findProgramByLatestTotal(
-  userId: string,
-  programKey: ProgramKey,
-  balances: number[]
-): Promise<ExistingProgramMatch | null> {
-  const candidates = Array.from(new Set(balances)).filter((b) => b > 0);
-  if (candidates.length === 0) return null;
-
-  const programs = await db
+  const existing = await db
     .select({
       id: pointsPrograms.id,
-      externalAccountId: pointsPrograms.externalAccountId,
-      ownerLabel: pointsPrograms.ownerLabel,
+      currentExternalId: pointsPrograms.externalAccountId,
+      currentOwnerLabel: pointsPrograms.ownerLabel,
     })
     .from(pointsPrograms)
     .where(
@@ -502,34 +347,62 @@ async function findProgramByLatestTotal(
         eq(pointsPrograms.userId, userId),
         eq(pointsPrograms.programKey, programKey)
       )
-    );
+    )
+    .limit(1);
 
-  for (const program of programs) {
-    const latest = await db
-      .select({ balance: balanceSnapshots.balance })
-      .from(balanceSnapshots)
-      .where(
-        and(
-          eq(balanceSnapshots.userId, userId),
-          eq(balanceSnapshots.programId, program.id),
-          isNull(balanceSnapshots.cardId),
-          eq(balanceSnapshots.balanceType, "total")
-        )
-      )
-      .orderBy(desc(balanceSnapshots.scrapedAt))
-      .limit(1);
-    if (latest.length === 0) continue;
-    const latestBalance = Number(latest[0].balance);
-    if (candidates.includes(latestBalance)) {
-      return {
-        programId: program.id,
-        currentExternalId: program.externalAccountId,
-        currentOwnerLabel: program.ownerLabel,
-        via: "latest_total",
-      };
+  if (existing.length > 0) {
+    const row = existing[0];
+    const nextExternalId = preferExternalAccountId(
+      row.currentExternalId,
+      externalAccountId
+    );
+    const nextOwnerLabel = preferOwnerLabel(
+      row.currentOwnerLabel,
+      ownerLabel
+    );
+    if (
+      nextExternalId !== row.currentExternalId ||
+      nextOwnerLabel !== row.currentOwnerLabel
+    ) {
+      await db
+        .update(pointsPrograms)
+        .set({
+          externalAccountId: nextExternalId,
+          ownerLabel: nextOwnerLabel,
+        })
+        .where(eq(pointsPrograms.id, row.id));
+      if (nextExternalId !== row.currentExternalId) {
+        logger.info(
+          {
+            userId,
+            programKey,
+            from: row.currentExternalId,
+            to: nextExternalId,
+          },
+          "Program identifier upgraded"
+        );
+      }
     }
+    return row.id;
   }
-  return null;
+
+  const meta = PROGRAM_CATALOG[programKey];
+  const inserted = await db
+    .insert(pointsPrograms)
+    .values({
+      userId,
+      programKey,
+      externalAccountId,
+      ownerLabel: ownerLabel ?? null,
+      programType: meta.programType,
+    })
+    .returning({ id: pointsPrograms.id });
+
+  logger.info(
+    { userId, programKey, externalAccountId, ownerLabel },
+    "Program created"
+  );
+  return inserted[0].id;
 }
 
 /**
@@ -567,58 +440,6 @@ function preferOwnerLabel(
   if (!inc) return cur;
   if (!cur) return inc;
   return inc.length > cur.length ? inc : cur;
-}
-
-async function upsertProgramByExternalId(
-  userId: string,
-  programKey: ProgramKey,
-  externalAccountId: string,
-  ownerLabel: string | null | undefined
-): Promise<string> {
-  const existing = await db
-    .select({
-      id: pointsPrograms.id,
-      ownerLabel: pointsPrograms.ownerLabel,
-    })
-    .from(pointsPrograms)
-    .where(
-      and(
-        eq(pointsPrograms.userId, userId),
-        eq(pointsPrograms.programKey, programKey),
-        eq(pointsPrograms.externalAccountId, externalAccountId)
-      )
-    )
-    .limit(1);
-
-  if (existing.length > 0) {
-    const row = existing[0];
-    const nextOwnerLabel = preferOwnerLabel(row.ownerLabel, ownerLabel);
-    if (nextOwnerLabel !== row.ownerLabel) {
-      await db
-        .update(pointsPrograms)
-        .set({ ownerLabel: nextOwnerLabel })
-        .where(eq(pointsPrograms.id, row.id));
-    }
-    return row.id;
-  }
-
-  const meta = PROGRAM_CATALOG[programKey];
-  const inserted = await db
-    .insert(pointsPrograms)
-    .values({
-      userId,
-      programKey,
-      externalAccountId,
-      ownerLabel: ownerLabel ?? null,
-      programType: meta.programType,
-    })
-    .returning({ id: pointsPrograms.id });
-
-  logger.info(
-    { userId, programKey, externalAccountId, ownerLabel },
-    "Program created"
-  );
-  return inserted[0].id;
 }
 
 async function upsertCard(

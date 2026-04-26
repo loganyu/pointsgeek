@@ -86,6 +86,20 @@ export const PROGRAM_CATALOG = {
     short: "AMZ",
     primarySyncUrl: "https://secure.chase.com/web/auth/dashboard",
   },
+  aa_aadvantage: {
+    // American Airlines AAdvantage. Two providers feed this programKey:
+    //  - aa.com (authoritative, via /services/graphql)
+    //  - online.citi.com (cobrand cards display the AAdvantage balance)
+    // They dedupe by `loyalty:<advantageNumber>` — same dedupe pattern
+    // as Delta SkyMiles via amex.com vs. delta.com.
+    programType: "airline",
+    brandSlug: "aa",
+    currency: "miles",
+    displayName: "AAdvantage",
+    short: "AA",
+    primarySyncUrl:
+      "https://www.aa.com/aadvantage-program/profile/account-summary",
+  },
 } as const satisfies Record<
   string,
   {

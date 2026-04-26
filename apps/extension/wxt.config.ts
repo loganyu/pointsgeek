@@ -5,6 +5,7 @@ import { loadEnv } from "vite";
  * Sites the extension reads balances from. Stable across all builds.
  */
 const FINANCIAL_SITES = [
+  "https://www.aa.com/*",
   "https://www.americanexpress.com/*",
   "https://global.americanexpress.com/*",
   "https://ultimaterewardspoints.chase.com/*",
@@ -12,6 +13,7 @@ const FINANCIAL_SITES = [
   "https://secure.chase.com/*",
   "https://myaccounts.capitalone.com/*",
   "https://verified.capitalone.com/*",
+  "https://online.citi.com/*",
   "https://www.delta.com/*",
   "https://www.united.com/*",
   "https://www.marriott.com/*",

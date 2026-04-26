@@ -39,9 +39,10 @@ export default async function DashboardPage() {
     db.select().from(cards).where(eq(cards.userId, userId)),
   ]);
 
-  // Build one ProgramRowData per points_programs row. A user with two Amex
-  // logins will therefore get two `amex_mr` rows — the `externalAccountId`
-  // keeps them apart and the owner chip disambiguates them visually.
+  // Build one ProgramRowData per points_programs row. There is exactly
+  // one row per (user, programKey) — multiple scrapers reporting the
+  // same program collapse to the same row, with the most-specific
+  // `externalAccountId` (loyalty:* form) winning over fingerprints.
   const rows: (ProgramRowData | null)[] = await Promise.all(
     userPrograms.map(async (p) => {
       const meta = PROGRAM_CATALOG[p.programKey as ProgramKey];

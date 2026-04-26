@@ -7,9 +7,11 @@ import type { ProgramKey } from "./programs";
  * and amex_reward_dollars in a single scrape.
  */
 export const PROVIDERS = [
+  "aa",
   "amex",
   "chase",
   "capitalone",
+  "citi",
   "delta",
   "united",
   "marriott",
