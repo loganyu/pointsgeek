@@ -15,12 +15,7 @@
  * ships a redacted DOM subtree back to our API.
  */
 
-/**
- * Web app base URL. Kept in sync with the other copies in
- * `lib/api.ts`, `lib/auth-flow.ts`, and `entrypoints/popup/App.tsx`.
- * When we move off localhost, replace all four in one pass.
- */
-const WEB_BASE = "http://localhost:3000";
+import { WEB_BASE } from "./config";
 
 type WidgetState = "idle" | "syncing" | "success" | "failed";
 

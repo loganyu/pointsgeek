@@ -1,6 +1,7 @@
 import { useState, useEffect, CSSProperties } from "react";
 import { getState, type StoredBalance } from "../../lib/storage";
 import { signInWithGoogle, signOut } from "../../lib/auth";
+import { WEB_BASE } from "../../lib/config";
 import { PROGRAM_CATALOG, type ProgramKey } from "@points-geek/shared";
 
 interface UserInfo {
@@ -8,9 +9,6 @@ interface UserInfo {
   email: string;
   image: string | null;
 }
-
-// Web app base URL. Will become env-driven once the staging deploy lands.
-const WEB_BASE = "http://localhost:3000";
 
 type Theme = "light" | "dark";
 const THEME_STORAGE_KEY = "pg-theme";

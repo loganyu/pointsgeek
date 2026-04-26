@@ -1,5 +1,6 @@
 import { setAuth, clearAuth, setLastError } from "./storage";
 import { extLogger } from "./logger";
+import { WEB_BASE as API_BASE } from "./config";
 
 /**
  * Background-side sign-in/out implementation. Runs inside the service
@@ -11,7 +12,6 @@ import { extLogger } from "./logger";
  * The popup talks to this via `browser.runtime.sendMessage({type:"SIGN_IN_REQUEST"})`.
  */
 
-const API_BASE = "http://localhost:3000";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export interface AuthFlowResult {
