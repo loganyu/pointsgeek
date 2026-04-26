@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm --filter @points-geek/web dev",
     "dev:ext": "pnpm --filter @points-geek/extension dev",
-    "build": "pnpm --filter @points-geek/shared build && pnpm --filter @points-geek/web build",
+    "build": "pnpm --filter @points-geek/web build",
     "build:ext": "pnpm --filter @points-geek/shared build && pnpm --filter @points-geek/extension build",
     "lint": "pnpm -r lint",
     "test": "vitest run",
