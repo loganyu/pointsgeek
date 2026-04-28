@@ -13,11 +13,18 @@ import type { ScrapeResult, BalanceRecord } from "@points-geek/shared";
  * With `credentials: "same-origin"` on our fetch, the cookie rides along
  * automatically — no Authorization header to extract.
  *
- * The `access_token` itself is HttpOnly so JS can't see it via
- * `document.cookie`. AA exposes a parallel non-HttpOnly `at_check=true`
- * flag for exactly this purpose — we poll *that* as the signed-in probe
- * with exponential backoff so signing in mid-page-life still triggers a
- * scrape, then bail silently if it never appears (signed-out tab).
+ * Sign-in detection has a subtle gotcha: `at_check=true` is *sticky*.
+ * AA sets it on first login and never clears it on sign-out. So the
+ * cookie alone isn't a reliable "auth is fresh" signal — it just means
+ * "this browser was authenticated at some point". Without further
+ * verification we'd flash "Syncing AA…" / "Sync failed" on the login
+ * page after sign-out.
+ *
+ * Strategy: use `at_check` as a cheap "have we ever been signed in?"
+ * gate, then always run a silent bootstrap GraphQL call to verify the
+ * access_token is *currently* valid. Only mount the widget once that
+ * confirms — stale auth becomes a silent skip instead of a visible
+ * failure.
  *
  * AA doesn't issue cards directly (Citi and Barclays do), so this
  * scraper produces a single program-level balance and no card discovery.
@@ -63,22 +70,6 @@ interface MemberResponse {
   errors?: unknown;
 }
 
-/** Synthesised shape returned by `fetchCustomer`. Mirrors the original
- *  nested shape so the caller doesn't need to change. */
-interface CustomerResponse {
-  data?: {
-    customer?: {
-      advantageNumber?: string;
-      memberInformation?: {
-        advantageNumber?: string;
-        name?: string;
-        loyaltyBalance?: number;
-      };
-    };
-  };
-  errors?: unknown;
-}
-
 export default defineContentScript({
   matches: ["https://www.aa.com/*"],
   async main() {
@@ -86,11 +77,8 @@ export default defineContentScript({
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "aa", url });
 
-    // Probe for sign-in via the at_check cookie (the readable companion
-    // to the HttpOnly access_token). User might sign in mid-page-life
-    // — back off and retry for up to 3 minutes before giving up. Don't
-    // mount the widget until we confirm sign-in, otherwise the marketing
-    // homepage flashes "Syncing AA…" for the entire poll budget.
+    // Step 1: cheap check — has this browser ever been signed in?
+    // No `at_check` ever means we shouldn't even hit the network.
     const signedIn = await waitForSignIn();
     if (!signedIn) {
       extLogger.info("scrape.skipped", {
@@ -99,41 +87,54 @@ export default defineContentScript({
       });
       return;
     }
+
+    // Step 2: silent bootstrap — verify auth is *currently* valid.
+    // Done before mounting the widget so a stale `at_check=true` (left
+    // behind by a previous sign-in) becomes a silent skip rather than
+    // a visible "Sync failed" on the login page. If this returns no
+    // advantageNumber, the access_token has expired or been cleared;
+    // nothing to scrape.
+    const bootstrap = await graphqlPost<BootstrapResponse>(
+      "CustomerBootstrap",
+      BOOTSTRAP_QUERY,
+      {},
+    );
+    const advantageNumber = bootstrap?.data?.customer?.advantageNumber;
+    if (!advantageNumber) {
+      extLogger.info("scrape.skipped", {
+        provider: "aa",
+        reason: "auth_bootstrap_failed",
+      });
+      return;
+    }
+
+    // Step 3: auth confirmed → mount widget and fetch the actual data.
     syncWidget.start({ label: "AA" });
 
-    const json = await fetchCustomer();
+    const member = await graphqlPost<MemberResponse>(
+      "MemberInformation",
+      MEMBER_QUERY,
+      { advantageNumber },
+    );
+    const memberInfo = member?.data?.memberInformation;
+    const rawBalance = memberInfo?.loyaltyBalance;
 
-    if (!json) {
+    if (!memberInfo || rawBalance == null) {
+      // Bootstrap succeeded moments ago, so this is a real API issue
+      // — surface it as a failure rather than a silent skip.
       extLogger.warn("scrape.failed", {
         provider: "aa",
-        reason: "graphql_request_failed",
+        reason: "member_query_failed",
       });
       send({
         success: false,
         error: {
           code: "API_ERROR",
-          message: "AA GraphQL request failed",
+          message: "AA member info request failed",
         },
         durationMs: Math.round(performance.now() - start),
         selectorsAttempted: [GRAPHQL_URL],
       });
-      return;
-    }
-
-    const customer = json.data?.customer;
-    const member = customer?.memberInformation;
-    const advantageNumber = member?.advantageNumber ?? customer?.advantageNumber;
-    const rawBalance = member?.loyaltyBalance;
-
-    if (!advantageNumber || rawBalance == null) {
-      // The endpoint returned 200 but with empty data — usually means
-      // the access_token was stale. Treat as silently signed-out: no
-      // user-facing failure, just skip.
-      extLogger.info("scrape.skipped", {
-        provider: "aa",
-        reason: "no_customer_data",
-      });
-      syncWidget.destroy();
       return;
     }
 
@@ -156,7 +157,7 @@ export default defineContentScript({
       return;
     }
 
-    const ownerLabel = parseFirstName(member?.name);
+    const ownerLabel = parseFirstName(memberInfo.name);
 
     const balances: BalanceRecord[] = [
       {
@@ -255,46 +256,6 @@ function hasSignedInMarker(): boolean {
   return /(?:^|;\s*)at_check=true(?:;|$)/.test(document.cookie);
 }
 
-async function fetchCustomer(): Promise<CustomerResponse | null> {
-  // Step 1: get the AAdvantage number. Tealium's `utag_main_lid` cookie
-  // holds it on every signed-in page, so we hit that first to avoid an
-  // extra round-trip. If it's missing or malformed (Tealium swap, ad
-  // blocker, fresh signup race), we fall back to a bootstrap GraphQL
-  // call which has no required args.
-  let advantageNumber = readAdvantageNumberFromCookie();
-  if (!advantageNumber) {
-    const bootstrap = await graphqlPost<BootstrapResponse>(
-      "CustomerBootstrap",
-      BOOTSTRAP_QUERY,
-      {},
-    );
-    advantageNumber = bootstrap?.data?.customer?.advantageNumber ?? null;
-  }
-  if (!advantageNumber) {
-    extLogger.warn("scrape.no_advantage_number", { provider: "aa" });
-    return null;
-  }
-
-  // Step 2: fetch the member info now that we have the required arg.
-  const member = await graphqlPost<MemberResponse>(
-    "MemberInformation",
-    MEMBER_QUERY,
-    { advantageNumber },
-  );
-  if (!member) return null;
-
-  // Re-shape into the nested form the caller expects.
-  return {
-    data: {
-      customer: {
-        advantageNumber,
-        memberInformation: member.data?.memberInformation,
-      },
-    },
-    errors: member.errors,
-  };
-}
-
 /**
  * Generic GraphQL POST against AA's endpoint. Returns the parsed JSON
  * (or `null` on transport / non-2xx errors — caller decides how to
@@ -337,24 +298,6 @@ async function graphqlPost<T>(
     });
     return null;
   }
-}
-
-/**
- * Pulls the AAdvantage number out of `utag_main_lid` (Tealium analytics
- * cookie). The raw value looks like `6LT6A60%3Bexp-session` — URL
- * decoded it's `6LT6A60;exp-session`, where `;exp-session` is Tealium's
- * session-scope marker that we strip off.
- *
- * Validates against the AAdvantage 6–9 alphanumeric format so we don't
- * pass garbage into the GraphQL `String!` arg.
- */
-function readAdvantageNumberFromCookie(): string | null {
-  const m = /(?:^|;\s*)utag_main_lid=([^;]+)/.exec(document.cookie);
-  if (!m) return null;
-  const decoded = decodeURIComponent(m[1]);
-  const value = decoded.split(/[;\s]/)[0];
-  if (!/^[A-Z0-9]{6,9}$/i.test(value)) return null;
-  return value.toUpperCase();
 }
 
 /**

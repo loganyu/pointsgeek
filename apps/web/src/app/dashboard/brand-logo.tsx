@@ -33,6 +33,11 @@ export const BRAND_META: Record<
     bg: "#E01933",
     initial: "D",
   },
+  aa: {
+    logoPath: "/logos/brands/aa.png",
+    bg: "#C8102E", // AA red
+    initial: "A",
+  },
   marriott: {
     logoPath: "/logos/brands/marriott.png",
     bg: "#2F3337",
