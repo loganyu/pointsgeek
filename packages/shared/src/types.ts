@@ -9,6 +9,7 @@ import type { ProgramKey } from "./programs";
 export const PROVIDERS = [
   "aa",
   "amex",
+  "bilt",
   "chase",
   "capitalone",
   "citi",

@@ -86,6 +86,18 @@ export const PROGRAM_CATALOG = {
     short: "AMZ",
     primarySyncUrl: "https://secure.chase.com/web/auth/dashboard",
   },
+  bilt_rewards: {
+    // Bilt Rewards. Earn-on-rent points that transfer to a wide set of
+    // airline + hotel partners, similar to Amex MR / Chase UR. Scraped
+    // from www.bilt.com via api.biltrewards.com (cross-origin, bearer
+    // auth from a JWT stored in localStorage).
+    programType: "bank_rewards",
+    brandSlug: "bilt",
+    currency: "points",
+    displayName: "Bilt Rewards",
+    short: "BILT",
+    primarySyncUrl: "https://www.bilt.com/",
+  },
   aa_aadvantage: {
     // American Airlines AAdvantage. Two providers feed this programKey:
     //  - aa.com (authoritative, via /services/graphql)

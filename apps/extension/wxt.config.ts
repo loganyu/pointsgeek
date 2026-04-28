@@ -8,6 +8,11 @@ const FINANCIAL_SITES = [
   "https://www.aa.com/*",
   "https://www.americanexpress.com/*",
   "https://global.americanexpress.com/*",
+  "https://www.bilt.com/*",
+  // Bilt's web app calls api.biltrewards.com cross-origin. host_permission
+  // is required for our content-script fetch to ride along even though
+  // CORS allow-origin already permits www.bilt.com.
+  "https://api.biltrewards.com/*",
   "https://ultimaterewardspoints.chase.com/*",
   "https://chaseloyalty.chase.com/*",
   "https://secure.chase.com/*",

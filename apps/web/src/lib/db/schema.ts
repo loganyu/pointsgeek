@@ -19,6 +19,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 export const providerEnum = pgEnum("provider", [
   "aa",
   "amex",
+  "bilt",
   "chase",
   "capitalone",
   "citi",
