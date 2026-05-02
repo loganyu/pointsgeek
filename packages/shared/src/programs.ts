@@ -98,6 +98,19 @@ export const PROGRAM_CATALOG = {
     short: "BILT",
     primarySyncUrl: "https://www.bilt.com/",
   },
+  asia_miles: {
+    // Cathay Asia Miles. Cathay Pacific's loyalty currency, also used
+    // by oneworld partners. Scraped from www.cathaypacific.com via the
+    // mpo-common-services profile API at api.cathaypacific.com — same
+    // cookie-auth pattern as AA's GraphQL endpoint (no Authorization
+    // header needed, cookies ride along on `credentials: "include"`).
+    programType: "airline",
+    brandSlug: "cathay",
+    currency: "miles",
+    displayName: "Asia Miles",
+    short: "AM",
+    primarySyncUrl: "https://www.cathaypacific.com/cx/en_US.html",
+  },
   qatar_avios: {
     // Qatar Airways Privilege Club. Avios is the unified currency Qatar
     // shares with British Airways, Iberia, Aer Lingus, etc. — but each

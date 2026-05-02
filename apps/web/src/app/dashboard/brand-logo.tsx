@@ -43,6 +43,11 @@ export const BRAND_META: Record<
     bg: "#5C0931", // Qatar Airways burgundy
     initial: "Q",
   },
+  cathay: {
+    logoPath: "/logos/brands/cathay.png",
+    bg: "#006564", // Cathay Pacific brunswick green
+    initial: "C",
+  },
   marriott: {
     logoPath: "/logos/brands/marriott.png",
     bg: "#2F3337",

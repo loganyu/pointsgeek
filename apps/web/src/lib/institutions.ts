@@ -70,6 +70,12 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "aa",
   },
   {
+    name: "Cathay Asia Miles",
+    url: "https://www.cathaypacific.com/cx/en_US.html",
+    category: "airline",
+    brandSlug: "cathay",
+  },
+  {
     name: "Delta SkyMiles",
     url: "https://www.delta.com/myskymiles/overview",
     category: "airline",
@@ -103,7 +109,6 @@ export const INSTITUTIONS: Institution[] = [
   { name: "ANA Mileage Club", url: "https://www.ana.co.jp/en/us/amc", category: "airline" },
   { name: "Avianca LifeMiles", url: "https://www.lifemiles.com", category: "airline" },
   { name: "British Airways Avios", url: "https://www.britishairways.com/executiveclub", category: "airline" },
-  { name: "Cathay Asia Miles", url: "https://www.cathaypacific.com", category: "airline" },
   { name: "Emirates Skywards", url: "https://www.emirates.com/skywards", category: "airline" },
   { name: "Etihad Guest", url: "https://www.etihad.com/etihadguest", category: "airline" },
   { name: "Flying Blue (Air France/KLM)", url: "https://www.flyingblue.com", category: "airline" },

@@ -13,6 +13,10 @@ const FINANCIAL_SITES = [
   // is required for our content-script fetch to ride along even though
   // CORS allow-origin already permits www.bilt.com.
   "https://api.biltrewards.com/*",
+  "https://www.cathaypacific.com/*",
+  // Same cross-origin pattern as Bilt — cathay's profile endpoint
+  // lives on a separate api.* host and CORS allows www.cathaypacific.com.
+  "https://api.cathaypacific.com/*",
   "https://ultimaterewardspoints.chase.com/*",
   "https://chaseloyalty.chase.com/*",
   "https://secure.chase.com/*",

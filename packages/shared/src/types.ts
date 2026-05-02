@@ -10,6 +10,7 @@ export const PROVIDERS = [
   "aa",
   "amex",
   "bilt",
+  "cathay",
   "chase",
   "capitalone",
   "citi",

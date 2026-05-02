@@ -20,6 +20,7 @@ export const providerEnum = pgEnum("provider", [
   "aa",
   "amex",
   "bilt",
+  "cathay",
   "chase",
   "capitalone",
   "citi",
