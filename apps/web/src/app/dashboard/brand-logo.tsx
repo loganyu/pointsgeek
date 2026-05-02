@@ -38,6 +38,11 @@ export const BRAND_META: Record<
     bg: "#C8102E", // AA red
     initial: "A",
   },
+  qatar: {
+    logoPath: "/logos/brands/qatar.png",
+    bg: "#5C0931", // Qatar Airways burgundy
+    initial: "Q",
+  },
   marriott: {
     logoPath: "/logos/brands/marriott.png",
     bg: "#2F3337",

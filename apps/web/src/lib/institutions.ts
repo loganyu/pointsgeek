@@ -64,10 +64,22 @@ export const INSTITUTIONS: Institution[] = [
 
   // Airline loyalty — scraped
   {
+    name: "American AAdvantage",
+    url: "https://www.aa.com/aadvantage-program/profile/account-summary",
+    category: "airline",
+    brandSlug: "aa",
+  },
+  {
     name: "Delta SkyMiles",
     url: "https://www.delta.com/myskymiles/overview",
     category: "airline",
     brandSlug: "delta",
+  },
+  {
+    name: "Qatar Privilege Club",
+    url: "https://www.qatarairways.com/en/Privilege-Club/postLogin/dashboardqrpcuser/avios-balance.html",
+    category: "airline",
+    brandSlug: "qatar",
   },
   {
     name: "United MileagePlus",
@@ -76,7 +88,6 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "united",
   },
   // Airline loyalty — directory only (US)
-  { name: "American AAdvantage", url: "https://www.aa.com", category: "airline" },
   { name: "Southwest Rapid Rewards", url: "https://www.southwest.com", category: "airline" },
   { name: "Alaska Mileage Plan", url: "https://www.alaskaair.com", category: "airline" },
   { name: "JetBlue TrueBlue", url: "https://www.jetblue.com", category: "airline" },
@@ -100,7 +111,6 @@ export const INSTITUTIONS: Institution[] = [
   { name: "Japan Airlines Mileage Bank", url: "https://www.jal.co.jp/jalmileagebank/en", category: "airline" },
   { name: "Lufthansa Miles & More", url: "https://www.miles-and-more.com", category: "airline" },
   { name: "Qantas Frequent Flyer", url: "https://www.qantas.com/frequent-flyer", category: "airline" },
-  { name: "Qatar Privilege Club", url: "https://privilegeclub.qatarairways.com", category: "airline" },
   { name: "Singapore KrisFlyer", url: "https://www.singaporeair.com/krisflyer", category: "airline" },
   { name: "Turkish Miles&Smiles", url: "https://www.turkishairlines.com/en-int/miles-and-smiles", category: "airline" },
   { name: "Virgin Atlantic Flying Club", url: "https://www.virginatlantic.com/flyingclub", category: "airline" },

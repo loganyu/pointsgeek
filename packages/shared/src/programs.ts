@@ -98,6 +98,25 @@ export const PROGRAM_CATALOG = {
     short: "BILT",
     primarySyncUrl: "https://www.bilt.com/",
   },
+  qatar_avios: {
+    // Qatar Airways Privilege Club. Avios is the unified currency Qatar
+    // shares with British Airways, Iberia, Aer Lingus, etc. — but each
+    // airline has its own loyalty account. We track the Privilege Club
+    // balance specifically (not the BA-combined "Total Avios for flights"
+    // that Qatar's UI offers as a convenience). When we add a BA scraper
+    // it'll feed a separate `british_airways_avios` program.
+    programType: "airline",
+    brandSlug: "qatar",
+    // Avios is technically its own currency name across BA/Qatar/Iberia,
+    // but it functions as airline mileage and our currency enum is
+    // intentionally narrow ("points" | "miles" | "usd_cents"). Slot it
+    // under "miles".
+    currency: "miles",
+    displayName: "Qatar Privilege Club",
+    short: "QR",
+    primarySyncUrl:
+      "https://www.qatarairways.com/en/Privilege-Club/postLogin/dashboardqrpcuser/avios-balance.html",
+  },
   aa_aadvantage: {
     // American Airlines AAdvantage. Two providers feed this programKey:
     //  - aa.com (authoritative, via /services/graphql)

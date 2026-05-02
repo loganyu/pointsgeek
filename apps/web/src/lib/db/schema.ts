@@ -24,8 +24,9 @@ export const providerEnum = pgEnum("provider", [
   "capitalone",
   "citi",
   "delta",
-  "united",
   "marriott",
+  "qatar",
+  "united",
 ]);
 
 export const programTypeEnum = pgEnum("program_type", [
