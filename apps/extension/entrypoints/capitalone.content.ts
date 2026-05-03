@@ -1,4 +1,3 @@
-import { waitForCapitalOneBalance } from "../lib/scraper-capitalone";
 import { resolveIdentifier } from "../lib/identifier";
 import { extLogger } from "../lib/logger";
 import { syncWidget } from "../lib/sync-widget";
@@ -9,17 +8,70 @@ import type {
 } from "@points-geek/shared";
 
 /**
- * Capital One content script.
+ * Capital One scraper — calls the customer-facing JSON APIs directly.
  *
- * Unlike Chase, Capital One's miles are *genuinely per-card* — each card
- * has its own balance which sums into the pool total on the Account Summary
- * page. So on the summary page we emit:
- *   • 1 `total` record for the pool (no linkedCard)
- *   • 1 `total` record per card with `linkedCard` set
+ *   GET /web-api/protected/636178/customer-accounts
+ *     → list of every account on the profile (credit cards + deposits)
+ *       with branding.images.cardArt URLs and product names.
  *
- * On a per-card rewards page (`/Card/.../rewards`) we only see one card's
- * balance and emit a single per-card record.
+ *   POST /web-api/protected/375751/loyalty/accounts/digital-account-view/get-accounts
+ *     → loyaltyTile.balances[0].balance (pool total miles) +
+ *       per-account balances for cards that earn miles.
+ *
+ * Auth is cookie-based — Capital One's session cookies (`C1_AMT`,
+ * `C1_AuthSrc`, etc.) ride along automatically with `credentials:
+ * "include"`. No bearer extraction.
+ *
+ * The two paths share `accountReferenceId` so we merge them: walk
+ * customer-accounts for cards, look up each card's miles balance from
+ * the loyalty map. Cash-back cards (Quicksilver) appear in
+ * customer-accounts but not in loyalty — they get card art with no
+ * balance. Miles-earning cards (Venture/VentureOne/Venture X) appear
+ * in both.
+ *
+ * The two numeric segments in the URL paths (`636178`, `375751`) are
+ * Capital One's API-gateway consumer IDs — they identify the calling
+ * web client to the gateway and are stable across users. If they ever
+ * rotate, scrape will fail and we'd need to extract them from the
+ * page's own outgoing requests.
  */
+const CUSTOMER_ACCOUNTS_URL =
+  "https://myaccounts.capitalone.com/web-api/protected/636178/customer-accounts?density=4&retrieveBusinessName=true&versionUpgrade=true";
+const LOYALTY_ACCOUNTS_URL =
+  "https://myaccounts.capitalone.com/web-api/protected/375751/loyalty/accounts/digital-account-view/get-accounts?include=LOYALTY_TILE,PARTNER_DETAILS";
+
+interface CustomerAccount {
+  accountReferenceId: string;
+  lastFour?: string;
+  businessLine?: string;
+  product?: { productName?: string; productId?: string };
+  branding?: {
+    images?: {
+      cardArt?: { assetLocationUrl?: string } | null;
+      smallBackgroundImage?: { assetLocationUrl?: string } | null;
+    } | null;
+  };
+}
+
+interface CustomerAccountsResponse {
+  entries?: CustomerAccount[];
+}
+
+interface LoyaltyBalance {
+  balance?: number;
+  loyaltyCurrencyCode?: string;
+}
+
+interface LoyaltyAccount {
+  accountReferenceId?: string;
+  balance?: LoyaltyBalance;
+}
+
+interface LoyaltyResponse {
+  loyaltyTile?: { balances?: LoyaltyBalance[] };
+  accounts?: LoyaltyAccount[];
+}
+
 export default defineContentScript({
   matches: [
     "https://myaccounts.capitalone.com/*",
@@ -27,131 +79,281 @@ export default defineContentScript({
   ],
   async main() {
     const url = window.location.href;
-    const isRewardsPage = /\/Card\/.*\/rewards/i.test(url);
     const isSummaryPage = /\/accountSummary/i.test(url);
     extLogger.info("scrape.start", {
       provider: "capitalone",
       url,
-      isRewardsPage,
       isSummaryPage,
     });
-    syncWidget.start({ label: "Capital One" });
 
-    const extraction = await waitForCapitalOneBalance(document);
-
-    if (!extraction.success || extraction.balance == null) {
-      extLogger.warn("scrape.failed", {
+    // The APIs only return useful data when the user is on the post-
+    // login summary page. Other pages (verified.capitalone.com auth
+    // gate, individual card pages, transfer flows, etc.) silently skip
+    // — the next /accountSummary visit will pick up the data.
+    if (!isSummaryPage) {
+      extLogger.info("scrape.skipped", {
         provider: "capitalone",
-        error: extraction.error,
-      });
-      sendResult({
-        success: false,
-        error: extraction.error,
-        durationMs: extraction.durationMs,
-        selectorsAttempted: extraction.selectorsAttempted,
-        matchedSelector: extraction.matchedSelector,
+        reason: "not_summary_page",
       });
       return;
     }
 
-    let balances: BalanceRecord[] = [];
-    let cards: DiscoveredCard[] = [];
+    syncWidget.start({ label: "Capital One" });
+    const start = performance.now();
 
-    if (isRewardsPage) {
-      const cardInfo = extractCardInfoFromRewardsPage(document);
-      balances = [
-        {
-          programKey: "capitalone_miles",
-          balance: extraction.balance,
-          balanceType: "total",
-          linkedCard: cardInfo
-            ? { cardName: cardInfo.cardName, lastFour: cardInfo.lastFour }
-            : undefined,
+    // Sequential, not parallel — the loyalty endpoint requires the
+    // account references in its body, which we get from the customer-
+    // accounts response.
+    const customerAccounts = await fetchCustomerAccounts();
+    if (!customerAccounts) {
+      extLogger.warn("scrape.failed", {
+        provider: "capitalone",
+        reason: "customer_accounts_failed",
+      });
+      sendResult({
+        success: false,
+        error: {
+          code: "API_ERROR",
+          message: "Capital One customer-accounts request failed",
         },
-      ];
-      if (cardInfo) {
-        cards = [
-          {
-            cardName: cardInfo.cardName,
-            lastFour: cardInfo.lastFour,
-            issuer: "capitalone",
-            programKey: "capitalone_miles",
-            imageUrl: cardInfo.imageUrl,
-          },
-        ];
+        durationMs: Math.round(performance.now() - start),
+        selectorsAttempted: [CUSTOMER_ACCOUNTS_URL],
+      });
+      return;
+    }
+
+    // Collect credit-card refs + their product IDs. The loyalty
+    // endpoint requires both per entry — `accountReferenceId` IDs the
+    // account, `productLineId` (= `product.productId` from customer-
+    // accounts) tells the gateway which product schema to apply.
+    const creditCardQueries: LoyaltyQuery[] = [];
+    for (const e of customerAccounts.entries ?? []) {
+      if (e.businessLine !== "CREDIT_CARDS") continue;
+      const ref = e.accountReferenceId;
+      const productId = e.product?.productId;
+      if (typeof ref !== "string" || !ref || !productId) continue;
+      creditCardQueries.push({
+        accountReferenceId: ref,
+        productLineId: productId,
+      });
+    }
+
+    const loyalty = await fetchLoyaltyAccounts(creditCardQueries);
+    if (!loyalty) {
+      extLogger.warn("scrape.failed", {
+        provider: "capitalone",
+        reason: "loyalty_failed",
+        refCount: creditCardRefs.length,
+      });
+      sendResult({
+        success: false,
+        error: {
+          code: "API_ERROR",
+          message: "Capital One loyalty request failed",
+        },
+        durationMs: Math.round(performance.now() - start),
+        selectorsAttempted: [LOYALTY_ACCOUNTS_URL],
+      });
+      return;
+    }
+
+    // Pool total miles (sum across miles-earning cards). Loyalty tile
+    // shows MILES; ignore other currencies (cash-back, etc).
+    const poolBalance = pickMilesBalance(loyalty.loyaltyTile?.balances);
+
+    // Per-card balance map keyed by accountReferenceId. Only includes
+    // accounts whose currency is MILES; cash-back cards return no
+    // entry and we just don't emit a per-card record for them.
+    const balanceByRef = new Map<string, number>();
+    for (const acc of loyalty.accounts ?? []) {
+      const ref = acc.accountReferenceId;
+      const bal = pickMilesBalance(acc.balance ? [acc.balance] : []);
+      if (ref && bal != null) {
+        balanceByRef.set(ref, bal);
       }
-    } else if (isSummaryPage) {
-      // Pool total from loyalty tile
-      balances = [
-        {
-          programKey: "capitalone_miles",
-          balance: extraction.balance,
-          balanceType: "total",
-          // No linkedCard — this is the pool sum.
-        },
-      ];
+    }
 
-      // Discover all cards on the summary
-      const discovered = await waitForCardsFromSummary(document);
-      cards = discovered.map((c) => ({
-        cardName: c.cardName,
-        lastFour: c.lastFour,
+    if (poolBalance == null && balanceByRef.size === 0) {
+      extLogger.warn("scrape.failed", {
+        provider: "capitalone",
+        reason: "no_miles_in_response",
+      });
+      sendResult({
+        success: false,
+        error: {
+          code: "PARSE_FAILED",
+          message: "Capital One loyalty response had no MILES data",
+        },
+        durationMs: Math.round(performance.now() - start),
+        selectorsAttempted: [LOYALTY_ACCOUNTS_URL],
+      });
+      return;
+    }
+
+    // Walk customer-accounts entries → emit cards + per-card balances.
+    const cards: DiscoveredCard[] = [];
+    const balances: BalanceRecord[] = [];
+
+    // Pool total comes from the tile, not any single account. Emit it
+    // first as the canonical "Capital One Miles" balance.
+    if (poolBalance != null) {
+      balances.push({
+        programKey: "capitalone_miles",
+        balance: poolBalance,
+        balanceType: "total",
+        // No linkedCard — pool sum.
+      });
+    }
+
+    const skippedNonCreditCards: string[] = [];
+    for (const account of customerAccounts.entries ?? []) {
+      // Skip non-credit-card products (360 Checking, savings, etc).
+      if (account.businessLine !== "CREDIT_CARDS") {
+        if (account.businessLine) skippedNonCreditCards.push(account.businessLine);
+        continue;
+      }
+
+      const cardName = account.product?.productName?.trim();
+      const lastFour = account.lastFour?.trim() || undefined;
+      const imageUrl = account.branding?.images?.cardArt?.assetLocationUrl;
+      if (!cardName) continue;
+
+      cards.push({
+        cardName,
+        lastFour,
         issuer: "capitalone",
         programKey: "capitalone_miles",
-        imageUrl: c.imageUrl,
-      }));
+        imageUrl,
+      });
 
-      // Per-card miles from the card-picker dialog
-      const perCard = await extractPerCardMilesViaDialog(document);
-      for (const pc of perCard) {
+      // Per-card miles, if the loyalty endpoint had this account.
+      const perCardBalance = balanceByRef.get(account.accountReferenceId);
+      if (perCardBalance != null) {
         balances.push({
           programKey: "capitalone_miles",
-          balance: pc.balance,
+          balance: perCardBalance,
           balanceType: "total",
-          linkedCard: { cardName: pc.cardName, lastFour: pc.lastFour },
+          linkedCard: { cardName, lastFour },
         });
       }
-
-      extLogger.info("scrape.per_card", {
-        provider: "capitalone",
-        count: perCard.length,
-      });
-    } else {
-      // Generic Capital One page — we have a balance but no context.
-      balances = [
-        {
-          programKey: "capitalone_miles",
-          balance: extraction.balance,
-          balanceType: "total",
-        },
-      ];
     }
 
     const ident = resolveIdentifier(document);
 
-    const result: ScrapeResult = {
+    extLogger.info("scrape.success", {
+      provider: "capitalone",
+      poolBalance,
+      perCardBalanceCount: balanceByRef.size,
+      cardCount: cards.length,
+      skippedNonCreditCards: skippedNonCreditCards.length,
+      cards: cards.map((c) => ({
+        cardName: c.cardName,
+        lastFour: c.lastFour,
+        imageUrl: c.imageUrl ?? null,
+      })),
+      externalAccountId: ident.externalAccountId,
+      identifierSource: ident.source,
+    });
+
+    sendResult({
       success: true,
       externalAccountId: ident.externalAccountId,
       ownerLabel: ident.ownerLabel,
       identifierSource: ident.source,
       balances,
       cards,
-      durationMs: extraction.durationMs,
-      selectorsAttempted: extraction.selectorsAttempted,
-      matchedSelector: extraction.matchedSelector,
-    };
-
-    extLogger.info("scrape.success", {
-      provider: "capitalone",
-      balanceCount: balances.length,
-      cardCount: cards.length,
-      externalAccountId: ident.externalAccountId,
-      identifierSource: ident.source,
+      durationMs: Math.round(performance.now() - start),
+      selectorsAttempted: [CUSTOMER_ACCOUNTS_URL, LOYALTY_ACCOUNTS_URL],
+      matchedSelector: CUSTOMER_ACCOUNTS_URL,
     });
-
-    sendResult(result);
   },
 });
+
+/**
+ * Pick the first balance whose `loyaltyCurrencyCode === "MILES"` from
+ * an array. Capital One mixes cash-back balances into the same payload
+ * shape, and we only track miles in `capitalone_miles`.
+ */
+function pickMilesBalance(
+  balances: LoyaltyBalance[] | undefined
+): number | null {
+  if (!balances) return null;
+  for (const b of balances) {
+    if (b.loyaltyCurrencyCode === "MILES" && typeof b.balance === "number") {
+      return Math.round(b.balance);
+    }
+  }
+  return null;
+}
+
+async function fetchCustomerAccounts(): Promise<CustomerAccountsResponse | null> {
+  return fetchJson<CustomerAccountsResponse>(CUSTOMER_ACCOUNTS_URL, {
+    method: "GET",
+    headers: {
+      // Same Accept Capital One's web app uses — version pinning matters.
+      accept: "application/json;v=1",
+      "accept-language": "en-US",
+      "c1-card-accept-language": "en-US",
+      "c1-xhr": "true",
+      "channel-type": "WEB",
+      "content-type": "application/json;v=1",
+      "x-ui-routing-id": "accountSummary",
+    },
+  });
+}
+
+interface LoyaltyQuery {
+  accountReferenceId: string;
+  productLineId: string;
+}
+
+async function fetchLoyaltyAccounts(
+  accountQueryList: LoyaltyQuery[]
+): Promise<LoyaltyResponse | null> {
+  // Body shape captured from the page's actual request:
+  //   {"accountQueryList": [{"accountReferenceId": "…", "productLineId": "…"}, ...]}
+  // `productLineId` matches `product.productId` from the customer-
+  // accounts response (e.g. "1057" Quicksilver, "1213" Venture X).
+  return fetchJson<LoyaltyResponse>(LOYALTY_ACCOUNTS_URL, {
+    method: "POST",
+    headers: {
+      accept: "application/json;v=2",
+      "accept-language": "en-US",
+      "api-key": "EASE",
+      "content-type": "application/json",
+      "x-ui-routing-id": "accountSummary",
+    },
+    body: JSON.stringify({ accountQueryList }),
+  });
+}
+
+async function fetchJson<T>(
+  url: string,
+  init: RequestInit
+): Promise<T | null> {
+  try {
+    const r = await fetch(url, {
+      credentials: "include",
+      ...init,
+    });
+    if (!r.ok) {
+      extLogger.warn("scrape.fetch_non_ok", {
+        provider: "capitalone",
+        url,
+        status: r.status,
+      });
+      return null;
+    }
+    return (await r.json()) as T;
+  } catch (err) {
+    extLogger.warn("scrape.fetch_error", {
+      provider: "capitalone",
+      url,
+      error: String(err),
+    });
+    return null;
+  }
+}
 
 function sendResult(payload: ScrapeResult) {
   if (payload.success) {
@@ -166,160 +368,5 @@ function sendResult(payload: ScrapeResult) {
     type: payload.success ? "BALANCE_SCRAPED" : "SCRAPE_FAILED",
     provider: "capitalone",
     payload,
-  });
-}
-
-/* ── Per-card rewards-page extraction ────────────────────── */
-
-function extractCardInfoFromRewardsPage(
-  doc: Document
-): { cardName: string; lastFour?: string; imageUrl?: string } | undefined {
-  const logoImg = doc.querySelector(
-    ".c1-ease-account-details-global-nav-bar-container img[alt]"
-  ) as HTMLImageElement | null;
-  const lastFourEl = doc.querySelector('[data-e2e="lastFourDigits"]');
-
-  const cardName = logoImg?.alt?.trim();
-  if (!cardName) return undefined;
-
-  const lastFourText = lastFourEl?.textContent?.trim();
-  const lastFour = lastFourText?.replace(/[^0-9]/g, "") || undefined;
-  const imageUrl = logoImg?.src || undefined;
-
-  return { cardName, lastFour, imageUrl };
-}
-
-/* ── Account Summary card discovery ──────────────────────── */
-
-interface DiscoveredSummaryCard {
-  cardName: string;
-  lastFour?: string;
-  imageUrl?: string;
-}
-
-function extractCardsNow(doc: Document): DiscoveredSummaryCard[] {
-  const cards: DiscoveredSummaryCard[] = [];
-  const tiles = doc.querySelectorAll("c1-ease-account-tile");
-  for (const tile of tiles) {
-    const logoImg = tile.querySelector(
-      "img.primary-detail__identity__img"
-    ) as HTMLImageElement | null;
-    if (!logoImg?.alt?.trim()) continue;
-    const cardName = logoImg.alt.trim();
-    const acctNumEl = tile.querySelector(
-      ".primary-detail__identity__account-number"
-    );
-    const acctNumText = acctNumEl?.textContent?.trim() ?? "";
-    const lastFour = acctNumText.replace(/[^0-9]/g, "") || undefined;
-    // The tile's <img> IS the card art — grab its resolved URL.
-    const imageUrl = logoImg.src || undefined;
-    cards.push({ cardName, lastFour, imageUrl });
-  }
-  return cards;
-}
-
-function waitForCardsFromSummary(
-  doc: Document,
-  timeoutMs = 10_000
-): Promise<DiscoveredSummaryCard[]> {
-  const immediate = extractCardsNow(doc);
-  if (immediate.length > 0) return Promise.resolve(immediate);
-
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      observer.disconnect();
-      resolve(extractCardsNow(doc));
-    }, timeoutMs);
-    const observer = new MutationObserver(() => {
-      const cards = extractCardsNow(doc);
-      if (cards.length > 0) {
-        clearTimeout(timer);
-        observer.disconnect();
-        resolve(cards);
-      }
-    });
-    observer.observe(doc.body, { childList: true, subtree: true });
-  });
-}
-
-/* ── Per-card miles dialog ──────────────────────────────── */
-
-async function extractPerCardMilesViaDialog(
-  doc: Document,
-  timeoutMs = 8_000
-): Promise<Array<{ cardName: string; lastFour?: string; balance: number }>> {
-  const loyaltyTile = doc.querySelector("#loyalty-tile");
-  if (!loyaltyTile) return [];
-
-  const viewRewardsBtn = loyaltyTile.querySelector(
-    "button.action-button"
-  ) as HTMLButtonElement | null;
-  if (!viewRewardsBtn) return [];
-
-  viewRewardsBtn.click();
-
-  const dialog = await waitForElement(
-    doc,
-    "c1-ease-card-radio-picker-dialog",
-    timeoutMs
-  );
-  if (!dialog) return [];
-
-  await new Promise((r) => setTimeout(r, 500));
-
-  const results: Array<{ cardName: string; lastFour?: string; balance: number }> = [];
-  const radioButtons = dialog.querySelectorAll("gng-radio-button");
-
-  for (const radio of radioButtons) {
-    const nameEl = radio.querySelector(
-      ".c1-ease-card-radio-picker__display-name"
-    );
-    if (!nameEl) continue;
-    const rawName = nameEl.textContent?.trim() ?? "";
-    const nameMatch = rawName.match(/^(.+?)\s+\.{3}(\d{4})$/);
-    const cardName = nameMatch ? nameMatch[1].trim() : rawName;
-    const lastFour = nameMatch ? nameMatch[2] : undefined;
-
-    const milesEl = nameEl.nextElementSibling;
-    const milesText = milesEl?.textContent?.trim() ?? "";
-    const milesMatch = milesText.match(/([\d,]+)\s*Miles/i);
-    if (!milesMatch) continue;
-
-    const balance = parseInt(milesMatch[1].replace(/,/g, ""), 10);
-    if (isNaN(balance)) continue;
-
-    results.push({ cardName, lastFour, balance });
-  }
-
-  // Close the dialog
-  const closeBtn = dialog.querySelector(
-    "button.c1-ease-dialog-close-button"
-  ) as HTMLButtonElement | null;
-  if (closeBtn) closeBtn.click();
-
-  return results;
-}
-
-function waitForElement(
-  doc: Document,
-  selector: string,
-  timeoutMs: number
-): Promise<Element | null> {
-  const existing = doc.querySelector(selector);
-  if (existing) return Promise.resolve(existing);
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      observer.disconnect();
-      resolve(null);
-    }, timeoutMs);
-    const observer = new MutationObserver(() => {
-      const el = doc.querySelector(selector);
-      if (el) {
-        clearTimeout(timer);
-        observer.disconnect();
-        resolve(el);
-      }
-    });
-    observer.observe(doc.body, { childList: true, subtree: true });
   });
 }

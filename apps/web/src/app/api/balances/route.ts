@@ -473,14 +473,28 @@ async function upsertCard(
     .limit(1);
 
   if (existing.length > 0) {
-    // Backfill a scraped image URL if we've learned one since the card was
-    // first created. Never overwrite a user-set slug.
+    // Always sync the scraped image URL to whatever the latest scrape
+    // says. Different scrape sources (and Capital One's API vs DOM)
+    // give different art — small product logos vs full card art —
+    // and the latest scraper's URL is the canonical one. The user's
+    // local override (`imageSlug`) is a separate field and always
+    // takes precedence at render time, so we don't worry about it
+    // here. Skip the write when the URL hasn't changed to avoid
+    // pointless DB churn.
     const row = existing[0];
-    if (card.imageUrl && !row.imageUrl) {
+    if (card.imageUrl && card.imageUrl !== row.imageUrl) {
       await db
         .update(cards)
         .set({ imageUrl: card.imageUrl })
         .where(eq(cards.id, row.id));
+      logger.info(
+        {
+          cardId: row.id,
+          from: row.imageUrl,
+          to: card.imageUrl,
+        },
+        "Card image URL updated"
+      );
     }
     return row.id;
   }
