@@ -2,7 +2,7 @@
   "name": "@points-geek/extension",
   "description": "Points Geek - Track your credit card points and miles",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

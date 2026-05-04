@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Source_Serif_4 } from "next/font/google";
 import { ThemeProvider } from "./theme-provider";
 import { PREFERENCES_SCRIPT_SRC } from "./preferences-script";
 import "./globals.css";
@@ -40,6 +41,21 @@ const geistMono = localFont({
   display: "swap",
 });
 
+// Source Serif 4 — only used on the marketing landing for hero
+// headline + section h2s, plus the italic accent variant. Loaded via
+// next/font/google rather than self-hosted to keep the apps/web
+// /public/fonts/ folder Geist-only; if we ever go fully offline the
+// Geist split-loader pattern can be repeated for this. The 400/500
+// weights cover headline + body usage; italic style enables the
+// "*One statement.*" accent without a second `Source_Serif_4` call.
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "PointsGeek",
   description: "Track your credit card points and miles",
@@ -62,7 +78,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} h-full antialiased`}
     >
       <head>
         {/* Inline preference-mirroring script lives in <head> so it

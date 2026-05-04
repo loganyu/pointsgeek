@@ -39,6 +39,26 @@
   --sidebar-expanded: 220px;
   --sidebar-gutter: var(--sidebar-expanded);
   --sidebar-width: var(--sidebar-expanded);
+
+  /* Marketing display type scale — only used on the public landing page.
+   * Dashboard typography stays compact; these sizes push past it for
+   * hero headlines and section h2s. */
+  --text-5xl: 48px;
+  --text-6xl: 60px;
+  --text-display: 68px;
+
+  /* Source Serif 4 powers the marketing headlines + the PG monogram in
+   * the stamp logo. Loaded via next/font/google in layout.tsx, exposed
+   * as `--font-serif`. Fallback chain matches the SVG's text attr so
+   * the logo file renders the same when previewed without the var. */
+  --font-serif:
+    var(--font-source-serif), "Source Serif 4", "Source Serif Pro", Georgia,
+    "Times New Roman", serif;
+
+  /* Hero paper-card tint — same gradient endpoint shows up as a flat
+   * surface in the hero's rotated background. Light-mode only; dark
+   * mode keeps the cream-on-purple feel by collapsing to surface-secondary. */
+  --surface-tinted: #f0e9f9;
 }
 
 /* Unpinned: content gutter shrinks; sidebar itself collapses until
@@ -67,6 +87,11 @@ html[data-sidebar-pinned="false"] {
    * (the dark-mode accent) would clash with surrounding text. */
   --brand-default-chip: var(--purple-hover);
   --brand-default-chip-fg: #ffffff;
+
+  /* Hero paper card on dark mode — collapse the cream-purple tint to
+   * the existing nested surface so the hero doesn't introduce a third
+   * surface tone. */
+  --surface-tinted: var(--surface-secondary);
 }
 
 @theme inline {
@@ -84,6 +109,7 @@ html[data-sidebar-pinned="false"] {
   --color-text-accent-hover: var(--text-accent-hover);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-serif);
 }
 
 body {
@@ -100,4 +126,19 @@ body {
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
+}
+
+/* Marketing eyebrow — small mono caps label that sits above section
+ * headlines on the landing page. Dashboard surfaces don't use this
+ * style; living next to the cursor rule keeps marketing one-offs
+ * scoped to a single block. */
+.pg-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--purple-deep);
+}
+.dark .pg-eyebrow {
+  color: var(--purple-tint);
 }
