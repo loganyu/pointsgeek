@@ -517,20 +517,15 @@ function ProgramsGrid() {
             New programs are added regularly. Don&apos;t see one you use? Let us
             know and it goes on the queue.
           </p>
+          {/* Pills: deliberately label-only (no counts). Counts drift the
+           * moment a new scraper ships; this stays evergreen. */}
           <div className="mt-4 flex gap-2 flex-wrap">
-            {[
-              { label: "5 banks", solid: true },
-              { label: "4 airlines", solid: true },
-              { label: "3 hotels", solid: true },
-              { label: "more soon", solid: false },
-            ].map((t) => (
-              <span
-                key={t.label}
-                className={`px-2.5 py-[5px] rounded-full text-xs text-text-secondary ${t.solid ? "bg-surface border border-border" : "border border-border border-dashed"}`}
-              >
-                {t.label}
-              </span>
-            ))}
+            <span className="px-2.5 py-[5px] rounded-full text-xs text-text-secondary bg-surface border border-border">
+              Many programs included
+            </span>
+            <span className="px-2.5 py-[5px] rounded-full text-xs text-text-secondary border border-border border-dashed">
+              More added regularly
+            </span>
           </div>
         </div>
       </div>

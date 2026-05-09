@@ -16,7 +16,6 @@ const FOOTER_GROUPS: Array<{ heading: string; links: Array<{ label: string; href
     links: [
       { label: "How it works", href: "#how" },
       { label: "Programs", href: "#programs" },
-      { label: "Privacy", href: "#privacy" },
       { label: "Pricing", href: "#" },
     ],
   },
@@ -25,15 +24,16 @@ const FOOTER_GROUPS: Array<{ heading: string; links: Array<{ label: string; href
     links: [
       { label: "About", href: "#" },
       { label: "Changelog", href: "#" },
-      { label: "Contact", href: "mailto:hello@pointsgeek.xyz" },
+      { label: "Contact", href: "mailto:pointsgeekxyz@gmail.com" },
     ],
   },
   {
-    heading: "Resources",
+    heading: "Legal",
     links: [
-      { label: "Chrome extension", href: "#" },
-      { label: "GitHub", href: "https://github.com" },
-      { label: "Status", href: "#" },
+      // /privacy is also the Chrome Web Store privacy-policy URL; the
+      // header's #privacy anchor still scrolls to the on-page section.
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of service", href: "/terms" },
     ],
   },
 ];
