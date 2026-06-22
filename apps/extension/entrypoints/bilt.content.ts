@@ -96,7 +96,7 @@ export default defineContentScript({
       });
       return;
     }
-    syncWidget.start({ label: "Bilt" });
+    if (!(await syncWidget.start({ label: "Bilt" }))) return;
 
     // Fetch loyalty + wallet in parallel — independent calls, both
     // need the bearer.

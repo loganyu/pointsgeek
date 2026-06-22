@@ -102,7 +102,7 @@ export default defineContentScript({
       return;
     }
 
-    syncWidget.start({ label: "Qatar" });
+    if (!(await syncWidget.start({ label: "Qatar" }))) return;
 
     const ownerLabel = extractFirstName(document);
 

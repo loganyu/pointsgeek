@@ -75,97 +75,84 @@ interface TileExtraction {
 }
 
 /**
- * Extract the labeled fields from an Amex rewards-tile aria-label.
+ * Parse one rewards tile, given its container (`[data-testid="rewards-tile"]`).
  *
- * Examples:
- *   "Membership Rewards® Points, Available Balance 274,698 points"
- *   "Delta SkyMiles®, Loyalty Account Number 9289872575, Available Balance 147,709 points"
- *   "Marriott Bonvoy® Points, Loyalty Account Number 264636152, Available Balance 26,571 points"
- *   "Reward Dollars, Available Balance $0.03"
+ * Amex's overview moved off inline `aria-label` text onto `aria-labelledby`
+ * references, so every field now lives in its own descendant node:
  *
- * We can't split on commas because the balance itself often contains one
- * ("274,698") — so each field is matched by its own label regex.
- */
-function parseAriaLabel(aria: string): {
-  programName: string | null;
-  balanceText: string | null;
-  loyaltyAccountNumber: string | null;
-} {
-  if (!aria) {
-    return {
-      programName: null,
-      balanceText: null,
-      loyaltyAccountNumber: null,
-    };
-  }
-
-  // Program name: everything from the start up to the first comma.
-  const programMatch = aria.match(/^([^,]+)/);
-  const programName = programMatch ? programMatch[1].trim() : null;
-
-  // Balance: match the labeled number form. The balance itself is digits,
-  // optional commas, optional dollar sign, optional decimal.
-  const balanceMatch = aria.match(
-    /Available Balance\s+(\$?[\d,]+(?:\.\d{1,2})?)/i
-  );
-  const balanceText = balanceMatch ? balanceMatch[1].trim() : null;
-
-  // Loyalty account number: "Loyalty Account Number 9289872575"
-  const lanMatch = aria.match(/Loyalty Account Number\s+(\d+)/i);
-  const loyaltyAccountNumber = lanMatch ? lanMatch[1] : null;
-
-  return { programName, balanceText, loyaltyAccountNumber };
-}
-
-/**
- * Parse one rewards tile. The tile container is a `loyalty-product-title-*`
- * button: its `aria-label` gives us the clean program name + balance, and
- * its descendants give us the balance-title (YTD vs total) and the linked
- * card-title spans for the card(s) this tile is tied to.
+ *   • program name      → the first child of the `[id$="-name"]` block
+ *                         ("Membership Rewards® Points", "Delta SkyMiles®")
+ *   • balance value     → the non-title child of `[data-testid="reward-balance"]`
+ *                         ("194,740 points", "$0.03")
+ *   • balance type      → `[data-locator-id^="loyalty-balance-title-"]`
+ *                         (empty = total; "YTD Points Earned" = per-card YTD)
+ *   • loyalty number    → `[data-testid="rewards-label-id"]` (Delta, Marriott)
+ *   • linked card(s)    → `[data-locator-id="loyalty-card-title"]` in the footer
+ *                         (single-card tiles; MR shows "3+ Accounts" instead and
+ *                         is left to default to amex_mr by the product grid)
+ *
+ * Reads structural data-locator-ids / ids rather than CSS class names where
+ * possible — Amex churns the hashed class names (`heading-sans-small-bold`
+ * vs `-xsmall-bold`) far more often than these hooks.
  *
  * Returns null if we can't recognize the program or read a numeric balance
  * — we'd rather skip a tile than guess wrong.
  */
-function extractTile(tile: Element): TileExtraction | null {
-  const aria = tile.getAttribute("aria-label") ?? "";
-  const { programName, balanceText, loyaltyAccountNumber } =
-    parseAriaLabel(aria);
+function extractTile(container: Element): TileExtraction | null {
+  const titleEl = container.querySelector(
+    '[data-locator-id^="loyalty-product-title-"]'
+  );
+  if (!titleEl) return null;
+
+  // Program name: first element child of the "-name" block. The block's
+  // later children are the loyalty-number line, so take the first only.
+  const nameBlock = titleEl.querySelector('[id$="-name"]');
+  const programName =
+    nameBlock?.querySelector(".color-text-link")?.textContent ??
+    nameBlock?.firstElementChild?.textContent ??
+    null;
   const programKey = mapProgramName(programName);
   if (!programKey) return null;
 
-  // Balance-title label → balanceType. Note: aria-label says "Available
-  // Balance" even for Marriott's YTD tile, so we can't trust aria for the
-  // type; use the dedicated label instead.
-  const balanceTitleEl = tile.querySelector(
+  // Balance block: `[data-testid="reward-balance"]` holds a balance-title
+  // node (may be empty) + the value node. The value is whichever child is
+  // NOT the balance-title — class-name independent.
+  const balanceBlock = titleEl.querySelector('[data-testid="reward-balance"]');
+  const balanceTitleEl = balanceBlock?.querySelector(
     '[data-locator-id^="loyalty-balance-title-"]'
   );
   const balanceTitleText =
     balanceTitleEl?.textContent?.trim().toLowerCase() ?? "";
-  const balanceType: "total" | "ytd_earned_on_card" = balanceTitleText.includes(
-    "ytd"
-  )
-    ? "ytd_earned_on_card"
-    : "total";
+  const balanceType: "total" | "ytd_earned_on_card" =
+    balanceTitleText.includes("ytd") ? "ytd_earned_on_card" : "total";
 
-  // Balance value from aria-label (falls back to raw text if missing).
-  let balance: number | null = null;
-  if (programKey === "amex_reward_dollars") {
-    balance = balanceText
-      ? parseDollarsToCents(balanceText)
-      : parseDollarsToCents(tile.textContent);
-  } else {
-    balance = balanceText
-      ? parseInteger(balanceText)
-      : parseInteger(tile.textContent);
+  let valueText: string | null = null;
+  if (balanceBlock) {
+    const valueEl = Array.from(balanceBlock.children).find(
+      (c) => !c.matches('[data-locator-id^="loyalty-balance-title-"]')
+    );
+    valueText = (valueEl ?? balanceBlock).textContent;
   }
+
+  const balance =
+    programKey === "amex_reward_dollars"
+      ? parseDollarsToCents(valueText)
+      : parseInteger(valueText);
   if (balance === null) return null;
 
-  // Linked card(s). Card titles live in the tile's surrounding container
-  // (not inside the product-title button itself), so the caller is
-  // responsible for scoping us correctly — but we also check inside just
-  // in case Amex nests them.
+  // Loyalty account number — Delta + Marriott expose one in the name block
+  // ("Loyalty Account Number: 9289872575"). Strip to digits; require a
+  // realistic length so a stray short number can't masquerade as one.
+  let loyaltyAccountNumber: string | null = null;
+  const labelIdEl = nameBlock?.querySelector('[data-testid="rewards-label-id"]');
+  if (labelIdEl) {
+    const digits = (labelIdEl.textContent ?? "").replace(/\D/g, "");
+    if (digits.length >= 6) loyaltyAccountNumber = digits;
+  }
+
+  // Linked card(s) live in the tile container footer, not the title button.
   const linkedCards: TileExtraction["linkedCards"] = [];
-  const cardTitleEls = tile.querySelectorAll(
+  const cardTitleEls = container.querySelectorAll(
     '[data-locator-id="loyalty-card-title"]'
   );
   for (const el of cardTitleEls) {
@@ -240,59 +227,18 @@ function findNearbyCardImage(cardEl: Element): string | undefined {
   return undefined;
 }
 
-/**
- * Walk up from a product-title element until we find the biggest ancestor
- * that still owns ONLY this tile (no other `loyalty-product-title-*` inside).
- * That ancestor is the tile's visual container — it holds the
- * balance-title, the loyalty-card-title spans, and maybe a header footer.
- */
-function findTileContainer(titleEl: Element): Element {
-  let best: Element = titleEl;
-  let ancestor: Element | null = titleEl.parentElement;
-  for (let d = 0; d < 10 && ancestor; d++) {
-    const titlesHere = ancestor.querySelectorAll(
-      '[data-locator-id^="loyalty-product-title-"]'
-    );
-    if (titlesHere.length > 1) break; // we've escaped into a multi-tile parent
-    best = ancestor;
-    ancestor = ancestor.parentElement;
-  }
-  return best;
-}
-
 function extractAllTiles(doc: Document): TileExtraction[] {
-  const titleEls = doc.querySelectorAll(
-    '[data-locator-id^="loyalty-product-title-"]'
-  );
+  // Each rewards tile is a `[data-testid="rewards-tile"]` container holding
+  // exactly one `loyalty-product-title-*` plus its footer (linked cards).
+  // Iterating the container — rather than the title element — keeps the
+  // program/balance fields and the footer card list scoped together.
+  const containers = doc.querySelectorAll('[data-testid="rewards-tile"]');
 
   const results: TileExtraction[] = [];
-  for (const titleEl of titleEls) {
+  for (const container of containers) {
     try {
-      // First pull program + balance + balanceType off the product-title
-      // itself (its aria-label is the clean source of truth).
-      const extracted = extractTile(titleEl);
-      if (!extracted) continue;
-
-      // Then collect linked cards from the surrounding container —
-      // card-titles generally live as siblings / descendants around the
-      // product-title, not inside it.
-      if (extracted.linkedCards.length === 0) {
-        const container = findTileContainer(titleEl);
-        const cardTitleEls = container.querySelectorAll(
-          '[data-locator-id="loyalty-card-title"]'
-        );
-        for (const el of cardTitleEls) {
-          const parsed = parseCardTitle(el.textContent);
-          if (parsed) {
-            extracted.linkedCards.push({
-              ...parsed,
-              imageUrl: findNearbyCardImage(el),
-            });
-          }
-        }
-      }
-
-      results.push(extracted);
+      const extracted = extractTile(container);
+      if (extracted) results.push(extracted);
     } catch {
       // Skip malformed tile
     }
@@ -457,51 +403,114 @@ function cardKey(cardName: string, lastFour: string | undefined): string {
   return `${cardName.toLowerCase()}|${lastFour ?? ""}`;
 }
 
+/** A healthy overview always has BOTH rewards balances and cards. */
+function isComplete(r: ScrapeResult): boolean {
+  return (
+    r.success &&
+    (r.balances?.length ?? 0) > 0 &&
+    (r.cards?.length ?? 0) > 0
+  );
+}
+
+/** Did we manage to parse anything at all (so the page has clearly rendered)? */
+function hasAnyContent(r: ScrapeResult): boolean {
+  return (r.balances?.length ?? 0) > 0 || (r.cards?.length ?? 0) > 0;
+}
+
 /**
- * Poll for overview content. The rewards tiles and product grid each load
- * async after initial paint, so we wait until we have at least one tile
- * AND at least one card, or until the timeout fires.
+ * Turn a settled-but-incomplete snapshot into an explicit failure.
+ *
+ * This is the crux of failure detection: a page that renders cards but no
+ * rewards balances (or vice versa) used to be returned as `success: true`
+ * with an empty section — so the widget showed "synced" and nothing was
+ * ever reported. Now we classify it as a failure with a message naming
+ * which half is missing, so (a) the user sees "Couldn't sync" instead of a
+ * forever-spinner, and (b) the background auto-reports it to telemetry.
  */
+function finalize(r: ScrapeResult): ScrapeResult {
+  if (isComplete(r)) return r;
+  // Nothing parsed at all → snapshot already returned ELEMENT_NOT_FOUND.
+  if (!r.success) return r;
+  const nBal = r.balances?.length ?? 0;
+  const nCard = r.cards?.length ?? 0;
+  const missing = nBal === 0 ? "rewards balances" : "cards";
+  return {
+    success: false,
+    error: {
+      code: "PARTIAL_RESULT",
+      message: `Amex overview parsed ${nCard} card(s) and ${nBal} balance(s); missing ${missing}. Page markup may have changed.`,
+    },
+    durationMs: r.durationMs,
+    selectorsAttempted: r.selectorsAttempted,
+  };
+}
+
+/**
+ * Poll for overview content. The rewards tiles and product grid load async
+ * after initial paint, so we resolve as soon as BOTH are present.
+ *
+ * If content renders but stays incomplete (e.g. cards but no rewards — the
+ * signature of an Amex markup change that broke tile parsing), we don't
+ * wait out the full timeout pretending it worked: a one-shot grace window
+ * after the first content appears lets the rest of the page settle, then we
+ * resolve a descriptive failure. The full `timeoutMs` remains only as a
+ * backstop for the "nothing ever rendered" case.
+ */
+const SETTLE_GRACE_MS = 6000;
+
 export function waitForAmexOverview(
   doc: Document,
   timeoutMs = SCRAPE_TIMEOUT_MS
 ): Promise<ScrapeResult> {
-  // DOM scrape: walk the rewards tiles, product grid, and linked card
-  // spans to assemble a multi-program result. Per-program loyalty
-  // numbers (Delta, Marriott, Reward Dollars) come from aria-labels;
-  // MR doesn't expose a number in its aria-label so it falls back to
-  // the scrape-wide externalAccountId.
   const immediate = snapshot(doc);
-  if (
-    immediate.success &&
-    (immediate.balances?.length ?? 0) > 0 &&
-    (immediate.cards?.length ?? 0) > 0
-  ) {
+  if (isComplete(immediate)) {
     return Promise.resolve(immediate);
   }
 
   return new Promise((resolve) => {
-    let lastResult = immediate;
-    const timer = setTimeout(() => {
+    let resolved = false;
+    let graceTimer: number | null = null;
+
+    const finish = (result: ScrapeResult) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(hardCap);
+      if (graceTimer !== null) clearTimeout(graceTimer);
       observer.disconnect();
-      // Return whatever we last managed to see, even if partial
-      resolve(lastResult);
-    }, timeoutMs);
+      resolve(result);
+    };
+
+    // Once we've seen ANY content, the page has rendered — give the rest a
+    // short, one-shot grace period to finish loading, then judge what we
+    // have. One-shot (not reset per mutation) so a chatty SPA can't defer
+    // the verdict indefinitely.
+    const armGrace = () => {
+      if (graceTimer !== null) return;
+      graceTimer = window.setTimeout(
+        () => finish(finalize(snapshot(doc))),
+        SETTLE_GRACE_MS
+      );
+    };
+
+    // Absolute backstop for the "nothing ever renders" case → finalize will
+    // pass through the snapshot's ELEMENT_NOT_FOUND.
+    const hardCap = window.setTimeout(
+      () => finish(finalize(snapshot(doc))),
+      timeoutMs
+    );
 
     const observer = new MutationObserver(() => {
       const result = snapshot(doc);
-      lastResult = result;
-      if (
-        result.success &&
-        (result.balances?.length ?? 0) > 0 &&
-        (result.cards?.length ?? 0) > 0
-      ) {
-        clearTimeout(timer);
-        observer.disconnect();
-        resolve(result);
+      if (isComplete(result)) {
+        finish(result);
+        return;
       }
+      if (hasAnyContent(result)) armGrace();
     });
-
     observer.observe(doc.body, { childList: true, subtree: true });
+
+    // If the first paint already had partial content but no further
+    // mutations follow, arm the grace now so we don't sit until the backstop.
+    if (hasAnyContent(immediate)) armGrace();
   });
 }

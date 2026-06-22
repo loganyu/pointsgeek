@@ -5,12 +5,18 @@
   "scripts": {
     "dev": "pnpm --filter @points-geek/web dev",
     "dev:ext": "pnpm --filter @points-geek/extension dev",
+    "dev:ext:staging": "pnpm --filter @points-geek/extension dev:staging",
     "build": "pnpm --filter @points-geek/web build",
-    "build:ext": "pnpm --filter @points-geek/shared build && pnpm --filter @points-geek/extension build",
+    "build:ext": "pnpm --filter @points-geek/extension build",
+    "build:ext:local": "pnpm --filter @points-geek/extension build:local",
+    "build:ext:staging": "pnpm --filter @points-geek/extension build:staging",
+    "zip:ext": "pnpm --filter @points-geek/extension zip",
+    "zip:ext:staging": "pnpm --filter @points-geek/extension zip:staging",
     "lint": "pnpm -r lint",
     "test": "vitest run",
     "db:generate": "pnpm --filter @points-geek/web db:generate",
-    "db:migrate": "pnpm --filter @points-geek/web db:migrate"
+    "db:migrate": "pnpm --filter @points-geek/web db:migrate",
+    "db:studio": "pnpm --filter @points-geek/web db:studio"
   },
   "packageManager": "pnpm@10.33.0"
 }

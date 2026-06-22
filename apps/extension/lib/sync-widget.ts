@@ -7,17 +7,21 @@
  *
  *   syncWidget.start({ label: "Chase" })   → "Syncing…" pill, bottom-right
  *   syncWidget.success("3 balances")       → green check, auto-fades ~2.5s
- *   syncWidget.fail({ code, message })     → red dot, persistent, click
- *                                             expands to detail + actions
+ *   syncWidget.fail({ code, message })     → red panel, persistent, with
+ *                                             a friendly message + "Try again"
  *
  * No persistence across navigation yet — a page reload drops the widget.
- * Phase 4 will add a "Report" button in the expanded failed state that
- * ships a redacted DOM subtree back to our API.
+ *
+ * Failures are reported to the backend automatically (the background
+ * script posts every failed scrape to /api/telemetry/scrape-failure), so
+ * the user is never asked to file anything — the failed panel just tells
+ * them something went wrong and offers a retry.
  */
 
 import { WEB_BASE } from "./config";
+import { getState } from "./storage";
 
-type WidgetState = "idle" | "syncing" | "success" | "failed";
+type WidgetState = "idle" | "syncing" | "success" | "failed" | "signin";
 
 interface WidgetContext {
   /** Display name shown next to the spinner, e.g. "Chase". */
@@ -37,11 +41,26 @@ class SyncWidget {
   private lastFailure: FailureDetail | null = null;
   private autoHideTimer: number | null = null;
 
-  start(ctx: WidgetContext) {
+  /**
+   * Mount the widget and check auth BEFORE the caller scrapes.
+   *
+   * Returns `true` when the user is signed in — the caller should proceed
+   * to scrape. Returns `false` when signed out: a "Sign in to sync" prompt
+   * is shown and the caller must `return` without scraping (no point doing
+   * the work when the background can't submit it). Callers use:
+   *
+   *   if (!(await syncWidget.start({ label: "Amex" }))) return;
+   */
+  async start(ctx: WidgetContext): Promise<boolean> {
     this.ctx = ctx;
     this.mount();
+    if (!(await this.isSignedIn())) {
+      this.showSignIn();
+      return false;
+    }
     this.state = "syncing";
     this.render();
+    return true;
   }
 
   success(summary?: string) {
@@ -70,6 +89,23 @@ class SyncWidget {
     this.state = "idle";
     this.ctx = null;
     this.lastFailure = null;
+  }
+
+  /** Is there an extension auth token? Storage hiccup → assume yes so we never block a real sync. */
+  private async isSignedIn(): Promise<boolean> {
+    try {
+      const { token } = await getState();
+      return !!token;
+    } catch {
+      return true;
+    }
+  }
+
+  private showSignIn() {
+    if (!this.host) this.mount();
+    this.state = "signin";
+    this.clearTimer();
+    this.render();
   }
 
   private clearTimer() {
@@ -139,6 +175,11 @@ class SyncWidget {
       // the "first popup" used by syncing/success; the panel is the
       // "second popup" with the error title + message + actions.
       container.appendChild(this.renderFailurePanel());
+      return;
+    }
+
+    if (this.state === "signin") {
+      container.appendChild(this.renderSignInPanel());
     }
   }
 
@@ -228,37 +269,109 @@ class SyncWidget {
     header.appendChild(this.renderCloseButton());
     panel.appendChild(header);
 
-    // Title row: red × icon + "{label} points sync failed". The icon
-    // replaces the old red-pill status — users still get the urgent
-    // red glyph, just inline with the title now that the pill is gone.
+    // Title row: red × icon + "Couldn't sync {label}". The icon replaces
+    // the old red-pill status — users still get the urgent red glyph,
+    // just inline with the title now that the pill is gone.
     const title = document.createElement("div");
     title.className = "pg-widget__panel-title";
     const titleIcon = document.createElement("span");
     titleIcon.className = "pg-widget__icon pg-widget__icon--cross";
     title.appendChild(titleIcon);
     const titleText = document.createElement("span");
-    titleText.textContent = `${this.ctx?.label ?? "Sync"} points sync failed`;
+    titleText.textContent = `Couldn't sync ${this.ctx?.label ?? "your balance"}`;
     title.appendChild(titleText);
     panel.appendChild(title);
 
-    // Single user-facing copy across every provider. The technical
-    // `code`/`message` on `this.lastFailure` is still captured — Phase 4
-    // will ship those (plus a redacted DOM subtree) in the Report payload.
+    // Single friendly user-facing line across every provider. We do NOT
+    // ask the user to report anything — the background already posts the
+    // technical `code`/`message`/selectors to our telemetry sink so we
+    // can fix it. The user just needs to know to retry.
     const msg = document.createElement("div");
     msg.className = "pg-widget__panel-message";
-    msg.textContent = "Please report issue to help us fix this";
+    msg.textContent =
+      "Something went wrong on our end. Please try again in a moment.";
     panel.appendChild(msg);
 
     const actions = document.createElement("div");
     actions.className = "pg-widget__panel-actions";
 
-    // Report button is a placeholder for Phase 4 — wire it up then.
-    const reportBtn = document.createElement("button");
-    reportBtn.className = "pg-widget__btn pg-widget__btn--primary";
-    reportBtn.textContent = "Report issue";
-    reportBtn.disabled = true;
-    reportBtn.title = "Coming soon";
-    actions.appendChild(reportBtn);
+    // "Try again" reloads the page, which re-runs the content script and
+    // re-attempts the scrape — the only retry mechanism we have without
+    // persisting state across navigation.
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "pg-widget__btn pg-widget__btn--primary";
+    retryBtn.type = "button";
+    retryBtn.textContent = "Try again";
+    retryBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.location.reload();
+    });
+    actions.appendChild(retryBtn);
+
+    panel.appendChild(actions);
+    return panel;
+  }
+
+  /**
+   * Shown when the extension has no auth token. Without it, the background
+   * can't submit the scrape, so we prompt the user to sign in rather than
+   * misleadingly flashing "Synced". The button kicks the same
+   * `SIGN_IN_REQUEST` flow the popup uses; on success we reload so the
+   * content script re-runs and syncs for real.
+   */
+  private renderSignInPanel(): HTMLElement {
+    const panel = document.createElement("div");
+    panel.className = "pg-widget__panel";
+
+    const header = document.createElement("div");
+    header.className = "pg-widget__row pg-widget__row--header";
+    header.appendChild(this.renderBrand());
+    header.appendChild(this.renderCloseButton());
+    panel.appendChild(header);
+
+    const title = document.createElement("div");
+    title.className = "pg-widget__panel-title";
+    title.textContent = "Sign in to sync";
+    panel.appendChild(title);
+
+    const msg = document.createElement("div");
+    msg.className = "pg-widget__panel-message";
+    msg.textContent = `Sign in to PointsGeek to save your ${
+      this.ctx?.label ?? "balance"
+    } to your dashboard.`;
+    panel.appendChild(msg);
+
+    const actions = document.createElement("div");
+    actions.className = "pg-widget__panel-actions";
+
+    const signInBtn = document.createElement("button");
+    signInBtn.className = "pg-widget__btn pg-widget__btn--primary";
+    signInBtn.type = "button";
+    signInBtn.textContent = "Sign in with Google";
+    signInBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      signInBtn.disabled = true;
+      signInBtn.textContent = "Signing in…";
+      try {
+        const res = (await browser.runtime.sendMessage({
+          type: "SIGN_IN_REQUEST",
+        })) as { ok?: boolean; error?: string } | undefined;
+        if (res?.ok) {
+          // Re-run the content script against a now-authenticated session.
+          window.location.reload();
+          return;
+        }
+        signInBtn.disabled = false;
+        signInBtn.textContent = "Sign in with Google";
+        msg.textContent =
+          res?.error ?? "Sign-in didn't complete. Please try again.";
+      } catch {
+        signInBtn.disabled = false;
+        signInBtn.textContent = "Sign in with Google";
+        msg.textContent = "Couldn't start sign-in. Please try again.";
+      }
+    });
+    actions.appendChild(signInBtn);
 
     panel.appendChild(actions);
     return panel;

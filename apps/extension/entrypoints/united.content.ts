@@ -54,7 +54,7 @@ export default defineContentScript({
     // bearer poll above can run for up to 3 min on a signed-out page,
     // and we don't want to show "Syncing United…" for that long on a
     // login screen.
-    syncWidget.start({ label: "United" });
+    if (!(await syncWidget.start({ label: "United" }))) return;
 
     const [accountStatus, cardDetails] = await Promise.all([
       fetchJson(ACCOUNT_STATUS_URL, bearer),

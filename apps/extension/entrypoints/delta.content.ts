@@ -32,7 +32,7 @@ export default defineContentScript({
       });
       return;
     }
-    syncWidget.start({ label: "Delta" });
+    if (!(await syncWidget.start({ label: "Delta" }))) return;
 
     const extraction = await waitForDeltaBalance(document);
 

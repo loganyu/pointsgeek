@@ -43,3 +43,33 @@ export async function submitBalance(
     return { ok: false, error: "Network error" };
   }
 }
+
+/**
+ * Fire-and-forget failure telemetry. Posted on every failed scrape so we
+ * (the devs) can see what's breaking in the wild and fix stale selectors,
+ * without asking the user to do anything.
+ *
+ * Deliberately unauthenticated and decoupled from `submitBalance`: a
+ * failed scrape is exactly the state where the user might also be signed
+ * out, and we still want the report. The background reaches this
+ * cross-origin via the extension's host_permissions for WEB_BASE. Never
+ * throws — telemetry must never break the sync path.
+ */
+export async function reportScrapeFailure(report: {
+  provider: string;
+  code?: string;
+  message?: string;
+  url?: string;
+  selectorsAttempted?: string[];
+}): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/api/telemetry/scrape-failure`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(report),
+      keepalive: true,
+    });
+  } catch (err) {
+    extLogger.warn("api.report_failure_error", { error: String(err) });
+  }
+}

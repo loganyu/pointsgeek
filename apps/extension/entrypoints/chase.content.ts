@@ -41,7 +41,7 @@ export default defineContentScript({
   async main() {
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "chase", url });
-    syncWidget.start({ label: "Chase" });
+    if (!(await syncWidget.start({ label: "Chase" }))) return;
 
     const parsed = new URL(url);
     const host = parsed.hostname;

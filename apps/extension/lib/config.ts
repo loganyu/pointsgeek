@@ -10,4 +10,4 @@
  * Falls back to localhost so the type is always `string`.
  */
 export const WEB_BASE: string =
-  import.meta.env.WXT_WEB_BASE ?? "http://localhost:3000";
+  import.meta.env.WXT_WEB_BASE ?? "http://localhost:3001";

@@ -87,9 +87,44 @@ export default function PrivacyPage() {
             see the &ldquo;Contact Us&rdquo; section at the end.
           </p>
 
-          <H2>1. Information We Collect</H2>
+          <H2>1. Information We Do Not Collect</H2>
+          <p>
+            <strong>
+              Your bank, airline, and hotel login credentials never leave your
+              device.
+            </strong>{" "}
+            PointsGeek does not access, store, or transmit your passwords or
+            third-party session cookies anywhere. The extension operates
+            entirely within the logged-in browser sessions you already have on
+            supported financial websites and only reads the loyalty balance and
+            card information visible on the page.
+          </p>
+          <p>Specifically, the extension does not read, store, or transmit:</p>
+          <ul>
+            <li>
+              Your bank, airline, hotel, or other third-party site passwords;
+            </li>
+            <li>
+              Authentication cookies, session tokens, or similar credentials
+              from third-party sites;
+            </li>
+            <li>
+              Full credit card numbers, CVVs, bank account numbers, or similar
+              payment instrument data; or
+            </li>
+            <li>
+              Data from websites outside the supported financial domains listed
+              in the extension&rsquo;s manifest.
+            </li>
+          </ul>
+          <p>
+            We may add support for additional domains or data types over time.
+            Material changes will be reflected in this Policy.
+          </p>
 
-          <H3>1.1 Information you provide to us</H3>
+          <H2>2. Information We Collect</H2>
+
+          <H3>2.1 Information you provide to us</H3>
           <p>We collect information you provide directly, including:</p>
           <ul>
             <li>
@@ -110,7 +145,7 @@ export default function PrivacyPage() {
             </li>
           </ul>
 
-          <H3>1.2 Information collected through the browser extension</H3>
+          <H3>2.2 Information collected through the browser extension</H3>
           <p>
             The PointsGeek browser extension allows you to view your loyalty
             and rewards balances in a single dashboard. When you visit a
@@ -144,7 +179,7 @@ export default function PrivacyPage() {
             and displayed on your dashboard.
           </p>
 
-          <H3>1.3 Information collected automatically</H3>
+          <H3>2.3 Information collected automatically</H3>
           <p>
             When you use the Services, we and our service providers may
             automatically collect:
@@ -170,40 +205,12 @@ export default function PrivacyPage() {
             </li>
           </ul>
 
-          <H3>1.4 Information from third parties</H3>
+          <H3>2.4 Information from third parties</H3>
           <p>
             We may receive information about you from third parties, such as
             identity providers (when you sign in with Google), email delivery
             providers, hosting providers, and analytics providers, in
             connection with their respective services.
-          </p>
-
-          <H2>2. Information We Do Not Collect</H2>
-          <p>
-            The PointsGeek extension is designed to operate within your
-            existing logged-in browser sessions. It does not:
-          </p>
-          <ul>
-            <li>
-              Read, store, or transmit your bank, airline, hotel, or other
-              third-party site passwords;
-            </li>
-            <li>
-              Read, store, or transmit authentication cookies, session tokens,
-              or similar credentials from third-party sites;
-            </li>
-            <li>
-              Read, store, or transmit full credit card numbers, CVVs, bank
-              account numbers, or similar payment instrument data;
-            </li>
-            <li>
-              Operate on websites outside the supported financial domains
-              listed in the extension&rsquo;s manifest.
-            </li>
-          </ul>
-          <p>
-            We may add support for additional domains or data types over time.
-            Material changes will be reflected in this Policy.
           </p>
 
           <H2>3. How We Use Information</H2>

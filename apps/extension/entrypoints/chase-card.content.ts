@@ -52,12 +52,12 @@ async function route(): Promise<void> {
   // rewards catalog, etc.). Mounting early would flash "Syncing Chase…"
   // on every route change.
   if (CARD_HASH_PATTERN.test(hash)) {
-    syncWidget.start({ label: "Chase" });
+    if (!(await syncWidget.start({ label: "Chase" }))) return;
     await scrapeIfCardPage();
     return;
   }
   if (TRAVEL_HASH_PATTERN.test(hash)) {
-    syncWidget.start({ label: "Chase" });
+    if (!(await syncWidget.start({ label: "Chase" }))) return;
     await scrapeTravelSidebar();
   }
 }

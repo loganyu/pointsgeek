@@ -47,7 +47,7 @@ export default defineContentScript({
       return;
     }
 
-    syncWidget.start({ label: "Marriott" });
+    if (!(await syncWidget.start({ label: "Marriott" }))) return;
 
     const rewardsId: string | undefined = session?.cacheData?.data?.rewardsId;
     const firstName: string | undefined = session?.cacheData?.data?.firstName;

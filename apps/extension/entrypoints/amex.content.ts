@@ -23,7 +23,7 @@ export default defineContentScript({
   async main() {
     const url = window.location.href;
     extLogger.info("scrape.start", { provider: "amex", url });
-    syncWidget.start({ label: "Amex" });
+    if (!(await syncWidget.start({ label: "Amex" }))) return;
 
     const result = await waitForAmexOverview(document);
 

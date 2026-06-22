@@ -40,7 +40,7 @@ export default defineContentScript({
       });
       return;
     }
-    syncWidget.start({ label: "Citi" });
+    if (!(await syncWidget.start({ label: "Citi" }))) return;
 
     // Two tiles to find — the rewards tile (program balance) and the
     // balance-summary tile (card name + art + last 4). They render

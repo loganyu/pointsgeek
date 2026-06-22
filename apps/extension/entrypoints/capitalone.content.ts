@@ -98,7 +98,7 @@ export default defineContentScript({
       return;
     }
 
-    syncWidget.start({ label: "Capital One" });
+    if (!(await syncWidget.start({ label: "Capital One" }))) return;
     const start = performance.now();
 
     // Sequential, not parallel — the loyalty endpoint requires the
@@ -143,7 +143,7 @@ export default defineContentScript({
       extLogger.warn("scrape.failed", {
         provider: "capitalone",
         reason: "loyalty_failed",
-        refCount: creditCardRefs.length,
+        refCount: creditCardQueries.length,
       });
       sendResult({
         success: false,

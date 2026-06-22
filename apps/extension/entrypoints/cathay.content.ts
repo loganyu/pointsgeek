@@ -66,7 +66,7 @@ export default defineContentScript({
       return;
     }
 
-    syncWidget.start({ label: "Cathay" });
+    if (!(await syncWidget.start({ label: "Cathay" }))) return;
 
     const balance = Math.round(Number(rawBalance));
     if (!Number.isFinite(balance) || balance < 0) {

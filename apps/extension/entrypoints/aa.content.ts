@@ -109,7 +109,7 @@ export default defineContentScript({
     }
 
     // Step 3: auth confirmed → mount widget and fetch the actual data.
-    syncWidget.start({ label: "AA" });
+    if (!(await syncWidget.start({ label: "AA" }))) return;
 
     const member = await graphqlPost<MemberResponse>(
       "MemberInformation",

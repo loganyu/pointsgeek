@@ -6,10 +6,14 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
+    "dev:staging": "WXT_MODE=staging wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
+    "build:local": "WXT_MODE=development wxt build",
+    "build:staging": "WXT_MODE=staging wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
+    "zip:staging": "WXT_MODE=staging wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"

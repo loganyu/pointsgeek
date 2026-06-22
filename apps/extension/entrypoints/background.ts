@@ -5,7 +5,7 @@ import type {
   Provider,
 } from "@points-geek/shared";
 import { RETRY_DELAY_MS } from "@points-geek/shared";
-import { submitBalance } from "../lib/api";
+import { submitBalance, reportScrapeFailure } from "../lib/api";
 import {
   getState,
   upsertBalances,
@@ -24,7 +24,7 @@ export default defineBackground(() => {
   browser.runtime.onMessage.addListener(
     (
       message: BackgroundMessage,
-      _sender,
+      sender,
       sendResponse: (response?: unknown) => void
     ) => {
       // Auth requests: the popup will close as soon as the OAuth window
@@ -54,11 +54,52 @@ export default defineBackground(() => {
         message.type === "BALANCE_SCRAPED" ||
         message.type === "SCRAPE_FAILED"
       ) {
+        // Auto-report failures to our telemetry sink BEFORE anything that
+        // could short-circuit (e.g. the not-signed-in bail in
+        // handleScrapeResult). This is the single guarantee that a broken
+        // scrape reaches the backend so we can fix it — no user action,
+        // works signed-out. The page URL comes from the content-script
+        // sender (the service worker has no page `location`).
+        maybeReportFailure(message, sender);
         handleScrapeResult(message);
       }
     }
   );
 });
+
+/**
+ * Strip query + fragment from a page URL before it leaves the device —
+ * the path tells us which scraper page broke without shipping any
+ * query-string values. Returns undefined for anything unparseable.
+ */
+function pageUrlForReport(rawUrl: string | undefined): string | undefined {
+  if (!rawUrl) return undefined;
+  try {
+    const u = new URL(rawUrl);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Fire failure telemetry for a failed scrape. No-op for successful
+ * scrapes. Fire-and-forget — `reportScrapeFailure` never throws.
+ */
+function maybeReportFailure(
+  message: ExtensionMessage,
+  sender: { url?: string; tab?: { url?: string } } | undefined
+) {
+  const result = message.payload;
+  if (!message.provider || !result || result.success) return;
+  void reportScrapeFailure({
+    provider: message.provider,
+    code: result.error?.code,
+    message: result.error?.message,
+    url: pageUrlForReport(sender?.tab?.url ?? sender?.url),
+    selectorsAttempted: result.selectorsAttempted,
+  });
+}
 
 async function handleScrapeResult(message: ExtensionMessage, isRetry = false) {
   const provider = message.provider;
