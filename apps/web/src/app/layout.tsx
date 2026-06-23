@@ -60,12 +60,15 @@ export const metadata: Metadata = {
   title: "PointsGeek",
   description: "Track your credit card points and miles",
   icons: {
+    // SVG first — Chrome prefers it for the tab and it stays crisp at any
+    // size. PNGs are fallbacks; `app/favicon.ico` (the purple tile) is
+    // auto-wired by Next's file convention for the legacy /favicon.ico.
     icon: [
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
       { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
       { url: "/brand/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/brand/favicon-mono.svg", type: "image/svg+xml" },
     ],
-    apple: "/brand/icon-128.png",
+    apple: "/brand/apple-touch-icon.png",
   },
 };
 
