@@ -109,7 +109,7 @@ export default defineConfig(() => {
     manifest: {
       name: `Points Geek${nameSuffix}`,
       description: "Track your credit card points and miles",
-      permissions: ["storage", "activeTab", "identity"],
+      permissions: ["storage", "identity"],
       host_permissions: [
         ...FINANCIAL_SITES,
         // Web app — derived from WXT_WEB_BASE so dev / staging / prod
