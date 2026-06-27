@@ -1,0 +1,1 @@
+ALTER TYPE "public"."provider" ADD VALUE 'hyatt' BEFORE 'marriott';apps/web/drizzle/0018_lame_post.sql

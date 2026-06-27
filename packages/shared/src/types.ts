@@ -15,6 +15,7 @@ export const PROVIDERS = [
   "capitalone",
   "citi",
   "delta",
+  "hyatt",
   "marriott",
   "qatar",
   "united",

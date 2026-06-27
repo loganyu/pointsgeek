@@ -142,11 +142,16 @@ export const INSTITUTIONS: Institution[] = [
     category: "hotel",
     brandSlug: "marriott",
   },
+  {
+    name: "World of Hyatt",
+    url: "https://www.hyatt.com",
+    category: "hotel",
+    brandSlug: "hyatt",
+  },
 
   // ── Hotel loyalty — pending scrapers ─────────────────────
   // Uncomment as scrapers ship.
   // { name: "Hilton Honors", url: "https://www.hilton.com", category: "hotel" },
-  // { name: "World of Hyatt", url: "https://www.hyatt.com", category: "hotel" },
   // { name: "IHG One Rewards", url: "https://www.ihg.com", category: "hotel" },
   // { name: "Wyndham Rewards", url: "https://www.wyndhamhotels.com", category: "hotel" },
   // { name: "Choice Privileges", url: "https://www.choicehotels.com", category: "hotel" },
