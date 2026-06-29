@@ -20,15 +20,6 @@ if (!url) {
   );
 }
 
-// Surface WHICH endpoint migrations use in the build log — a `-pooler` host
-// hangs the migrate step on Vercel (pgBouncer), a direct host does not. Host
-// only, no credentials, so it's safe to print.
-try {
-  console.log(`[drizzle] migrating via host: ${new URL(url).host}`);
-} catch {
-  /* unparseable url — let drizzle surface the real connection error */
-}
-
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
   out: "./drizzle",

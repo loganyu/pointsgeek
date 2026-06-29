@@ -1,1 +1,1 @@
-ALTER TYPE "public"."provider" ADD VALUE IF NOT EXISTS 'hyatt' BEFORE 'marriott';
+ALTER TYPE "public"."provider" ADD VALUE 'hyatt' BEFORE 'marriott';
