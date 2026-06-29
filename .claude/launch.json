@@ -5,14 +5,14 @@
       "name": "web",
       "runtimeExecutable": "/bin/zsh",
       "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @points-geek/web dev"],
-      "port": 3000,
+      "port": 3001,
       "autoPort": false
     },
     {
       "name": "extension",
       "runtimeExecutable": "/bin/zsh",
       "runtimeArgs": ["-l", "-c", "cd /Users/loganyu/Projects/point-portfolio && pnpm --filter @points-geek/extension dev"],
-      "port": 3001,
+      "port": 3002,
       "autoPort": false
     }
   ]
