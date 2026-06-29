@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { BrandLogo } from "./dashboard/brand-logo";
 import { LogoStampMark } from "@/components/marketing/logo";
 import { HeroDashboardChip } from "@/components/marketing/hero-dashboard-chip";
 import { PrivacyDiagram } from "@/components/marketing/privacy-diagram";
@@ -18,7 +17,7 @@ import { CHROME_STORE_URL } from "@/lib/links";
  *   1. Header (logo + nav + Get started)
  *   2. Hero — copy left, dashboard mockup floating on a tinted paper card
  *   3. How it works — 3-step grid with mini illustrations
- *   4. Programs supported — 12 brand tiles, 4 cols
+ *   4. Programs supported — three-row scrolling logo roll
  *   5. Privacy by architecture — large card + SVG diagram
  *   6. Footer
  *
@@ -35,7 +34,7 @@ export default async function Home() {
       <MarketingHeader />
       <Hero />
       <HowItWorks />
-      <ProgramsGrid />
+      <ProgramsRoll />
       <Privacy />
       <MarketingFooter />
     </div>
@@ -450,139 +449,158 @@ function LedgerStepArt() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// PROGRAMS GRID
+// PROGRAMS ROLL
 // ─────────────────────────────────────────────────────────────────
 
-interface ProgramTile {
-  /** Brand slug → resolves to the BrandLogo PNG. Null = use letter fallback. */
-  brandSlug: string | null;
+interface RollProgram {
+  slug: string;
   name: string;
-  sub: string;
-  type: "Bank" | "Airline" | "Hotel";
-  /** Letter to render if the brand has no logo asset yet. */
-  initial?: string;
-  /** Background for letter-fallback chips. */
-  bg?: string;
+  program: string;
+  /** Logo under /public/logos/brands; null falls back to the colored chip. */
+  logo: string | null;
+  /** Fallback chip color + letter, used only when logo is null. */
+  bg: string;
+  initial: string;
 }
 
-// 12 tiles, mixing programs we have art for (BrandLogo) with programs
-// we want to advertise on the marketing page even though their
-// scrapers aren't shipped yet (Hilton, Hyatt, Southwest, American).
-// Letter fallbacks render with a brand-tinted bg per the design.
-const PROGRAMS: ProgramTile[] = [
-  { brandSlug: "amex", name: "American Express", sub: "Membership Rewards", type: "Bank" },
-  { brandSlug: "chase", name: "Chase", sub: "Ultimate Rewards", type: "Bank" },
-  { brandSlug: "capitalone", name: "Capital One", sub: "Miles", type: "Bank" },
-  { brandSlug: "citi", name: "Citi", sub: "ThankYou Points", type: "Bank" },
-  { brandSlug: "bilt", name: "Bilt", sub: "Bilt Rewards", type: "Bank" },
-  { brandSlug: "delta", name: "Delta", sub: "SkyMiles", type: "Airline" },
-  { brandSlug: "united", name: "United", sub: "MileagePlus", type: "Airline" },
-  { brandSlug: "aa", name: "American", sub: "AAdvantage", type: "Airline" },
-  { brandSlug: null, name: "Southwest", sub: "Rapid Rewards", type: "Airline", initial: "S", bg: "#304CB2" },
-  { brandSlug: "marriott", name: "Marriott", sub: "Bonvoy", type: "Hotel" },
-  { brandSlug: null, name: "Hilton", sub: "Honors", type: "Hotel", initial: "H", bg: "#002F61" },
-  { brandSlug: null, name: "Hyatt", sub: "World of Hyatt", type: "Hotel", initial: "H", bg: "#0F4C81" },
+// Order follows the design handoff. We have real logo art for all of these in
+// /public/logos/brands, so the initial-chip fallback only triggers if a future
+// program is added without a logo.
+const ROLL_PROGRAMS: RollProgram[] = [
+  { slug: "amex", name: "American Express", program: "Membership Rewards", logo: "/logos/brands/amex.png", bg: "#006FCF", initial: "A" },
+  { slug: "chase", name: "Chase", program: "Ultimate Rewards", logo: "/logos/brands/chase.png", bg: "#117ACA", initial: "C" },
+  { slug: "capitalone", name: "Capital One", program: "Capital One Miles", logo: "/logos/brands/capitalone.png", bg: "#D03027", initial: "C" },
+  { slug: "citi", name: "Citi", program: "ThankYou Points", logo: "/logos/brands/citi.png", bg: "#003B70", initial: "C" },
+  { slug: "bilt", name: "Bilt", program: "Bilt Rewards", logo: "/logos/brands/bilt.png", bg: "#0A0A0A", initial: "B" },
+  { slug: "delta", name: "Delta", program: "SkyMiles", logo: "/logos/brands/delta.png", bg: "#E01933", initial: "D" },
+  { slug: "united", name: "United", program: "MileagePlus", logo: "/logos/brands/united.png", bg: "#002244", initial: "U" },
+  { slug: "aa", name: "American", program: "AAdvantage", logo: "/logos/brands/aa.png", bg: "#0078D2", initial: "A" },
+  { slug: "cathay", name: "Cathay Pacific", program: "Asia Miles", logo: "/logos/brands/cathay.png", bg: "#006564", initial: "C" },
+  { slug: "qatar", name: "Qatar Airways", program: "Privilege Club", logo: "/logos/brands/qatar.png", bg: "#5C0632", initial: "Q" },
+  { slug: "marriott", name: "Marriott", program: "Bonvoy", logo: "/logos/brands/marriott.png", bg: "#2F3337", initial: "M" },
+  { slug: "hyatt", name: "World of Hyatt", program: "World of Hyatt", logo: "/logos/brands/hyatt.png", bg: "#1C57A5", initial: "H" },
 ];
 
-function ProgramsGrid() {
+// Three rows, mixing categories, matching the handoff's distribution. `items`
+// are indices into ROLL_PROGRAMS. Rows alternate scroll direction; right rows
+// run slightly slower so the rows visibly desync.
+const ROLL_ROWS: Array<{ items: number[]; direction: "left" | "right"; duration: number }> = [
+  { items: [0, 5, 10, 3], direction: "left", duration: 100 },
+  { items: [2, 6, 11, 4], direction: "right", duration: 116 },
+  { items: [1, 7, 8, 9], direction: "left", duration: 116 },
+];
+
+// Each track repeats its pills this many times: one visible set plus
+// (ROLL_COPIES - 1) aria-hidden sets. translateX(-50%) covers half the track
+// (= ROLL_COPIES/2 sets), which stays wider than the 1280px-capped row so the
+// loop never shows a gap. Durations above are ~2x the design's 50s/58s to keep
+// its drift speed now that -50% spans two sets instead of one.
+const ROLL_COPIES = 4;
+
+function ProgramsRoll() {
   return (
     <section
       id="programs"
       className="max-w-[1280px] mx-auto px-12 py-24 border-t border-border-light"
     >
-      <div className="grid [grid-template-columns:1fr_2.4fr] gap-16 items-start mb-12">
-        <div>
-          <div className="pg-eyebrow mb-3">Programs supported</div>
-          <h2
-            className="text-text-primary m-0"
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: 44,
-              fontWeight: 500,
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-            }}
+      <div className="max-w-2xl mb-12">
+        <div className="pg-eyebrow mb-3">Programs supported</div>
+        <h2
+          className="text-text-primary m-0"
+          style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: 44,
+            fontWeight: 500,
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          The cards in your wallet,
+          <br />
+          <span style={{ fontStyle: "italic", color: "var(--purple-deep)" }}>
+            keep track of all your airlines, hotels, and banks.
+          </span>
+        </h2>
+        <p
+          className="text-text-secondary mt-5 m-0"
+          style={{ fontSize: 15, lineHeight: 1.6, maxWidth: 540 }}
+        >
+          Many programs already supported, with new ones added regularly.
+          Don&apos;t see one you use?{" "}
+          <a
+            href="mailto:pointsgeekxyz@gmail.com"
+            className="text-text-accent hover:text-text-accent-hover font-medium no-underline"
           >
-            The cards in your wallet,
-            <br />
-            <span
-              style={{ fontStyle: "italic", color: "var(--purple-deep)" }}
-            >
-              the airlines you actually fly.
-            </span>
-          </h2>
-        </div>
-        <div>
-          <p
-            className="text-text-secondary m-0"
-            style={{ fontSize: 16, lineHeight: 1.6, maxWidth: 540 }}
-          >
-            New programs are added regularly. Don&apos;t see one you use? Let us
-            know and it goes on the queue.
-          </p>
-          {/* Pills: deliberately label-only (no counts). Counts drift the
-           * moment a new scraper ships; this stays evergreen. */}
-          <div className="mt-4 flex gap-2 flex-wrap">
-            <span className="px-2.5 py-[5px] rounded-full text-xs text-text-secondary bg-surface border border-border">
-              Many programs included
-            </span>
-            <span className="px-2.5 py-[5px] rounded-full text-xs text-text-secondary border border-border border-dashed">
-              More added regularly
-            </span>
-          </div>
-        </div>
+            Let us know
+          </a>{" "}
+          and it goes on the queue.
+        </p>
       </div>
-      <div className="grid grid-cols-4 gap-3">
-        {PROGRAMS.map((p) => (
-          <ProgramTileCard key={p.name} program={p} />
+      {/* "The roll": three rows auto-scrolling in alternating directions. Each
+       * track repeats its pills ROLL_COPIES times so the -50% loop never shows
+       * a gap; every copy past the first is aria-hidden, so a program is read
+       * once. Pure CSS animation — see .pg-roll* in globals.css. */}
+      <div className="pg-roll flex flex-col gap-3.5 py-1.5">
+        {ROLL_ROWS.map((row, rowIdx) => (
+          <div className="pg-roll-row" key={rowIdx}>
+            <div
+              className={`pg-roll-track ${row.direction}`}
+              style={{ animationDuration: `${row.duration}s` }}
+            >
+              {Array.from({ length: ROLL_COPIES }).flatMap((_, copy) =>
+                row.items.map((idx) => (
+                  <ProgramPill
+                    key={`${copy}-${idx}`}
+                    program={ROLL_PROGRAMS[idx]}
+                    hidden={copy > 0}
+                  />
+                )),
+              )}
+            </div>
+          </div>
         ))}
       </div>
     </section>
   );
 }
 
-function ProgramTileCard({ program }: { program: ProgramTile }) {
+function ProgramPill({
+  program,
+  hidden,
+}: {
+  program: RollProgram;
+  hidden?: boolean;
+}) {
   return (
-    <div className="bg-surface border border-border rounded-xl px-4 py-4 flex items-center gap-3">
-      {/* Logo chip — BrandLogo for known brands, manual letter chip for the
-       * "advertise but not yet scraped" set. The 36px size matches the
-       * design's circle-chip diameter and the dashboard ProgramsList. */}
-      {program.brandSlug ? (
-        <BrandLogo slug={program.brandSlug} size={36} />
+    <div
+      className="flex items-center gap-[11px] py-2 pl-2 pr-[18px] bg-surface border border-border rounded-full whitespace-nowrap"
+      aria-hidden={hidden || undefined}
+    >
+      {program.logo ? (
+        <span className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-white border border-border flex items-center justify-center">
+          <Image
+            src={program.logo}
+            alt=""
+            width={36}
+            height={36}
+            className="w-full h-full object-contain"
+          />
+        </span>
       ) : (
-        <div
-          className="shrink-0 rounded-full flex items-center justify-center text-white font-semibold"
-          style={{
-            width: 36,
-            height: 36,
-            background: program.bg ?? "var(--brand-default-chip)",
-            fontSize: 14,
-          }}
-          aria-hidden="true"
+        <span
+          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+          style={{ background: program.bg }}
         >
-          {program.initial ?? program.name[0]}
-        </div>
+          {program.initial}
+        </span>
       )}
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-text-primary truncate tracking-[-0.005em]">
+      <span className="flex flex-col leading-[1.25]">
+        <span className="text-sm font-semibold text-text-primary">
           {program.name}
-        </div>
-        <div
-          className="text-text-tertiary truncate"
-          style={{ fontSize: 11.5, marginTop: 1 }}
-        >
-          {program.sub}
-        </div>
-      </div>
-      <span
-        className="uppercase text-text-tertiary"
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 9.5,
-          letterSpacing: "0.06em",
-        }}
-      >
-        {program.type.slice(0, 3)}
+        </span>
+        <span className="text-text-tertiary" style={{ fontSize: 11.5 }}>
+          {program.program}
+        </span>
       </span>
     </div>
   );

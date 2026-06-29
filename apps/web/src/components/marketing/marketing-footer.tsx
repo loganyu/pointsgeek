@@ -5,10 +5,10 @@ import { LogoLockup } from "./logo";
  * Marketing footer — 4-column nav + meta strip. The first column is
  * the brand lockup with a tagline; the next three are link groups.
  *
- * Footer link targets are placeholders today — we route them to
- * anchors on this page or to `#` so the layout looks complete without
- * dead-link warnings. As real /changelog, /about, /pricing pages
- * land, swap each `href` over to the live route.
+ * Every link resolves to a real target — on-page anchors (#how,
+ * #programs), the contact mailto, or the /privacy and /terms routes.
+ * Don't add placeholder `href="#"` links here; leave a group out until
+ * its destination exists.
  */
 const FOOTER_GROUPS: Array<{ heading: string; links: Array<{ label: string; href: string }> }> = [
   {
@@ -16,14 +16,11 @@ const FOOTER_GROUPS: Array<{ heading: string; links: Array<{ label: string; href
     links: [
       { label: "How it works", href: "#how" },
       { label: "Programs", href: "#programs" },
-      { label: "Pricing", href: "#" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About", href: "#" },
-      { label: "Changelog", href: "#" },
       { label: "Contact", href: "mailto:pointsgeekxyz@gmail.com" },
     ],
   },
