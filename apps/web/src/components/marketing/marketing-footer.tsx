@@ -75,14 +75,8 @@ export function MarketingFooter() {
             </div>
           ))}
         </div>
-        <div className="border-t border-border-light pt-5 flex justify-between text-xs text-text-tertiary">
-          <span>© {year} PointsGeek. Made for travelers, not advertisers.</span>
-          <span
-            className="tracking-wider"
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
-            v 0.4.1 · CHI
-          </span>
+        <div className="border-t border-border-light pt-5 text-xs text-text-tertiary">
+          <span>© {year} PointsGeek. Made for travelers.</span>
         </div>
       </div>
     </footer>
