@@ -8,6 +8,7 @@ import { users } from "@/lib/db/schema";
 import { DEFAULT_TIMEZONE, ensureIncluded } from "@/lib/timezones";
 import { AppShell } from "../app-shell";
 import { ProfileForm } from "./profile-form";
+import { CHROME_STORE_URL } from "@/lib/links";
 
 const MAX_IMAGE_BYTES = 500 * 1024;
 
@@ -130,6 +131,14 @@ export default async function SettingsPage() {
             Install the Chrome extension and sign in with the same Google
             account to sync your balances automatically.
           </p>
+          <a
+            href={CHROME_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 bg-white border border-border px-[18px] py-[11px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
+          >
+            Install from Chrome Web Store
+          </a>
         </section>
       </main>
     </AppShell>

@@ -8,6 +8,7 @@ import { HeroDashboardChip } from "@/components/marketing/hero-dashboard-chip";
 import { PrivacyDiagram } from "@/components/marketing/privacy-diagram";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { CHROME_STORE_URL } from "@/lib/links";
 
 /**
  * Public landing page. Unauth'd visitors hit this; signed-in users
@@ -113,7 +114,9 @@ function Hero() {
             Sign up with Google
           </Link>
           <a
-            href="#"
+            href={CHROME_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-[11px] rounded-[10px] text-sm font-medium text-text-secondary no-underline transition-colors hover:text-text-primary"
           >
             Install Chrome extension
