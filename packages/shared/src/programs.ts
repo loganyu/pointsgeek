@@ -64,6 +64,19 @@ export const PROGRAM_CATALOG = {
     // reads the points balance, then closes it again.
     primarySyncUrl: "https://www.marriott.com/default.mi",
   },
+  world_of_hyatt: {
+    programType: "hotel",
+    brandSlug: "hyatt",
+    currency: "points",
+    displayName: "World of Hyatt",
+    short: "WOH",
+    // Scraped from www.hyatt.com via the member profile API
+    // (/profile/api/member/profile), same same-origin cookie-auth pattern
+    // as Marriott. Root URL — the content script runs on any hyatt.com
+    // page, so we link to the homepage (always valid) and let the user
+    // sign in there rather than guess a member-area path.
+    primarySyncUrl: "https://www.hyatt.com",
+  },
   united_mileageplus: {
     programType: "airline",
     brandSlug: "united",

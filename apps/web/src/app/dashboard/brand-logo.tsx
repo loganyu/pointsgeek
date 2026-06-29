@@ -53,6 +53,11 @@ export const BRAND_META: Record<
     bg: "#2F3337",
     initial: "M",
   },
+  hyatt: {
+    logoPath: "/logos/brands/hyatt.png",
+    bg: "#0F4C81", // World of Hyatt blue
+    initial: "H",
+  },
   bilt: {
     logoPath: "/logos/brands/bilt.png",
     bg: "#0A0A0A",

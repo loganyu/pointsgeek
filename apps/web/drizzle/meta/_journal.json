@@ -127,6 +127,13 @@
       "when": 1777764981508,
       "tag": "0017_optimal_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1782595898676,
+      "tag": "0018_lame_post",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ export const providerEnum = pgEnum("provider", [
   "capitalone",
   "citi",
   "delta",
+  "hyatt",
   "marriott",
   "qatar",
   "united",
