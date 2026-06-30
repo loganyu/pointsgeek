@@ -59,7 +59,11 @@ export async function getState(): Promise<StoredState> {
 }
 
 export async function setAuth(token: string, user: UserInfo): Promise<void> {
-  await browser.storage.local.set({ token, user, lastError: undefined });
+  // `set({ lastError: undefined })` is a no-op: chrome.storage drops undefined
+  // keys during serialization, so a prior sign-in error would survive and show
+  // in the popup even after a successful sign-in. Remove the key explicitly.
+  await browser.storage.local.set({ token, user });
+  await browser.storage.local.remove("lastError");
 }
 
 export async function clearAuth(): Promise<void> {
@@ -72,7 +76,8 @@ export async function upsertBalances(records: StoredBalance[]): Promise<void> {
   for (const rec of records) {
     balances[balanceKey(rec)] = rec;
   }
-  await browser.storage.local.set({ balances, lastError: undefined });
+  await browser.storage.local.set({ balances });
+  await browser.storage.local.remove("lastError");
 }
 
 export async function setLastError(error: string): Promise<void> {

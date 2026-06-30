@@ -145,9 +145,7 @@ export default function App() {
       {lastError && <ErrorAlert message={lastError} />}
 
       {pooledTotals.length === 0 ? (
-        <div style={styles.emptyState}>
-          Visit your bank's site to sync your first program.
-        </div>
+        <div style={styles.emptyState}>No programs synced yet.</div>
       ) : (
         <div style={styles.table}>
           {pooledTotals.map((b, i) => (
