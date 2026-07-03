@@ -74,7 +74,10 @@ export function HeroDashboardChip() {
     <div
       className="bg-surface border border-border rounded-2xl overflow-hidden"
       style={{
-        width: 460,
+        // Fluid below its design width so the hero column can shrink on
+        // phones; the parent wrapper caps it back at 460 on desktop.
+        width: "100%",
+        maxWidth: 460,
         // Layered shadow keeps the chip floating above the paper card
         // without going full SaaS-bro neon. Purple-tinted drop layer
         // matches the lavender backdrop, so it grounds rather than fights it.
