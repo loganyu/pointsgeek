@@ -68,6 +68,20 @@ html[data-sidebar-pinned="false"] {
   --sidebar-width: var(--sidebar-collapsed);
 }
 
+/* Phones: force the collapsed icon rail regardless of the pinned
+ * preference — a 220px pinned sidebar + matching gutter leaves a 375px
+ * viewport with less than half its width for content. The rail's icons
+ * still navigate; the unpinned hover/tap overlay still floats the
+ * expanded sidebar OVER content (inline style on <aside>), so nothing
+ * is lost, and the pin preference resumes above md. */
+@media (max-width: 767px) {
+  :root,
+  html[data-sidebar-pinned="false"] {
+    --sidebar-gutter: var(--sidebar-collapsed);
+    --sidebar-width: var(--sidebar-collapsed);
+  }
+}
+
 /* Dark ("nocturnal") mode — deep warm-navy with a lighter aubergine accent */
 .dark {
   --background: #13161f;       /* deep navy */
