@@ -1,6 +1,7 @@
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect, CSSProperties, MouseEvent } from "react";
 import { getState, type StoredBalance } from "../../lib/storage";
 import { signInWithGoogle, signOut } from "../../lib/auth";
+import { requestHandoffUrl } from "../../lib/api";
 import { WEB_BASE } from "../../lib/config";
 import { PROGRAM_CATALOG, type ProgramKey } from "@points-geek/shared";
 
@@ -169,9 +170,27 @@ export default function App() {
  * as the web wordmark.
  */
 function OpenAppButton() {
+  // If signed in, trade the stored token for a one-time sign-in URL so the web
+  // app opens already authenticated. Falls back to /dashboard (which prompts a
+  // normal login) when signed out or if the handoff can't be minted. Opening
+  // via browser.tabs.create avoids the popup-blocker that window.open hits
+  // after an await.
+  async function handleOpen(e: MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    const { token } = await getState();
+    let url = `${WEB_BASE}/dashboard`;
+    if (token) {
+      const handoffUrl = await requestHandoffUrl(token);
+      if (handoffUrl) url = handoffUrl;
+    }
+    await browser.tabs.create({ url });
+    window.close();
+  }
+
   return (
     <a
       href={`${WEB_BASE}/dashboard`}
+      onClick={handleOpen}
       target="_blank"
       rel="noreferrer"
       style={styles.openAppButton}
