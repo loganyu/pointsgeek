@@ -106,7 +106,7 @@ function Hero() {
         <div className="flex items-center gap-3 flex-wrap">
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2.5 bg-white border border-border px-[18px] py-[11px] pl-[14px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
+            className="inline-flex items-center gap-2.5 bg-surface border border-border px-[18px] py-[11px] pl-[14px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
             style={{ boxShadow: "0 1px 0 rgba(34,32,29,0.04)" }}
           >
             <GoogleG />

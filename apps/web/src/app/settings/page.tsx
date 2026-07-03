@@ -135,7 +135,7 @@ export default async function SettingsPage() {
             href={CHROME_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 bg-white border border-border px-[18px] py-[11px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
+            className="mt-4 inline-flex items-center gap-2 bg-surface-secondary border border-border px-[18px] py-[11px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
           >
             Install from Chrome Web Store
           </a>
