@@ -27,6 +27,8 @@ const FINANCIAL_SITES = [
   "https://www.united.com/*",
   "https://www.marriott.com/*",
   "https://www.hyatt.com/*",
+  "https://jetblue.com/*",
+  "https://www.jetblue.com/*",
   "https://www.qatarairways.com/*",
 ];
 

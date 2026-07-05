@@ -58,6 +58,11 @@ export const BRAND_META: Record<
     bg: "#0F4C81", // World of Hyatt blue
     initial: "H",
   },
+  jetblue: {
+    logoPath: "/logos/brands/jetblue.svg",
+    bg: "#003876", // JetBlue navy
+    initial: "J",
+  },
   bilt: {
     logoPath: "/logos/brands/bilt.png",
     bg: "#0A0A0A",

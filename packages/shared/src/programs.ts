@@ -54,6 +54,16 @@ export const PROGRAM_CATALOG = {
     short: "DL",
     primarySyncUrl: "https://www.delta.com/myskymiles/overview",
   },
+  jetblue_trueblue: {
+    programType: "airline",
+    brandSlug: "jetblue",
+    currency: "points",
+    displayName: "JetBlue TrueBlue",
+    short: "B6",
+    // The signed-in nav button on jetblue.com exposes the TrueBlue
+    // balance directly, so the homepage is enough for the content script.
+    primarySyncUrl: "https://www.jetblue.com/",
+  },
   marriott_bonvoy: {
     programType: "hotel",
     brandSlug: "marriott",

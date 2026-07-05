@@ -16,6 +16,7 @@ export const PROVIDERS = [
   "citi",
   "delta",
   "hyatt",
+  "jetblue",
   "marriott",
   "qatar",
   "united",

@@ -134,6 +134,13 @@
       "when": 1782595898676,
       "tag": "0018_lame_post",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1783281600000,
+      "tag": "0019_add_jetblue_provider",
+      "breakpoints": true
     }
   ]
 }

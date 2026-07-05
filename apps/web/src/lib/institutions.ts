@@ -95,6 +95,12 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "delta",
   },
   {
+    name: "JetBlue TrueBlue",
+    url: "https://www.jetblue.com/",
+    category: "airline",
+    brandSlug: "jetblue",
+  },
+  {
     name: "Qatar Privilege Club",
     url: "https://www.qatarairways.com/en/Privilege-Club/postLogin/dashboardqrpcuser/avios-balance.html",
     category: "airline",
@@ -111,7 +117,6 @@ export const INSTITUTIONS: Institution[] = [
   // Uncomment as scrapers ship.
   // { name: "Southwest Rapid Rewards", url: "https://www.southwest.com", category: "airline" },
   // { name: "Alaska Mileage Plan", url: "https://www.alaskaair.com", category: "airline" },
-  // { name: "JetBlue TrueBlue", url: "https://www.jetblue.com", category: "airline" },
   // { name: "Hawaiian HawaiianMiles", url: "https://www.hawaiianairlines.com", category: "airline" },
   // { name: "Frontier Miles", url: "https://www.flyfrontier.com", category: "airline" },
 
