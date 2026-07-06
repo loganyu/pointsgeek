@@ -7,6 +7,7 @@
     "dev:ext": "pnpm --filter @points-geek/extension dev",
     "dev:ext:staging": "pnpm --filter @points-geek/extension dev:staging",
     "build": "pnpm --filter @points-geek/web build",
+    "build:vercel": "pnpm --filter @points-geek/web build:vercel",
     "build:ext": "pnpm --filter @points-geek/extension build",
     "build:ext:local": "pnpm --filter @points-geek/extension build:local",
     "build:ext:staging": "pnpm --filter @points-geek/extension build:staging",
@@ -16,6 +17,7 @@
     "test": "vitest run",
     "db:generate": "pnpm --filter @points-geek/web db:generate",
     "db:migrate": "pnpm --filter @points-geek/web db:migrate",
+    "db:migrate:deploy": "pnpm --filter @points-geek/web db:migrate:deploy",
     "db:studio": "pnpm --filter @points-geek/web db:studio"
   },
   "packageManager": "pnpm@10.33.0"
