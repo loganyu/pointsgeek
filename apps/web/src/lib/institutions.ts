@@ -83,6 +83,12 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "aa",
   },
   {
+    name: "Alaska Atmos Rewards",
+    url: "https://www.alaskaair.com/atmosrewards/account/overview/",
+    category: "airline",
+    brandSlug: "alaskaair",
+  },
+  {
     name: "Cathay Asia Miles",
     url: "https://www.cathaypacific.com/cx/en_US.html",
     category: "airline",
@@ -116,7 +122,6 @@ export const INSTITUTIONS: Institution[] = [
   // ── Airline loyalty — pending scrapers (US) ──────────────
   // Uncomment as scrapers ship.
   // { name: "Southwest Rapid Rewards", url: "https://www.southwest.com", category: "airline" },
-  // { name: "Alaska Mileage Plan", url: "https://www.alaskaair.com", category: "airline" },
   // { name: "Hawaiian HawaiianMiles", url: "https://www.hawaiianairlines.com", category: "airline" },
   // { name: "Frontier Miles", url: "https://www.flyfrontier.com", category: "airline" },
 

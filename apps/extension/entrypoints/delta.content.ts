@@ -52,7 +52,7 @@ export default defineContentScript({
     }
 
     // Prefer the SkyMiles number as a stable per-account identifier when
-    // we can read it off the page; fall back to the usual greeting/fingerprint.
+    // we can read it off the page; otherwise fall back to the greeting.
     const skyMilesNumber = extractSkyMilesNumber(document);
     // Delta surfaces a "Good Evening, Logan" greeting in an Angular banner
     // whose class doesn't match the shared helper's selectors — pull it

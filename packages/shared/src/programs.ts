@@ -167,6 +167,17 @@ export const PROGRAM_CATALOG = {
     primarySyncUrl:
       "https://www.aa.com/aadvantage-program/profile/account-summary",
   },
+  alaska_atmos: {
+    // Alaska Airlines Atmos Rewards. Scraped from the signed-in account
+    // overview page, which exposes both Rewards No. and Available Points
+    // directly in the rendered DOM.
+    programType: "airline",
+    brandSlug: "alaskaair",
+    currency: "points",
+    displayName: "Atmos Rewards",
+    short: "AS",
+    primarySyncUrl: "https://www.alaskaair.com/atmosrewards/account/overview/",
+  },
 } as const satisfies Record<
   string,
   {

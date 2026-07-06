@@ -39,6 +39,8 @@ const CUSTOMER_ACCOUNTS_URL =
   "https://myaccounts.capitalone.com/web-api/protected/636178/customer-accounts?density=4&retrieveBusinessName=true&versionUpgrade=true";
 const LOYALTY_ACCOUNTS_URL =
   "https://myaccounts.capitalone.com/web-api/protected/375751/loyalty/accounts/digital-account-view/get-accounts?include=LOYALTY_TILE,PARTNER_DETAILS";
+const SUMMARY_PAGE_TIMEOUT_MS = 3 * 60_000;
+const SUMMARY_SETTLE_MS = 1_500;
 
 interface CustomerAccount {
   accountReferenceId: string;
@@ -78,25 +80,39 @@ export default defineContentScript({
     "https://verified.capitalone.com/*",
   ],
   async main() {
-    const url = window.location.href;
-    const isSummaryPage = /\/accountSummary/i.test(url);
+    const initialUrl = window.location.href;
+    const isSummaryPage = isAccountSummaryPage(initialUrl);
     extLogger.info("scrape.start", {
       provider: "capitalone",
-      url,
+      url: initialUrl,
       isSummaryPage,
     });
 
-    // The APIs only return useful data when the user is on the post-
-    // login summary page. Other pages (verified.capitalone.com auth
-    // gate, individual card pages, transfer flows, etc.) silently skip
-    // — the next /accountSummary visit will pick up the data.
-    if (!isSummaryPage) {
+    // Capital One often lands on `#/welcome` immediately after login,
+    // then the SPA transitions to `#/accountSummary` after auth/profile
+    // hydration. Do not exit on that first route — wait quietly, like
+    // the AA/United/Bilt signed-in waits, so a normal login flow still
+    // results in one scrape without a manual second page refresh.
+    const summaryUrl = await waitForAccountSummaryPage(SUMMARY_PAGE_TIMEOUT_MS);
+    if (!summaryUrl) {
       extLogger.info("scrape.skipped", {
         provider: "capitalone",
-        reason: "not_summary_page",
+        reason: "not_summary_page_after_wait",
+        initialUrl,
+        currentUrl: window.location.href,
       });
       return;
     }
+    if (!isSummaryPage) {
+      extLogger.info("scrape.summary_page_detected", {
+        provider: "capitalone",
+        url: summaryUrl,
+      });
+    }
+
+    // Give the account summary shell a brief beat to finish initializing
+    // the same cookies/client state its own API calls rely on.
+    await sleep(SUMMARY_SETTLE_MS);
 
     if (!(await syncWidget.start({ label: "Capital One" }))) return;
     const start = performance.now();
@@ -238,7 +254,7 @@ export default defineContentScript({
       }
     }
 
-    const ident = resolveIdentifier(document);
+    const ident = resolveIdentifier(document, { cards });
 
     extLogger.info("scrape.success", {
       provider: "capitalone",
@@ -268,6 +284,33 @@ export default defineContentScript({
     });
   },
 });
+
+function isAccountSummaryPage(url: string): boolean {
+  return /\/accountSummary/i.test(url);
+}
+
+async function waitForAccountSummaryPage(
+  timeoutMs: number
+): Promise<string | null> {
+  if (isAccountSummaryPage(window.location.href)) return window.location.href;
+
+  extLogger.info("scrape.awaiting_summary_page", {
+    provider: "capitalone",
+    initialUrl: window.location.href,
+    timeoutMs,
+  });
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (isAccountSummaryPage(window.location.href)) return window.location.href;
+    await sleep(500);
+  }
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * Pick the first balance whose `loyaltyCurrencyCode === "MILES"` from

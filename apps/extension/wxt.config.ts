@@ -6,6 +6,8 @@ import { loadEnv } from "vite";
  */
 const FINANCIAL_SITES = [
   "https://www.aa.com/*",
+  "https://alaskaair.com/*",
+  "https://www.alaskaair.com/*",
   "https://www.americanexpress.com/*",
   "https://global.americanexpress.com/*",
   "https://www.bilt.com/*",

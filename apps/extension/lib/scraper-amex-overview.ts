@@ -20,9 +20,9 @@ import { resolveIdentifier } from "./identifier";
  *   • Marriott Bonvoy YTD         (per-card YTD earnings — NOT program total)
  *   • Reward Dollars total        (stored as cents)
  *
- * It also extracts a stable-ish `externalAccountId` (greeting first name
- * when available, else a fingerprint of card last-fours) so two Amex logins
- * on one user don't overwrite each other's data.
+ * It also extracts a stable-ish `externalAccountId` (email/customer id when
+ * visible, else display name + one card last-four, else greeting) so two
+ * Amex logins on one user don't overwrite each other's data.
  */
 
 /** Map Amex's displayed program name to our canonical programKey. */
@@ -330,7 +330,7 @@ function snapshot(doc: Document): ScrapeResult {
     };
   }
 
-  const ident = resolveIdentifier(doc);
+  const ident = resolveIdentifier(doc, { cards: productCards });
 
   // Build the cards[] list. Each product card's primary programKey is
   // determined by which tile linked to it (by name+lastFour match). If a

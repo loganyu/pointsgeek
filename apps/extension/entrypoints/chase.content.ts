@@ -179,7 +179,7 @@ function buildSuccess(
     imageUrl: c.imageUrl,
   }));
 
-  const ident = resolveIdentifier(doc);
+  const ident = resolveIdentifier(doc, { cards });
 
   return {
     success: true,
@@ -507,7 +507,7 @@ async function scrapeUrCombined() {
     return;
   }
 
-  const ident = resolveIdentifier(document);
+  const ident = resolveIdentifier(document, { cards });
   extLogger.info("scrape.success", {
     provider: "chase",
     mode: "ur-combined",
@@ -610,7 +610,7 @@ async function scrapeIndividualCardOnly() {
     },
   ];
 
-  const ident = resolveIdentifier(document);
+  const ident = resolveIdentifier(document, { cards });
   extLogger.info("scrape.success", {
     provider: "chase",
     mode: "individual-card",

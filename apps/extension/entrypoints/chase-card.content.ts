@@ -186,7 +186,7 @@ async function scrapeIfCardPage(): Promise<void> {
     },
   ];
 
-  const ident = resolveIdentifier(document);
+  const ident = resolveIdentifier(document, { cards });
 
   const result: ScrapeResult = {
     success: true,
@@ -375,7 +375,7 @@ async function scrapeTravelSidebar(): Promise<void> {
     return;
   }
 
-  const ident = resolveIdentifier(document);
+  const ident = resolveIdentifier(document, { cards });
 
   extLogger.info("scrape.success", {
     provider: "chase",

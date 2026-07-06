@@ -38,6 +38,11 @@ export const BRAND_META: Record<
     bg: "#C8102E", // AA red
     initial: "A",
   },
+  alaskaair: {
+    logoPath: "/logos/brands/alaskaair.png",
+    bg: "#01426A", // Alaska blue
+    initial: "A",
+  },
   qatar: {
     logoPath: "/logos/brands/qatar.png",
     bg: "#5C0931", // Qatar Airways burgundy
