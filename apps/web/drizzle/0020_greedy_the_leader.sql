@@ -1,0 +1,2 @@
+ALTER TABLE "points_programs" DROP CONSTRAINT "uniq_user_program";--> statement-breakpoint
+ALTER TABLE "points_programs" ADD CONSTRAINT "uniq_user_program_external_account" UNIQUE("user_id","program_key","external_account_id");

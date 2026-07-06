@@ -178,9 +178,9 @@ function usePersistedBoolean(
 }
 
 /**
- * Sub-line label beside a program row. When we have both an owner and a
- * loyalty number (e.g. Marriott: "Logan Yu" + "264636152"), both show,
- * joined by a middot. Falls back to whichever piece we have.
+ * Sub-line label beside a program row. Direct loyalty accounts prefer an
+ * owner / membership number; bank rows can fall back to the card portion
+ * of the display-name/card id so same-provider accounts are readable.
  */
 function programIdentityLabel(p: ProgramRowData): string | null {
   const parts: string[] = [];
@@ -193,7 +193,22 @@ function programIdentityLabel(p: ProgramRowData): string | null {
   ) {
     parts.push(p.externalAccountId.slice("loyalty:".length));
   }
+  if (p.programType === "bank_rewards") {
+    const cardLastFour = accountCardLastFour(p);
+    if (cardLastFour) {
+      parts.push(`Account with card ${cardLastFour}`);
+    }
+  }
   return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+function accountCardLastFour(p: ProgramRowData): string | null {
+  if (p.externalAccountId.startsWith("card:")) {
+    const lastFour = p.externalAccountId.split(":").at(-1);
+    return lastFour && /^\d{4}$/.test(lastFour) ? lastFour : null;
+  }
+  const card = p.cards.find((c) => c.lastFour);
+  return card?.lastFour ?? null;
 }
 
 /* ── Formatting helpers ──────────────────────────────────── */

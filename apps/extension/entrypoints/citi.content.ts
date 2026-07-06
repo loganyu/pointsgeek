@@ -123,7 +123,7 @@ export default defineContentScript({
       return;
     }
 
-    const ident = resolveIdentifier(document);
+    const ident = resolveIdentifier(document, { cards });
 
     extLogger.info("scrape.success", {
       provider: "citi",

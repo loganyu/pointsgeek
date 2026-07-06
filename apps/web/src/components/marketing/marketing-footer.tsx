@@ -41,10 +41,10 @@ export function MarketingFooter() {
   // Component (no "use client" directive).
   const year = new Date().getFullYear();
   return (
-    <footer className="px-12 pb-12">
+    <footer className="px-5 sm:px-8 lg:px-12 pb-12">
       <div className="max-w-[1280px] mx-auto">
-        <div className="border-t border-border-light pt-[72px] pb-14 grid gap-12 [grid-template-columns:1.4fr_1fr_1fr_1fr] items-start">
-          <div>
+        <div className="border-t border-border-light pt-16 sm:pt-[72px] pb-14 grid gap-10 sm:gap-12 grid-cols-2 md:[grid-template-columns:1.4fr_1fr_1fr_1fr] items-start">
+          <div className="col-span-2 md:col-span-1">
             <Link href="/" className="select-none" aria-label="PointsGeek home">
               <LogoLockup kind="stamp" size={32} />
             </Link>

@@ -47,7 +47,7 @@ export default async function Home() {
 
 function Hero() {
   return (
-    <section className="max-w-[1280px] mx-auto px-12 pt-[72px] pb-24 grid [grid-template-columns:1.05fr_1fr] gap-16 items-center">
+    <section className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 pt-10 sm:pt-[72px] pb-16 sm:pb-24 grid lg:[grid-template-columns:1.05fr_1fr] gap-12 lg:gap-16 items-center">
       <div>
         {/* Eyebrow chip — pill with purple dot */}
         <div
@@ -66,7 +66,7 @@ function Hero() {
           className="text-text-primary m-0"
           style={{
             fontFamily: "var(--font-serif)",
-            fontSize: "var(--text-display)",
+            fontSize: "clamp(42px, 10vw, var(--text-display))",
             fontWeight: 500,
             lineHeight: 1.05,
             letterSpacing: "-0.025em",
@@ -106,7 +106,7 @@ function Hero() {
         <div className="flex items-center gap-3 flex-wrap">
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2.5 bg-white border border-border px-[18px] py-[11px] pl-[14px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
+            className="inline-flex items-center gap-2.5 bg-surface border border-border px-[18px] py-[11px] pl-[14px] rounded-[10px] text-sm font-medium text-text-primary no-underline transition-colors hover:bg-surface-hover"
             style={{ boxShadow: "0 1px 0 rgba(34,32,29,0.04)" }}
           >
             <GoogleG />
@@ -125,7 +125,7 @@ function Hero() {
 
         {/* Trust strip */}
         <div
-          className="mt-9 pt-6 border-t border-border-light flex gap-8 text-text-tertiary"
+          className="mt-9 pt-6 border-t border-border-light flex flex-col gap-3 sm:flex-row sm:gap-8 text-text-tertiary"
           style={{ fontSize: 12.5, letterSpacing: "0.01em" }}
         >
           <div>
@@ -142,7 +142,7 @@ function Hero() {
       </div>
 
       {/* Right column — rotated paper card backdrop + dashboard chip */}
-      <div className="relative h-[540px] flex items-center justify-center">
+      <div className="relative py-14 sm:py-16 lg:py-0 lg:h-[540px] flex items-center justify-center">
         {/* Tinted paper backdrop — subtly rotated for hand-stamped feel */}
         <div
           className="absolute inset-0 rounded-3xl"
@@ -185,7 +185,7 @@ function Hero() {
         >
           7 programs · 14 cards · 1 ledger
         </div>
-        <div className="relative z-[2]">
+        <div className="relative z-[2] w-full max-w-[460px] px-4 sm:px-6 lg:px-0">
           <HeroDashboardChip />
         </div>
       </div>
@@ -231,16 +231,16 @@ function HowItWorks() {
   return (
     <section
       id="how"
-      className="max-w-[1280px] mx-auto px-12 py-24 border-t border-border-light"
+      className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24 border-t border-border-light"
     >
-      <div className="grid [grid-template-columns:1fr_2.4fr] gap-16 items-start mb-14">
+      <div className="grid md:[grid-template-columns:1fr_2.4fr] gap-8 md:gap-16 items-start mb-10 md:mb-14">
         <div>
           <div className="pg-eyebrow mb-3">How it works</div>
           <h2
             className="text-text-primary m-0"
             style={{
               fontFamily: "var(--font-serif)",
-              fontSize: 44,
+              fontSize: "clamp(32px, 7vw, 44px)",
               fontWeight: 500,
               lineHeight: 1.1,
               letterSpacing: "-0.02em",
@@ -264,7 +264,7 @@ function HowItWorks() {
           what&apos;s already on screen and forwards the balance.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {steps.map((s) => (
           <article
             key={s.n}
@@ -501,7 +501,7 @@ function ProgramsRoll() {
   return (
     <section
       id="programs"
-      className="max-w-[1280px] mx-auto px-12 py-24 border-t border-border-light"
+      className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24 border-t border-border-light"
     >
       <div className="max-w-2xl mb-12">
         <div className="pg-eyebrow mb-3">Programs supported</div>
@@ -509,7 +509,7 @@ function ProgramsRoll() {
           className="text-text-primary m-0"
           style={{
             fontFamily: "var(--font-serif)",
-            fontSize: 44,
+            fontSize: "clamp(32px, 7vw, 44px)",
             fontWeight: 500,
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
@@ -621,16 +621,16 @@ function Privacy() {
   return (
     <section
       id="privacy"
-      className="max-w-[1280px] mx-auto px-12 py-24 border-t border-border-light"
+      className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24 border-t border-border-light"
     >
-      <div className="bg-surface border border-border rounded-[20px] p-14 grid [grid-template-columns:1.1fr_1fr] gap-16 items-center">
+      <div className="bg-surface border border-border rounded-[20px] p-6 sm:p-10 lg:p-14 grid lg:[grid-template-columns:1.1fr_1fr] gap-10 lg:gap-16 items-center">
         <div>
           <div className="pg-eyebrow mb-3">Privacy by architecture</div>
           <h2
             className="text-text-primary"
             style={{
               fontFamily: "var(--font-serif)",
-              fontSize: 38,
+              fontSize: "clamp(30px, 6.5vw, 38px)",
               fontWeight: 500,
               lineHeight: 1.1,
               letterSpacing: "-0.02em",
@@ -671,7 +671,7 @@ function Privacy() {
             ))}
           </ul>
         </div>
-        <div className="relative h-[380px]">
+        <div className="relative h-[300px] sm:h-[380px]">
           <PrivacyDiagram accent="#4a2f85" />
         </div>
       </div>

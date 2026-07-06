@@ -24,17 +24,12 @@ export default async function WelcomePage() {
   const [user] = await db
     .select({
       firstName: users.firstName,
-      name: users.name,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
   if (user?.firstName) redirect("/dashboard");
-
-  // Pre-fill from NextAuth's `name` (OAuth display name) by splitting
-  // on the first space. User can edit before submitting.
-  const prefill = splitName(user?.name);
 
   async function saveProfile(formData: FormData) {
     "use server";
@@ -89,26 +84,16 @@ export default async function WelcomePage() {
         <p className="text-sm text-text-secondary text-center mb-6">
           A couple of quick details so we can tailor your dashboard.
         </p>
+        {/* No name prefill: the OAuth display name is often not a real
+         * first/last split (e.g. a brand account like "Points Geek"),
+         * so let the user type their own. */}
         <WelcomeForm
           action={saveProfile}
-          defaults={{
-            firstName: prefill.first,
-            lastName: prefill.last,
-          }}
+          defaults={{ firstName: "", lastName: "" }}
           timezones={TIMEZONES}
           defaultTimezone={DEFAULT_TIMEZONE}
         />
       </div>
     </main>
   );
-}
-
-function splitName(name: string | null | undefined): {
-  first: string;
-  last: string;
-} {
-  if (!name) return { first: "", last: "" };
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return { first: "", last: "" };
-  return { first: parts[0], last: parts.slice(1).join(" ") };
 }

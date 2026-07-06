@@ -54,6 +54,16 @@ export const PROGRAM_CATALOG = {
     short: "DL",
     primarySyncUrl: "https://www.delta.com/myskymiles/overview",
   },
+  jetblue_trueblue: {
+    programType: "airline",
+    brandSlug: "jetblue",
+    currency: "points",
+    displayName: "JetBlue TrueBlue",
+    short: "B6",
+    // The signed-in nav button on jetblue.com exposes the TrueBlue
+    // balance directly, so the homepage is enough for the content script.
+    primarySyncUrl: "https://www.jetblue.com/",
+  },
   marriott_bonvoy: {
     programType: "hotel",
     brandSlug: "marriott",
@@ -156,6 +166,17 @@ export const PROGRAM_CATALOG = {
     short: "AA",
     primarySyncUrl:
       "https://www.aa.com/aadvantage-program/profile/account-summary",
+  },
+  alaska_atmos: {
+    // Alaska Airlines Atmos Rewards. Scraped from the signed-in account
+    // overview page, which exposes both Rewards No. and Available Points
+    // directly in the rendered DOM.
+    programType: "airline",
+    brandSlug: "alaskaair",
+    currency: "points",
+    displayName: "Atmos Rewards",
+    short: "AS",
+    primarySyncUrl: "https://www.alaskaair.com/atmosrewards/account/overview/",
   },
 } as const satisfies Record<
   string,

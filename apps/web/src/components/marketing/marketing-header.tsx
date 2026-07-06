@@ -13,26 +13,28 @@ import { LogoLockup } from "./logo";
 export function MarketingHeader() {
   return (
     <header className="border-b border-border-light">
-      <div className="max-w-[1280px] mx-auto px-12 py-5 flex items-center justify-between">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-4 sm:py-5 flex items-center justify-between">
         <Link href="/" className="select-none" aria-label="PointsGeek home">
           <LogoLockup kind="stamp" size={32} />
         </Link>
-        <nav className="flex items-center gap-8">
+        {/* Section anchors hide below md — on a phone the sections are one
+         * short scroll away, and five links don't fit next to the lockup. */}
+        <nav className="flex items-center gap-4 sm:gap-6 lg:gap-8">
           <a
             href="#how"
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="hidden md:inline text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             How it works
           </a>
           <a
             href="#programs"
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="hidden md:inline text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             Programs
           </a>
           <a
             href="#privacy"
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="hidden md:inline text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             Privacy
           </a>

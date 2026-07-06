@@ -10,6 +10,7 @@ import {
   getState,
   upsertBalances,
   setLastError,
+  clearAuth,
   type StoredBalance,
 } from "../lib/storage";
 import { performSignIn, performSignOut } from "../lib/auth-flow";
@@ -141,8 +142,13 @@ async function handleScrapeResult(message: ExtensionMessage, isRetry = false) {
   }
 
   if (!apiResult.ok && apiResult.status === 401) {
+    // Token rejected — drop the stored auth so the popup shows the sign-in
+    // button and the next visit's sync gate prompts re-auth, instead of
+    // scraping and silently failing again. setLastError runs after clearAuth
+    // (which doesn't touch lastError) so the message survives for the popup.
     browser.action.setBadgeText({ text: "!" });
     browser.action.setBadgeBackgroundColor({ color: "#EAB308" });
+    await clearAuth();
     await setLastError("Session expired — please sign in again");
     return;
   }

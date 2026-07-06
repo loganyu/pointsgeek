@@ -2,11 +2,13 @@ import NextAuth from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
+import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { Resend as ResendSDK } from "resend";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { users, accounts, sessions, verificationTokens } from "./db/schema";
+import { verifyHandoffCode } from "./jwt";
 
 /** Codes live this long. Short enough to make brute force impractical
  *  without rate limiting, long enough that switching apps to copy a
@@ -185,6 +187,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       maxAge: CODE_TTL_SECONDS,
       generateVerificationToken: generateSixDigitCode,
       sendVerificationRequest,
+    }),
+    // Extension → web "handoff". Not a user-facing sign-in method: the
+    // /auth/handoff page calls signIn("handoff") with a one-time code minted
+    // by /api/auth/handoff from a valid extension token. The code is a 60s,
+    // issuer-scoped JWT; we still confirm the user row exists before issuing a
+    // session so a deleted account can't be revived.
+    Credentials({
+      id: "handoff",
+      name: "Extension handoff",
+      credentials: { code: { label: "Code", type: "text" } },
+      async authorize(credentials) {
+        const code =
+          typeof credentials?.code === "string" ? credentials.code : null;
+        if (!code) return null;
+        const result = await verifyHandoffCode(code);
+        if (!result) return null;
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, result.userId))
+          .limit(1);
+        if (!user) return null;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      },
     }),
   ],
   pages: {

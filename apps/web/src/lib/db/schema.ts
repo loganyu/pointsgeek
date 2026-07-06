@@ -18,6 +18,7 @@ import type { AdapterAccountType } from "next-auth/adapters";
 
 export const providerEnum = pgEnum("provider", [
   "aa",
+  "alaskaair",
   "amex",
   "bilt",
   "cathay",
@@ -26,6 +27,7 @@ export const providerEnum = pgEnum("provider", [
   "citi",
   "delta",
   "hyatt",
+  "jetblue",
   "marriott",
   "qatar",
   "united",
@@ -152,7 +154,8 @@ export const pointsPrograms = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     /** Stable program identifier from shared/programs.ts PROGRAM_CATALOG. */
     programKey: text("program_key").notNull(),
-    /** Scraped identifier for the external account (email, customer id, or fingerprint). */
+    /** Scraped identifier for the external account (loyalty number,
+     *  email, id, display-name/card last-four, name, or default). */
     externalAccountId: text("external_account_id").notNull(),
     /** Display label for the owner ("Logan"). Nullable — falls back to
      *  the loyalty number for airline/hotel programs, or nothing at all. */
@@ -174,18 +177,18 @@ export const pointsPrograms = pgTable(
     lastSyncError: text("last_sync_error"),
   },
   (t) => [
-    // One row per (user, program). We deliberately don't include
-    // `externalAccountId` in the key so multiple scrapers reporting the
-    // same program (Citi cobrand AA card + AA.com graphql) collapse to
-    // a single row. The `externalAccountId` becomes informational only —
-    // upgraded over time to a `loyalty:<id>` form when an authoritative
-    // scraper learns the loyalty number, but never used for dedupe.
-    //
-    // Tradeoff: we don't support a user having two distinct accounts in
-    // the same program (e.g. their own AAdvantage and a partner's). If
-    // we ever need that, add an `account_label` column and key on
-    // (user, program_key, account_label) instead.
-    unique("uniq_user_program").on(t.userId, t.programKey),
+    // One row per external account in a program. Direct loyalty scrapes
+    // use `loyalty:<membership-number>` when available; issuer/bank
+    // scrapes fall back to email / customer id / display-name + one
+    // card last-four / greeting / "default" in that order. This is
+    // imperfect for banks that expose no stable account identifier, but
+    // including it in the key lets known identifiers support multiple
+    // same-program accounts.
+    unique("uniq_user_program_external_account").on(
+      t.userId,
+      t.programKey,
+      t.externalAccountId
+    ),
   ]
 );
 

@@ -73,3 +73,28 @@ export async function reportScrapeFailure(report: {
     extLogger.warn("api.report_failure_error", { error: String(err) });
   }
 }
+
+/**
+ * Trade the extension's API token for a one-time web sign-in URL. The popup's
+ * "Open PointsGeek" opens the returned URL so the web app lands the user on
+ * their dashboard already signed in. Returns null on any failure — the caller
+ * falls back to opening the dashboard (which prompts a normal web login).
+ */
+export async function requestHandoffUrl(token: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/handoff`, {
+      method: "POST",
+      headers: authHeaders(token),
+    });
+    if (!res.ok) {
+      extLogger.warn("api.handoff_failed", { status: res.status });
+      return null;
+    }
+    const data = await res.json().catch(() => null);
+    if (!data?.code) return null;
+    return `${API_BASE}/auth/handoff?code=${encodeURIComponent(data.code)}`;
+  } catch (err) {
+    extLogger.warn("api.handoff_error", { error: String(err) });
+    return null;
+  }
+}

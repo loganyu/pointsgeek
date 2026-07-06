@@ -8,12 +8,13 @@
  * account (creating duplicate program rows). So pick whatever is most
  * stable that the page reliably exposes.
  *
- * Fallback strategy: email → customer id → greeting name → constant
- * `"default"`. We deliberately DO NOT fall back to a card-set fingerprint
- * — cards come and go (new cards opened, old ones closed), which would
- * silently generate duplicate program rows whenever the user's card list
- * shifted. Accepting the single-account-per-user trade-off in the
- * no-identifier case is the better behavior.
+ * Fallback strategy: email → customer id → display name + one card
+ * last-four → greeting name → constant `"default"`. Card last-fours are
+ * intentionally a bank-only fallback: they distinguish multiple issuer
+ * logins when the site exposes no email/customer id. The server also
+ * matches by card last-four overlap so normal card-list drift can keep
+ * the same row even if a later scrape chooses a different card as the
+ * account label.
  */
 
 export interface IdentifierResult {
@@ -24,7 +25,12 @@ export interface IdentifierResult {
    * "Account" string; the UI should render nothing in that case.
    */
   ownerLabel: string | null;
-  source: "email" | "customer_id" | "greeting_name" | "default";
+  source:
+    | "email"
+    | "customer_id"
+    | "card_last_four"
+    | "greeting_name"
+    | "default";
 }
 
 /**
@@ -106,11 +112,41 @@ export function tryExtractEmail(doc: Document): string | null {
   return email.includes("@") ? email.trim() : null;
 }
 
+/** Deterministic bank fallback from display name + one scraped card last-four. */
+export function accountCardIdFromCards(
+  cards: Array<{ lastFour?: string }> | undefined,
+  displayName?: string | null
+): string | null {
+  const name = normalizeDisplayName(displayName);
+  for (const card of cards ?? []) {
+    const normalized = normalizeLastFour(card.lastFour);
+    if (normalized) {
+      return name ? `card:${name}:${normalized}` : `card:${normalized}`;
+    }
+  }
+  return null;
+}
+
+function normalizeLastFour(value: string | undefined): string | null {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  if (digits.length < 4) return null;
+  return digits.slice(-4);
+}
+
+function normalizeDisplayName(value: string | null | undefined): string | null {
+  const normalized = value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || null;
+}
+
 /**
  * Resolve an identifier with the canonical fallback chain:
- * email → customer id → greeting → constant `"default"`. Callers can
- * pass pre-extracted values (e.g. a provider-specific loyalty number)
- * by filling `override`.
+ * email → customer id → display name + one card last-four → greeting →
+ * constant `"default"`. Callers can pass pre-extracted values (e.g. a
+ * provider-specific loyalty number) by filling `override`.
  *
  * Machine identifier (externalAccountId) and display label (ownerLabel)
  * are chosen independently — so we can key a Delta scrape on the
@@ -122,10 +158,12 @@ export function resolveIdentifier(
     email?: string | null;
     customerId?: string | null;
     greetingName?: string | null;
+    cards?: Array<{ lastFour?: string }>;
   }
 ): IdentifierResult {
   const email = override?.email ?? tryExtractEmail(doc);
   const greeting = override?.greetingName ?? tryExtractGreetingName(doc);
+  const cardAccountId = accountCardIdFromCards(override?.cards, greeting);
 
   let externalAccountId: string;
   let source: IdentifierResult["source"];
@@ -135,16 +173,17 @@ export function resolveIdentifier(
   } else if (override?.customerId) {
     externalAccountId = `id:${override.customerId}`;
     source = "customer_id";
+  } else if (cardAccountId) {
+    externalAccountId = cardAccountId;
+    source = "card_last_four";
   } else if (greeting) {
     externalAccountId = `name:${greeting.toLowerCase()}`;
     source = "greeting_name";
   } else {
-    // No reliable identifier. Use a constant so a single logged-in
-    // account reuses the same program row across scrapes. Trade-off:
-    // if the user later signs into a SECOND account without exposing
-    // an identifier we can read, its scrape will overwrite the first.
-    // Card-set fingerprints were the previous fallback but drifted
-    // whenever cards opened/closed, so we dropped them.
+    // No reliable identifier. Use a constant so one logged-in account
+    // reuses the same row across scrapes. Trade-off: if the user later
+    // signs into a second account and the site exposes no email, id, or
+    // cards, its scrape will overwrite the first.
     externalAccountId = "default";
     source = "default";
   }

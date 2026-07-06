@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { UserMenu } from "./user-menu";
 import { GearIcon } from "./icons";
 
@@ -23,14 +23,22 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
-  const expanded = pinned || hovered;
+  // Phones force the collapsed rail via the globals.css media query no
+  // matter what the pin preference says, so treat the sidebar as unpinned
+  // there — otherwise a saved pinned=true would leave `width` at the
+  // (media-forced) 56px on tap and the user-menu popover would open
+  // inside a 56px-wide clipped rail.
+  const isMobile = useIsMobile();
+  const pinnedEffective = pinned && !isMobile;
+  const expanded = pinnedEffective || hovered;
 
   // Width comes from `--sidebar-width` (pre-hydrated via
   // `html[data-sidebar-pinned]`) so the first paint already matches the
-  // saved state. When unpinned + hovered, we override to the expanded
-  // width so the sidebar can float over the reserved gutter.
-  const width =
-    !pinned && hovered ? "var(--sidebar-expanded)" : "var(--sidebar-width)";
+  // saved state. When unpinned + hovered (or tapped, on touch), we
+  // override to the expanded width so the sidebar can float over the
+  // reserved gutter.
+  const overlay = !pinnedEffective && hovered;
+  const width = overlay ? "var(--sidebar-expanded)" : "var(--sidebar-width)";
 
   // Clicking the pin while the cursor is still over the sidebar would
   // leave `hovered = true`, so `expanded = pinned || hovered` would stay
@@ -48,10 +56,7 @@ export function Sidebar({
       onMouseLeave={() => setHovered(false)}
       style={{
         width,
-        boxShadow:
-          !pinned && hovered
-            ? "4px 0 20px rgba(34,32,29,0.08)"
-            : undefined,
+        boxShadow: overlay ? "4px 0 20px rgba(34,32,29,0.08)" : undefined,
       }}
       className="fixed left-0 top-0 z-40 h-screen bg-background border-r border-border overflow-hidden transition-[width] duration-150 ease-out"
     >
@@ -184,6 +189,23 @@ function IconAction({
       {children}
     </button>
   );
+}
+
+/**
+ * Matches the `max-width: 767px` breakpoint the sidebar CSS vars key off
+ * (globals.css). SSR + first client render report `false` so hydration
+ * matches the server; the real value settles right after mount.
+ */
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isMobile;
 }
 
 /* ── Icons (hand-rolled, matches design-system conventions) ─── */

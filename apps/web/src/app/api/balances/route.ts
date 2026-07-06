@@ -24,11 +24,10 @@ import {
  *   1. Always write a `scrape_events` row for telemetry.
  *   2. If the scrape failed or carries no balances, stop there.
  *   3. Otherwise:
- *      a) upsert one `points_programs` row per (user, programKey).
- *         The first scraper to report a program creates it; later
- *         scrapers find it and (optionally) upgrade its
- *         `externalAccountId` from a fingerprint like `name:logan`
- *         to a `loyalty:<id>` form once we learn the loyalty number.
+ *      a) upsert one `points_programs` row per
+ *         (user, programKey, externalAccountId). Direct loyalty scrapes
+ *         should use membership numbers (`loyalty:<id>`); issuer/bank
+ *         scrapes use the best identifier visible on the page.
  *      b) upsert every discovered `cards` row under its program.
  *      c) for each balance, resolve (programId, cardId), apply the
  *         daily-dedup rule (skip if latest row on UTC today has the
@@ -90,7 +89,7 @@ export async function POST(req: NextRequest) {
     //     web app can surface a per-row "sync failed" badge. Best-effort:
     //     we match on (userId, externalAccountId) which covers the common
     //     case but may miss programs whose id was later upgraded to a
-    //     `loyalty:...` fingerprint — acceptable for the v1 indicator.
+    //     better identifier — acceptable for the v1 indicator.
     if (!scrapeEvent.success && externalAccountId) {
       await db
         .update(pointsPrograms)
@@ -160,6 +159,11 @@ export async function POST(req: NextRequest) {
         programKey,
         externalAccountId: accountId,
         ownerLabel,
+        scrapedCards: cardsForProgram({
+          balances,
+          discoveredCards,
+          programKey,
+        }),
       });
       programIdByKey.set(programKey, id);
     }
@@ -317,25 +321,35 @@ export async function GET() {
  * Pick the program row for a (user, programKey) landing in this scrape.
  *
  * Three-stage lookup:
- *   1. Card last-four overlap — if the payload mentions a card whose
+ *   1. Exact `(user_id, program_key, external_account_id)` match.
+ *   2. Card last-four overlap — if the payload mentions a card whose
  *      last-four already belongs to a card under an existing program
  *      (same user + programKey), reuse that program. Covers
  *      chaseloyalty + /myunited agreeing on "Gateway …8072".
+ *   3. Legacy placeholder upgrade — only when there is exactly one
+ *      existing row and the incoming id is clearly more specific.
  *
- * Under the one-row-per-(user, program) model the dedupe logic is
- * trivial: SELECT by (user_id, program_key), upgrade `externalAccountId`
- * to a `loyalty:…` form when the payload supplies one, fill in a
- * better `ownerLabel`, otherwise INSERT.
+ * Resolution is exact by `(user_id, program_key, external_account_id)`.
+ * For old single-row data created before multi-account support, a lone
+ * less-specific row (`default`, `name:*`, etc.) may be upgraded to a
+ * more-specific incoming id instead of creating a duplicate.
  */
 async function resolveProgramId(args: {
   userId: string;
   programKey: ProgramKey;
   externalAccountId: string;
   ownerLabel: string | null | undefined;
+  scrapedCards: Array<{ cardName?: string; lastFour?: string }>;
 }): Promise<string> {
-  const { userId, programKey, externalAccountId, ownerLabel } = args;
+  const {
+    userId,
+    programKey,
+    externalAccountId,
+    ownerLabel,
+    scrapedCards,
+  } = args;
 
-  const existing = await db
+  const exact = await db
     .select({
       id: pointsPrograms.id,
       currentExternalId: pointsPrograms.externalAccountId,
@@ -345,45 +359,64 @@ async function resolveProgramId(args: {
     .where(
       and(
         eq(pointsPrograms.userId, userId),
-        eq(pointsPrograms.programKey, programKey)
+        eq(pointsPrograms.programKey, programKey),
+        eq(pointsPrograms.externalAccountId, externalAccountId)
       )
     )
     .limit(1);
 
-  if (existing.length > 0) {
-    const row = existing[0];
-    const nextExternalId = preferExternalAccountId(
-      row.currentExternalId,
-      externalAccountId
-    );
+  if (exact.length > 0) {
+    const row = exact[0];
     const nextOwnerLabel = preferOwnerLabel(
       row.currentOwnerLabel,
       ownerLabel
     );
-    if (
-      nextExternalId !== row.currentExternalId ||
-      nextOwnerLabel !== row.currentOwnerLabel
-    ) {
+    if (nextOwnerLabel !== row.currentOwnerLabel) {
       await db
         .update(pointsPrograms)
-        .set({
-          externalAccountId: nextExternalId,
-          ownerLabel: nextOwnerLabel,
-        })
+        .set({ ownerLabel: nextOwnerLabel })
         .where(eq(pointsPrograms.id, row.id));
-      if (nextExternalId !== row.currentExternalId) {
-        logger.info(
-          {
-            userId,
-            programKey,
-            from: row.currentExternalId,
-            to: nextExternalId,
-          },
-          "Program identifier upgraded"
-        );
-      }
     }
     return row.id;
+  }
+
+  const cardOverlap = await findProgramByCardOverlap({
+    userId,
+    programKey,
+    incomingExternalAccountId: externalAccountId,
+    ownerLabel,
+    scrapedCards,
+  });
+  if (cardOverlap) return cardOverlap;
+
+  const upgrade = await findSingleUpgradeableProgram({
+    userId,
+    programKey,
+    incomingExternalAccountId: externalAccountId,
+    scrapedCards,
+  });
+  if (upgrade) {
+    const nextOwnerLabel = preferOwnerLabel(
+      upgrade.currentOwnerLabel,
+      ownerLabel
+    );
+    await db
+      .update(pointsPrograms)
+      .set({
+        externalAccountId,
+        ownerLabel: nextOwnerLabel,
+      })
+      .where(eq(pointsPrograms.id, upgrade.id));
+    logger.info(
+      {
+        userId,
+        programKey,
+        from: upgrade.currentExternalId,
+        to: externalAccountId,
+      },
+      "Program identifier upgraded"
+    );
+    return upgrade.id;
   }
 
   const meta = PROGRAM_CATALOG[programKey];
@@ -405,20 +438,237 @@ async function resolveProgramId(args: {
   return inserted[0].id;
 }
 
-/**
- * Pick the "better" externalAccountId when we find an existing program via
- * card last4 and the scrape supplies a different id. `loyalty:…` — the
- * stable loyalty-account number — always wins. Otherwise the existing id
- * sticks so we don't bounce back and forth between e.g. `email` and
- * `name:…` just because two scrapers disagree on what's visible.
- */
-function preferExternalAccountId(
+function cardsForProgram(args: {
+  balances: Array<{
+    programKey: ProgramKey;
+    linkedCard?: { cardName: string; lastFour?: string };
+  }>;
+  discoveredCards: DiscoveredCard[] | undefined;
+  programKey: ProgramKey;
+}): Array<{ cardName?: string; lastFour?: string }> {
+  const out: Array<{ cardName?: string; lastFour?: string }> = [];
+  for (const c of args.discoveredCards ?? []) {
+    if (c.programKey === args.programKey) {
+      out.push({ cardName: c.cardName, lastFour: c.lastFour });
+    }
+  }
+  for (const b of args.balances) {
+    if (b.programKey === args.programKey && b.linkedCard) {
+      out.push(b.linkedCard);
+    }
+  }
+  return out;
+}
+
+async function findProgramByCardOverlap(args: {
+  userId: string;
+  programKey: ProgramKey;
+  incomingExternalAccountId: string;
+  ownerLabel: string | null | undefined;
+  scrapedCards: Array<{ cardName?: string; lastFour?: string }>;
+}): Promise<string | null> {
+  const lastFours = Array.from(
+    new Set(
+      args.scrapedCards
+        .map((c) => c.lastFour?.trim())
+        .filter((v): v is string => !!v)
+    )
+  );
+  if (lastFours.length === 0) return null;
+
+  const programRows = await db
+    .select({
+      id: pointsPrograms.id,
+      currentExternalId: pointsPrograms.externalAccountId,
+      currentOwnerLabel: pointsPrograms.ownerLabel,
+    })
+    .from(pointsPrograms)
+    .where(
+      and(
+        eq(pointsPrograms.userId, args.userId),
+        eq(pointsPrograms.programKey, args.programKey)
+      )
+    );
+  if (programRows.length === 0) return null;
+
+  const programIds = programRows.map((r) => r.id);
+  const overlappingCards = await db
+    .select({ programId: cards.programId })
+    .from(cards)
+    .where(
+      and(
+        eq(cards.userId, args.userId),
+        inArray(cards.programId, programIds),
+        inArray(cards.lastFour, lastFours)
+      )
+    );
+
+  const matchedIds = Array.from(
+    new Set(overlappingCards.map((c) => c.programId))
+  );
+  if (matchedIds.length !== 1) return null;
+
+  const row = programRows.find((r) => r.id === matchedIds[0]);
+  if (!row) return null;
+  if (
+    hasConflictingCardAccountNames(
+      row.currentExternalId,
+      args.incomingExternalAccountId
+    )
+  ) {
+    return null;
+  }
+
+  const nextExternalId = shouldReplaceExternalAccountIdAfterCardMatch(
+    row.currentExternalId,
+    args.incomingExternalAccountId
+  )
+    ? args.incomingExternalAccountId
+    : row.currentExternalId;
+  const nextOwnerLabel = preferOwnerLabel(
+    row.currentOwnerLabel,
+    args.ownerLabel
+  );
+
+  if (
+    nextExternalId !== row.currentExternalId ||
+    nextOwnerLabel !== row.currentOwnerLabel
+  ) {
+    await db
+      .update(pointsPrograms)
+      .set({
+        externalAccountId: nextExternalId,
+        ownerLabel: nextOwnerLabel,
+      })
+      .where(eq(pointsPrograms.id, row.id));
+    if (nextExternalId !== row.currentExternalId) {
+      logger.info(
+        {
+          userId: args.userId,
+          programKey: args.programKey,
+          from: row.currentExternalId,
+          to: nextExternalId,
+        },
+        "Program identifier updated from card overlap"
+      );
+    }
+  }
+
+  return row.id;
+}
+
+function shouldReplaceExternalAccountIdAfterCardMatch(
   current: string,
   incoming: string
-): string {
-  if (current === incoming) return current;
-  if (incoming.startsWith("loyalty:")) return incoming;
-  return current;
+): boolean {
+  if (current === incoming) return false;
+  return (
+    externalAccountSpecificity(incoming) >
+    externalAccountSpecificity(current)
+  );
+}
+
+/**
+ * Upgrade exactly one old placeholder row when a later scrape supplies a
+ * more-specific account id. Once multiple rows exist for a program, we
+ * stop guessing and insert exact ids only — otherwise logging into a
+ * second bank account could overwrite the first.
+ */
+async function findSingleUpgradeableProgram(args: {
+  userId: string;
+  programKey: ProgramKey;
+  incomingExternalAccountId: string;
+  scrapedCards: Array<{ cardName?: string; lastFour?: string }>;
+}): Promise<{
+  id: string;
+  currentExternalId: string;
+  currentOwnerLabel: string | null;
+} | null> {
+  const rows = await db
+    .select({
+      id: pointsPrograms.id,
+      currentExternalId: pointsPrograms.externalAccountId,
+      currentOwnerLabel: pointsPrograms.ownerLabel,
+    })
+    .from(pointsPrograms)
+    .where(
+      and(
+        eq(pointsPrograms.userId, args.userId),
+        eq(pointsPrograms.programKey, args.programKey)
+      )
+    );
+
+  if (rows.length !== 1) return null;
+  const row = rows[0];
+  if (
+    externalAccountSpecificity(args.incomingExternalAccountId) <=
+    externalAccountSpecificity(row.currentExternalId)
+  ) {
+    return null;
+  }
+
+  const incomingHasCardIdentity = args.scrapedCards.some((c) =>
+    c.lastFour?.trim()
+  );
+  if (incomingHasCardIdentity) {
+    // If the old row already has cards and none overlapped above, this
+    // is probably a different bank login, not the same account getting a
+    // better id. Create a second row instead of overwriting the first.
+    const existingCard = await db
+      .select({ id: cards.id })
+      .from(cards)
+      .where(
+        and(
+          eq(cards.userId, args.userId),
+          eq(cards.programId, row.id)
+        )
+      )
+      .limit(1);
+    if (existingCard.length > 0) {
+      return null;
+    }
+  }
+
+  return row;
+}
+
+function externalAccountSpecificity(id: string): number {
+  if (id.startsWith("loyalty:")) return 5;
+  if (id.includes("@")) return 4;
+  if (id.startsWith("id:")) return 4;
+  const cardAccount = parseCardAccountId(id);
+  if (cardAccount?.name) return 3;
+  if (cardAccount) return 2;
+  if (id.startsWith("name:")) return 2;
+  if (id === "default") return 0;
+  return 1;
+}
+
+function hasConflictingCardAccountNames(
+  current: string,
+  incoming: string
+): boolean {
+  const currentCard = parseCardAccountId(current);
+  const incomingCard = parseCardAccountId(incoming);
+  if (!currentCard || !incomingCard) return false;
+  if (currentCard.lastFour !== incomingCard.lastFour) return false;
+  if (!currentCard.name || !incomingCard.name) return false;
+  return currentCard.name !== incomingCard.name;
+}
+
+function parseCardAccountId(
+  id: string
+): { name: string | null; lastFour: string } | null {
+  if (!id.startsWith("card:")) return null;
+  const parts = id.split(":");
+  if (parts.length === 2 && /^\d{4}$/.test(parts[1])) {
+    return { name: null, lastFour: parts[1] };
+  }
+  const lastFour = parts.at(-1);
+  if (parts.length >= 3 && lastFour && /^\d{4}$/.test(lastFour)) {
+    return { name: parts.slice(1, -1).join(":"), lastFour };
+  }
+  return null;
 }
 
 /**

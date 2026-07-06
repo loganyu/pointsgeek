@@ -74,6 +74,8 @@ export default defineContentScript({
       extLogger.info("scrape.skipped", {
         provider: "qatar",
         reason: "login_state_timeout",
+        hasQRToken: hasQRToken(),
+        hasName: hasPopulatedUserName(),
       });
       return;
     }
@@ -160,7 +162,14 @@ export default defineContentScript({
 async function waitForLoggedInState(timeoutMs: number): Promise<boolean> {
   const deadline = performance.now() + timeoutMs;
   while (performance.now() < deadline) {
-    if (hasQRToken() && hasPopulatedUserName()) return true;
+    // A populated `.userNameLoggedIn` is the strongest "logged in AND primed"
+    // signal: Qatar only writes it after its own verifyUser auth call succeeds,
+    // which itself needs the token in place — so it subsumes the QRTOKEN check.
+    // We used to AND-require the QRTOKEN cookie too, but Qatar appears to have
+    // made it undetectable to document.cookie (HttpOnly), which made this time
+    // out even while signed in. Keep QRTOKEN as an OR fallback in case the name
+    // markup ever changes.
+    if (hasPopulatedUserName() || hasQRToken()) return true;
     await sleep(300);
   }
   return false;
