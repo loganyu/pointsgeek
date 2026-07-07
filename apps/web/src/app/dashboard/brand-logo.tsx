@@ -68,6 +68,11 @@ export const BRAND_META: Record<
     bg: "#003876", // JetBlue navy
     initial: "J",
   },
+  jal: {
+    logoPath: "/logos/brands/jal.png",
+    bg: "#C8102E",
+    initial: "J",
+  },
   bilt: {
     logoPath: "/logos/brands/bilt.png",
     bg: "#0A0A0A",

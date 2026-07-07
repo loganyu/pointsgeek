@@ -64,6 +64,16 @@ export const PROGRAM_CATALOG = {
     // balance directly, so the homepage is enough for the content script.
     primarySyncUrl: "https://www.jetblue.com/",
   },
+  jal_mileage_bank: {
+    // Japan Airlines Mileage Bank. Scraped from the signed-in JMB page,
+    // which exposes the redeemable miles balance in the rendered DOM.
+    programType: "airline",
+    brandSlug: "jal",
+    currency: "miles",
+    displayName: "JAL Mileage Bank",
+    short: "JL",
+    primarySyncUrl: "https://www.jal.co.jp/arl/en/jmb/",
+  },
   marriott_bonvoy: {
     programType: "hotel",
     brandSlug: "marriott",

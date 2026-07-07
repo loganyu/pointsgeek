@@ -155,6 +155,13 @@
       "when": 1783355193489,
       "tag": "0021_breezy_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783431981846,
+      "tag": "0022_nebulous_red_hulk",
+      "breakpoints": true
     }
   ]
 }

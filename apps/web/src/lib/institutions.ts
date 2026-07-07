@@ -107,6 +107,12 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "jetblue",
   },
   {
+    name: "JAL Mileage Bank",
+    url: "https://www.jal.co.jp/arl/en/jmb/",
+    category: "airline",
+    brandSlug: "jal",
+  },
+  {
     name: "Qatar Privilege Club",
     url: "https://www.qatarairways.com/en/Privilege-Club/postLogin/dashboardqrpcuser/avios-balance.html",
     category: "airline",
@@ -138,7 +144,6 @@ export const INSTITUTIONS: Institution[] = [
   // { name: "Etihad Guest", url: "https://www.etihad.com/etihadguest", category: "airline" },
   // { name: "Flying Blue (Air France/KLM)", url: "https://www.flyingblue.com", category: "airline" },
   // { name: "Iberia Plus", url: "https://www.iberia.com", category: "airline" },
-  // { name: "Japan Airlines Mileage Bank", url: "https://www.jal.co.jp/jalmileagebank/en", category: "airline" },
   // { name: "Lufthansa Miles & More", url: "https://www.miles-and-more.com", category: "airline" },
   // { name: "Qantas Frequent Flyer", url: "https://www.qantas.com/frequent-flyer", category: "airline" },
   // { name: "Singapore KrisFlyer", url: "https://www.singaporeair.com/krisflyer", category: "airline" },
