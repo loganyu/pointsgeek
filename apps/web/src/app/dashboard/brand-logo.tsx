@@ -78,6 +78,11 @@ export const BRAND_META: Record<
     bg: "#0A0A0A",
     initial: "B",
   },
+  rove: {
+    logoPath: "/logos/brands/rove.svg",
+    bg: "#111827",
+    initial: "R",
+  },
   citi: {
     logoPath: "/logos/brands/citi.png",
     bg: "#003B70",

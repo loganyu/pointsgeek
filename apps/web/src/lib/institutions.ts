@@ -16,7 +16,7 @@
  * source of truth for programKey literals the extension relies on.
  */
 
-export type InstitutionCategory = "bank" | "airline" | "hotel";
+export type InstitutionCategory = "bank" | "airline" | "hotel" | "reward";
 
 export interface Institution {
   name: string;
@@ -30,9 +30,15 @@ export const CATEGORY_LABELS: Record<InstitutionCategory, string> = {
   bank: "Banks & Credit Cards",
   airline: "Airline Loyalty",
   hotel: "Hotel Loyalty",
+  reward: "Reward Programs",
 };
 
-export const CATEGORY_ORDER: InstitutionCategory[] = ["bank", "airline", "hotel"];
+export const CATEGORY_ORDER: InstitutionCategory[] = [
+  "bank",
+  "reward",
+  "airline",
+  "hotel",
+];
 
 export const INSTITUTIONS: Institution[] = [
   // ── Banks & credit cards — scraped ───────────────────────
@@ -41,12 +47,6 @@ export const INSTITUTIONS: Institution[] = [
     url: "https://global.americanexpress.com/overview",
     category: "bank",
     brandSlug: "amex",
-  },
-  {
-    name: "Bilt",
-    url: "https://www.bilt.com/",
-    category: "bank",
-    brandSlug: "bilt",
   },
   {
     name: "Capital One",
@@ -65,6 +65,20 @@ export const INSTITUTIONS: Institution[] = [
     url: "https://online.citi.com/US/ag/dashboard",
     category: "bank",
     brandSlug: "citi",
+  },
+
+  // ── Reward programs — scraped ────────────────────────────
+  {
+    name: "Bilt Rewards",
+    url: "https://www.bilt.com/",
+    category: "reward",
+    brandSlug: "bilt",
+  },
+  {
+    name: "Rove Miles",
+    url: "https://www.rove.com/home",
+    category: "reward",
+    brandSlug: "rove",
   },
 
   // ── Banks & credit cards — pending scrapers ──────────────

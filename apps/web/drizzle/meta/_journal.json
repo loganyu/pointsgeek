@@ -162,6 +162,13 @@
       "when": 1783431981846,
       "tag": "0022_nebulous_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1783444617778,
+      "tag": "0023_lethal_dracula",
+      "breakpoints": true
     }
   ]
 }

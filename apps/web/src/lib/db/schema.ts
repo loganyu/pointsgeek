@@ -31,6 +31,7 @@ export const providerEnum = pgEnum("provider", [
   "jetblue",
   "marriott",
   "qatar",
+  "rove",
   "united",
 ]);
 
@@ -38,6 +39,7 @@ export const programTypeEnum = pgEnum("program_type", [
   "bank_rewards",
   "airline",
   "hotel",
+  "reward_program",
 ]);
 
 export const balanceTypeEnum = pgEnum("balance_type", [

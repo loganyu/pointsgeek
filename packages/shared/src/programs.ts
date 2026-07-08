@@ -124,12 +124,22 @@ export const PROGRAM_CATALOG = {
     // airline + hotel partners, similar to Amex MR / Chase UR. Scraped
     // from www.bilt.com via api.biltrewards.com (cross-origin, bearer
     // auth from a JWT stored in localStorage).
-    programType: "bank_rewards",
+    programType: "reward_program",
     brandSlug: "bilt",
     currency: "points",
     displayName: "Bilt Rewards",
     short: "BILT",
     primarySyncUrl: "https://www.bilt.com/",
+  },
+  rove_miles: {
+    // Rove Miles. A standalone travel rewards program scraped from
+    // www.rove.com via the same bearer-auth API the web app uses.
+    programType: "reward_program",
+    brandSlug: "rove",
+    currency: "miles",
+    displayName: "Rove Miles",
+    short: "ROVE",
+    primarySyncUrl: "https://www.rove.com/home",
   },
   asia_miles: {
     // Cathay Asia Miles. Cathay Pacific's loyalty currency, also used
@@ -191,7 +201,7 @@ export const PROGRAM_CATALOG = {
 } as const satisfies Record<
   string,
   {
-    programType: "bank_rewards" | "airline" | "hotel";
+    programType: "bank_rewards" | "airline" | "hotel" | "reward_program";
     brandSlug: string;
     currency: "points" | "miles" | "usd_cents";
     displayName: string;

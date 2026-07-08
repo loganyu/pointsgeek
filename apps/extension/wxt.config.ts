@@ -35,6 +35,9 @@ const FINANCIAL_SITES = [
   "https://jetblue.com/*",
   "https://www.jetblue.com/*",
   "https://www.qatarairways.com/*",
+  "https://rove.com/*",
+  "https://www.rove.com/*",
+  "https://api-v2.rove.com/*",
 ];
 
 /**

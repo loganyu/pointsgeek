@@ -67,9 +67,14 @@ export interface ProgramRowData {
   cards: CardRowData[];
 }
 
-type SectionKey = "banks" | "airlines" | "hotels";
+type SectionKey = "banks" | "rewards" | "airlines" | "hotels";
 
-const DEFAULT_SECTION_ORDER: SectionKey[] = ["banks", "airlines", "hotels"];
+const DEFAULT_SECTION_ORDER: SectionKey[] = [
+  "banks",
+  "rewards",
+  "airlines",
+  "hotels",
+];
 const SECTION_ORDER_KEY = "pg-section-order";
 const PROGRAM_ORDERS_KEY = "pg-program-orders";
 const SECTION_EXPANDED_KEY = "pg-section-expanded";
@@ -828,14 +833,16 @@ function SortableCategorySection({
 
 export default function ProgramsList({
   banks,
+  rewards,
   airlines,
   hotels,
 }: {
   banks: ProgramRowData[];
+  rewards: ProgramRowData[];
   airlines: ProgramRowData[];
   hotels: ProgramRowData[];
 }) {
-  const allPrograms = [...banks, ...airlines, ...hotels];
+  const allPrograms = [...banks, ...rewards, ...airlines, ...hotels];
   // Sum only point/mile programs into the headline; cash balances render
   // separately below.
   const pointsPrograms = allPrograms.filter(
@@ -862,7 +869,7 @@ export default function ProgramsList({
     useState<SectionKey[]>(DEFAULT_SECTION_ORDER);
   const [programOrders, setProgramOrders] = useState<
     Record<SectionKey, string[]>
-  >({ banks: [], airlines: [], hotels: [] });
+  >({ banks: [], rewards: [], airlines: [], hotels: [] });
   const [mounted, setMounted] = useState(false);
   // Currently-dragged item, rendered into the DragOverlay so it floats
   // above every stacking context (including section cards with
@@ -900,6 +907,7 @@ export default function ProgramsList({
         if (parsed && typeof parsed === "object") {
           setProgramOrders({
             banks: Array.isArray(parsed.banks) ? parsed.banks : [],
+            rewards: Array.isArray(parsed.rewards) ? parsed.rewards : [],
             airlines: Array.isArray(parsed.airlines) ? parsed.airlines : [],
             hotels: Array.isArray(parsed.hotels) ? parsed.hotels : [],
           });
@@ -914,6 +922,11 @@ export default function ProgramsList({
   const orderedPrograms = useMemo(
     () => ({
       banks: sortByIds(banks, programOrders.banks, (p) => p.programRowId),
+      rewards: sortByIds(
+        rewards,
+        programOrders.rewards,
+        (p) => p.programRowId
+      ),
       airlines: sortByIds(
         airlines,
         programOrders.airlines,
@@ -921,7 +934,7 @@ export default function ProgramsList({
       ),
       hotels: sortByIds(hotels, programOrders.hotels, (p) => p.programRowId),
     }),
-    [banks, airlines, hotels, programOrders]
+    [banks, rewards, airlines, hotels, programOrders]
   );
 
   const sectionInfo: Record<
@@ -932,6 +945,10 @@ export default function ProgramsList({
       title: "Banks",
       emptyMessage:
         "No bank rewards programs yet. Sync an Amex, Chase, or Capital One account to get started.",
+    },
+    rewards: {
+      title: "Reward Programs",
+      emptyMessage: "No reward programs yet.",
     },
     airlines: {
       title: "Airlines",

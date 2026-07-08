@@ -144,6 +144,7 @@ export default async function DashboardPage() {
   });
 
   const banks = validRows.filter((r) => r.programType === "bank_rewards");
+  const rewards = validRows.filter((r) => r.programType === "reward_program");
   const airlines = validRows.filter((r) => r.programType === "airline");
   const hotels = validRows.filter((r) => r.programType === "hotel");
 
@@ -161,7 +162,12 @@ export default async function DashboardPage() {
           <AddProgramButton />
         </div>
 
-        <ProgramsList banks={banks} airlines={airlines} hotels={hotels} />
+        <ProgramsList
+          banks={banks}
+          rewards={rewards}
+          airlines={airlines}
+          hotels={hotels}
+        />
       </main>
     </AppShell>
   );

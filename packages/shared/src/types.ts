@@ -21,11 +21,17 @@ export const PROVIDERS = [
   "jetblue",
   "marriott",
   "qatar",
+  "rove",
   "united",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
-export const PROGRAM_TYPES = ["bank_rewards", "airline", "hotel"] as const;
+export const PROGRAM_TYPES = [
+  "bank_rewards",
+  "airline",
+  "hotel",
+  "reward_program",
+] as const;
 export type ProgramType = (typeof PROGRAM_TYPES)[number];
 
 /**
