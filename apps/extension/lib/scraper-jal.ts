@@ -3,6 +3,16 @@ import { SCRAPE_TIMEOUT_MS } from "@points-geek/shared";
 
 export const JAL_MILE_BALANCE_SELECTOR = "#JS_121_mileBalance";
 export const JAL_STATUS_SELECTOR = "#JS_121_jmbStatus, #JS_jmbStatusNameText";
+export const JAL_OWNER_SELECTORS = [
+  "#JS_121_dispMemName",
+  ".login-top-text .name",
+  ".login-top-text",
+  "#JS_121_memberName",
+  "#JS_memberName",
+  '[id*="memberName" i]',
+  '[class*="member-name" i]',
+  '[class*="user-name" i]',
+];
 
 interface SelectorStrategy {
   name: string;
@@ -143,6 +153,13 @@ export function waitForJalSignedIn(
 }
 
 export function extractJalMembershipNumber(doc: Document): string | null {
+  const tableValue = findTableValueByHeader(
+    doc,
+    /^(?:JMB\s+)?Membership\s+Number$/i
+  );
+  const tableNumber = parsePlausibleMemberNumber(tableValue ?? "");
+  if (tableNumber) return tableNumber;
+
   const inputSelectors = [
     'input[id*="jmb" i]',
     'input[name*="jmb" i]',
@@ -166,6 +183,7 @@ export function extractJalMembershipNumber(doc: Document): string | null {
     '[class*="member" i]',
     '[id*="customer" i]',
     '[class*="customer" i]',
+    ".customerInfoBlockA02",
     "header",
     ".details-wrap",
   ];
@@ -181,23 +199,25 @@ export function extractJalMembershipNumber(doc: Document): string | null {
 }
 
 export function extractJalOwnerLabel(doc: Document): string | null {
-  const selectors = [
-    "#JS_121_memberName",
-    "#JS_memberName",
-    '[id*="memberName" i]',
-    '[class*="member-name" i]',
-    '[class*="user-name" i]',
-    "header",
-  ];
+  const profileName = normalizeJalPersonName(
+    findTableValueByHeader(doc, /^Name$/i)
+  );
+  if (profileName) return profileName;
 
-  for (const selector of selectors) {
+  const profileHeading = doc.querySelector<HTMLElement>(
+    ".customerInfoBlockA02 h2"
+  );
+  const headingName = parseOwnerLabel(profileHeading?.textContent ?? "");
+  if (headingName) return headingName;
+
+  for (const selector of JAL_OWNER_SELECTORS) {
     for (const el of doc.querySelectorAll<HTMLElement>(selector)) {
       const label = parseOwnerLabel(el.textContent ?? "");
       if (label) return label;
     }
   }
 
-  return parseOwnerLabel(doc.body?.textContent ?? "");
+  return null;
 }
 
 export function jalSelectorsAttempted(): string[] {
@@ -205,6 +225,8 @@ export function jalSelectorsAttempted(): string[] {
     JAL_MILE_BALANCE_SELECTOR,
     JAL_STATUS_SELECTOR,
     ...STRATEGIES.map((s) => s.name),
+    ...JAL_OWNER_SELECTORS,
+    ".customerInfoBlockA02 th/td",
     'input[id*="jmb" i]',
     'input[name*="jmb" i]',
     '[id*="jmb" i]',
@@ -215,7 +237,8 @@ export function jalSelectorsAttempted(): string[] {
 function isJalSignedIn(doc: Document): boolean {
   return (
     extractJalMileageBankBalance(doc).success ||
-    !!doc.querySelector(JAL_STATUS_SELECTOR)
+    !!doc.querySelector(JAL_STATUS_SELECTOR) ||
+    (!!extractJalMembershipNumber(doc) && !!extractJalOwnerLabel(doc))
   );
 }
 
@@ -249,8 +272,8 @@ function parseMembershipNumber(text: string): string | null {
   for (const pattern of patterns) {
     const match = normalized.match(pattern);
     if (!match) continue;
-    const digits = match[1].replace(/\D/g, "");
-    if (isPlausibleMemberNumber(digits)) return digits;
+    const digits = parsePlausibleMemberNumber(match[1]);
+    if (digits) return digits;
   }
 
   return null;
@@ -258,17 +281,21 @@ function parseMembershipNumber(text: string): string | null {
 
 function parseOwnerLabel(text: string): string | null {
   const normalized = cleanText(text);
-  const match = normalized.match(
-    /(?:welcome|hello|hi|good\s+(?:morning|afternoon|evening))\s*,?\s+([A-Z][A-Za-z' -]{1,60})/i
-  );
-  if (!match) return null;
+  if (!normalized || normalized.length > 140) return null;
 
-  const label = match[1]
-    .replace(/\b(?:JAL|Mileage|Bank|Miles|mile|points?)\b.*$/i, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const patterns = [
+    /^(?:welcome|hello|hi|good\s+(?:morning|afternoon|evening))\s*,?\s+(.+)$/i,
+    /^personal\s+information\s+of\s+(.+)$/i,
+    /^(.+)$/,
+  ];
 
-  return label && /[A-Za-z]/.test(label) ? label : null;
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    const label = normalizeJalPersonName(match?.[1]);
+    if (label) return label;
+  }
+
+  return null;
 }
 
 function parseJalMilesText(text: string): number | null {
@@ -284,6 +311,78 @@ function parseJalMilesText(text: string): number | null {
 
 function isPlausibleMemberNumber(digits: string): boolean {
   return /^\d{7,12}$/.test(digits);
+}
+
+function parsePlausibleMemberNumber(value: string): string | null {
+  const digits = value.replace(/\D/g, "");
+  return isPlausibleMemberNumber(digits) ? digits : null;
+}
+
+function findTableValueByHeader(
+  doc: Document,
+  headerPattern: RegExp
+): string | null {
+  for (const row of doc.querySelectorAll<HTMLTableRowElement>("tr")) {
+    const header = row.querySelector<HTMLElement>("th");
+    if (!headerPattern.test(cleanText(header?.textContent ?? ""))) continue;
+
+    const value = row.querySelector<HTMLElement>("td");
+    const text = cleanText(value?.textContent ?? "");
+    if (text) return text;
+  }
+  return null;
+}
+
+function normalizeJalPersonName(value: string | null | undefined): string | null {
+  const normalized = cleanText(value ?? "")
+    .replace(
+      /\b(?:manage\s+your\s+account|miles?|points?|JAL|Mileage|Bank)\b.*$/i,
+      ""
+    )
+    .trim();
+  if (!normalized || normalized.length > 48) return null;
+  if (/\d/.test(normalized)) return null;
+
+  const words = normalized.split(/\s+/);
+  if (words.length < 2 || words.length > 5) return null;
+
+  const first = words[0].replace(/\./g, "").toLowerCase();
+  const hasTitle = ["mr", "mrs", "ms", "miss", "dr"].includes(first);
+  const nameWords = hasTitle ? words.slice(1) : words;
+  if (nameWords.length < 2) return null;
+
+  const badWords = new Set([
+    "account",
+    "available",
+    "bank",
+    "city",
+    "country",
+    "customer",
+    "information",
+    "jal",
+    "member",
+    "membership",
+    "mileage",
+    "miles",
+    "points",
+    "services",
+    "website",
+  ]);
+  if (nameWords.some((word) => badWords.has(word.toLowerCase()))) return null;
+
+  return nameWords.map(formatNameWord).join(" ");
+}
+
+function formatNameWord(word: string): string {
+  const stripped = word.replace(/\./g, "");
+  return stripped
+    .split("-")
+    .map((part) =>
+      part
+        ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        : part
+    )
+    .join("-");
 }
 
 function cleanText(text: string): string {

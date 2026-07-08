@@ -1,5 +1,6 @@
 import { extLogger } from "../lib/logger";
 import {
+  extractJalMileageBankBalance,
   extractJalMembershipNumber,
   extractJalOwnerLabel,
   jalSelectorsAttempted,
@@ -18,6 +19,14 @@ import type { BalanceRecord, ScrapeResult } from "@points-geek/shared";
  */
 const SIGNED_IN_TIMEOUT_MS = 3 * 60_000;
 const BALANCE_TIMEOUT_MS = 15_000;
+const JAL_ACCOUNT_HINTS_KEY = "jalAccountHints";
+const MAX_JAL_ACCOUNT_HINTS = 20;
+
+interface JalAccountHint {
+  ownerLabel: string;
+  membershipNumber: string;
+  updatedAt: string;
+}
 
 export default defineContentScript({
   matches: [
@@ -45,12 +54,31 @@ export default defineContentScript({
     }
     extLogger.info("scrape.signed_in", { provider: "jal" });
 
+    const initialMembershipNumber = extractJalMembershipNumber(document);
+    const initialOwnerLabel = extractJalOwnerLabel(document);
+    await rememberJalAccountHint(initialOwnerLabel, initialMembershipNumber);
+
+    const immediateExtraction = extractJalMileageBankBalance(document);
+    if (
+      !immediateExtraction.success &&
+      initialMembershipNumber &&
+      initialOwnerLabel &&
+      isJalProfilePage()
+    ) {
+      extLogger.info("scrape.skipped", {
+        provider: "jal",
+        reason: "account_hint_cached",
+        hasMembershipNumber: true,
+        ownerLabel: initialOwnerLabel,
+      });
+      return;
+    }
+
     if (!(await syncWidget.start({ label: "JAL" }))) return;
 
-    const extraction = await waitForJalMileageBankBalance(
-      document,
-      BALANCE_TIMEOUT_MS
-    );
+    const extraction = immediateExtraction.success
+      ? immediateExtraction
+      : await waitForJalMileageBankBalance(document, BALANCE_TIMEOUT_MS);
     if (!extraction.success || extraction.balance == null) {
       extLogger.warn("scrape.failed", {
         provider: "jal",
@@ -68,8 +96,11 @@ export default defineContentScript({
       return;
     }
 
-    const membershipNumber = extractJalMembershipNumber(document);
     const ownerLabel = extractJalOwnerLabel(document);
+    const pageMembershipNumber = extractJalMembershipNumber(document);
+    await rememberJalAccountHint(ownerLabel, pageMembershipNumber);
+    const membershipNumber =
+      pageMembershipNumber ?? (await lookupCachedJalMembershipNumber(ownerLabel));
     const ident = accountIdFromMembershipOrOwner(membershipNumber, ownerLabel);
     const balances: BalanceRecord[] = [
       {
@@ -85,6 +116,8 @@ export default defineContentScript({
       balance: extraction.balance,
       hasMembershipNumber: !!membershipNumber,
       ownerLabel,
+      usedCachedMembershipNumber:
+        !!membershipNumber && membershipNumber !== pageMembershipNumber,
       identifierSource: ident.source,
     });
 
@@ -101,6 +134,13 @@ export default defineContentScript({
     });
   },
 });
+
+function isJalProfilePage(): boolean {
+  return (
+    window.location.pathname.includes("/JmbWeb/AR/AdrsChgPre") ||
+    !!document.querySelector(".customerInfoBlockA02")
+  );
+}
 
 function accountIdFromMembershipOrOwner(
   membershipNumber: string | null,
@@ -124,6 +164,73 @@ function accountIdFromMembershipOrOwner(
   }
 
   return { externalAccountId: "default", source: "default" };
+}
+
+async function rememberJalAccountHint(
+  ownerLabel: string | null,
+  membershipNumber: string | null
+): Promise<void> {
+  const ownerKey = jalOwnerKey(ownerLabel);
+  if (!ownerKey || !membershipNumber) return;
+
+  const stored = await browser.storage.local.get(JAL_ACCOUNT_HINTS_KEY);
+  const hints = parseJalAccountHints(stored[JAL_ACCOUNT_HINTS_KEY]);
+  hints[ownerKey] = {
+    ownerLabel: ownerLabel!,
+    membershipNumber,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const trimmed = Object.fromEntries(
+    Object.entries(hints)
+      .sort(([, a], [, b]) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, MAX_JAL_ACCOUNT_HINTS)
+  );
+  await browser.storage.local.set({ [JAL_ACCOUNT_HINTS_KEY]: trimmed });
+}
+
+async function lookupCachedJalMembershipNumber(
+  ownerLabel: string | null
+): Promise<string | null> {
+  const ownerKey = jalOwnerKey(ownerLabel);
+  if (!ownerKey) return null;
+
+  const stored = await browser.storage.local.get(JAL_ACCOUNT_HINTS_KEY);
+  const hint = parseJalAccountHints(stored[JAL_ACCOUNT_HINTS_KEY])[ownerKey];
+  return hint?.membershipNumber ?? null;
+}
+
+function parseJalAccountHints(value: unknown): Record<string, JalAccountHint> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const out: Record<string, JalAccountHint> = {};
+  for (const [key, hint] of Object.entries(value)) {
+    if (!hint || typeof hint !== "object" || Array.isArray(hint)) continue;
+    const maybe = hint as Partial<JalAccountHint>;
+    if (
+      typeof maybe.ownerLabel === "string" &&
+      typeof maybe.membershipNumber === "string" &&
+      typeof maybe.updatedAt === "string"
+    ) {
+      out[key] = {
+        ownerLabel: maybe.ownerLabel,
+        membershipNumber: maybe.membershipNumber,
+        updatedAt: maybe.updatedAt,
+      };
+    }
+  }
+  return out;
+}
+
+function jalOwnerKey(ownerLabel: string | null): string | null {
+  const key =
+    ownerLabel
+      ?.replace(/\b(?:mr|mrs|ms|miss|dr)\.?\b/gi, " ")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() ?? "";
+  return key || null;
 }
 
 function send(payload: ScrapeResult) {

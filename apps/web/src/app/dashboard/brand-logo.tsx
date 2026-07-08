@@ -79,7 +79,7 @@ export const BRAND_META: Record<
     initial: "B",
   },
   rove: {
-    logoPath: "/logos/brands/rove.svg",
+    logoPath: "/logos/brands/rove.png",
     bg: "#111827",
     initial: "R",
   },

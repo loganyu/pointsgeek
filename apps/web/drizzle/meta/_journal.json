@@ -169,6 +169,13 @@
       "when": 1783444617778,
       "tag": "0023_lethal_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783526400000,
+      "tag": "0024_move_bilt_rewards",
+      "breakpoints": true
     }
   ]
 }
