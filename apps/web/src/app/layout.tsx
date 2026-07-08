@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Source_Serif_4 } from "next/font/google";
 import { ThemeProvider } from "./theme-provider";
 import { PREFERENCES_SCRIPT_SRC } from "./preferences-script";
+import { GoogleAnalytics } from "./google-analytics";
 import "./globals.css";
 
 // Self-hosted Geist variable fonts. One .woff2 per family covers every
@@ -93,6 +94,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
+        <GoogleAnalytics
+          measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+        />
       </body>
     </html>
   );

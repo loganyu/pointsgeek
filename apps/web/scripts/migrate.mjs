@@ -12,7 +12,11 @@
 // as DATABASE_URL_UNPOOLED (older integrations: POSTGRES_URL_NON_POOLING).
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import pg from "pg";
+
+loadLocalEnv();
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -36,6 +40,12 @@ const db = drizzle(pool);
 
 try {
   await migrate(db, { migrationsFolder: "./drizzle" });
+  await pool.query(`
+    UPDATE "points_programs"
+    SET "program_type" = 'reward_program'::"program_type"
+    WHERE "program_key" = 'bilt_rewards'
+      AND "program_type" <> 'reward_program'::"program_type"
+  `);
   console.log("[migrate] all migrations applied");
 } catch (err) {
   console.error("\n[migrate] FAILED");
@@ -49,4 +59,24 @@ try {
   process.exitCode = 1;
 } finally {
   await pool.end();
+}
+
+function loadLocalEnv() {
+  const envPath = resolve(process.cwd(), ".env");
+  if (!existsSync(envPath)) return;
+
+  const lines = readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const equalsAt = trimmed.indexOf("=");
+    if (equalsAt <= 0) continue;
+
+    const key = trimmed.slice(0, equalsAt).trim();
+    if (process.env[key] !== undefined) continue;
+
+    const rawValue = trimmed.slice(equalsAt + 1).trim();
+    process.env[key] = rawValue.replace(/^(['"])(.*)\1$/, "$2");
+  }
 }
