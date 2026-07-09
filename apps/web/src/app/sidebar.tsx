@@ -116,6 +116,13 @@ export function Sidebar({
             active={pathname.startsWith("/accounts")}
             expanded={expanded}
           />
+          <NavItem
+            href="/extension"
+            icon={<ExtensionIcon />}
+            label="Extension"
+            active={pathname.startsWith("/extension")}
+            expanded={expanded}
+          />
         </nav>
 
         <div className="flex-1" />
@@ -244,6 +251,27 @@ function LayersIcon() {
       <path d="M12 3 3 7l9 4 9-4-9-4Z" />
       <path d="M3 12l9 4 9-4" />
       <path d="M3 17l9 4 9-4" />
+    </svg>
+  );
+}
+
+function ExtensionIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M8 15h4" />
+      <path d="M16 15h.01" />
     </svg>
   );
 }
