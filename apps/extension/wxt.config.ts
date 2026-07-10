@@ -28,6 +28,7 @@ const FINANCIAL_SITES = [
   "https://www.delta.com/*",
   "https://www.united.com/*",
   "https://www.marriott.com/*",
+  "https://www.hilton.com/*",
   "https://www.hyatt.com/*",
   "https://jal.co.jp/*",
   "https://www.jal.co.jp/*",
@@ -38,6 +39,8 @@ const FINANCIAL_SITES = [
   "https://rove.com/*",
   "https://www.rove.com/*",
   "https://api-v2.rove.com/*",
+  "https://southwest.com/*",
+  "https://www.southwest.com/*",
 ];
 
 /**

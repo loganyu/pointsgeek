@@ -63,6 +63,11 @@ export const BRAND_META: Record<
     bg: "#0F4C81", // World of Hyatt blue
     initial: "H",
   },
+  hilton: {
+    logoPath: "/logos/brands/hilton.png",
+    bg: "#104C97", // Hilton blue
+    initial: "H",
+  },
   jetblue: {
     logoPath: "/logos/brands/jetblue.svg",
     bg: "#003876", // JetBlue navy
@@ -92,6 +97,11 @@ export const BRAND_META: Record<
     logoPath: "/logos/brands/united.png",
     bg: "#002244", // United navy
     initial: "U",
+  },
+  southwest: {
+    logoPath: "/logos/brands/southwest.svg",
+    bg: "#304CB2", // Southwest blue
+    initial: "S",
   },
   amazon: {
     logoPath: "/logos/brands/amazon.png",

@@ -138,10 +138,15 @@ export const INSTITUTIONS: Institution[] = [
     category: "airline",
     brandSlug: "united",
   },
+  {
+    name: "Southwest Rapid Rewards",
+    url: "https://www.southwest.com/",
+    category: "airline",
+    brandSlug: "southwest",
+  },
 
   // ── Airline loyalty — pending scrapers (US) ──────────────
   // Uncomment as scrapers ship.
-  // { name: "Southwest Rapid Rewards", url: "https://www.southwest.com", category: "airline" },
   // { name: "Hawaiian HawaiianMiles", url: "https://www.hawaiianairlines.com", category: "airline" },
   // { name: "Frontier Miles", url: "https://www.flyfrontier.com", category: "airline" },
 
@@ -177,10 +182,15 @@ export const INSTITUTIONS: Institution[] = [
     category: "hotel",
     brandSlug: "hyatt",
   },
+  {
+    name: "Hilton Honors",
+    url: "https://www.hilton.com/en/",
+    category: "hotel",
+    brandSlug: "hilton",
+  },
 
   // ── Hotel loyalty — pending scrapers ─────────────────────
   // Uncomment as scrapers ship.
-  // { name: "Hilton Honors", url: "https://www.hilton.com", category: "hotel" },
   // { name: "IHG One Rewards", url: "https://www.ihg.com", category: "hotel" },
   // { name: "Wyndham Rewards", url: "https://www.wyndhamhotels.com", category: "hotel" },
   // { name: "Choice Privileges", url: "https://www.choicehotels.com", category: "hotel" },

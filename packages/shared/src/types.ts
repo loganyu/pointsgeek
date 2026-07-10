@@ -16,12 +16,14 @@ export const PROVIDERS = [
   "capitalone",
   "citi",
   "delta",
+  "hilton",
   "hyatt",
   "jal",
   "jetblue",
   "marriott",
   "qatar",
   "rove",
+  "southwest",
   "united",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];

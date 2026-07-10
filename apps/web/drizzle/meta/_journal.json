@@ -176,6 +176,20 @@
       "when": 1783526400000,
       "tag": "0024_move_bilt_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1783651200000,
+      "tag": "0025_add_hilton_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1783656000000,
+      "tag": "0026_add_southwest_provider",
+      "breakpoints": true
     }
   ]
 }

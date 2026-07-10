@@ -474,11 +474,13 @@ const ROLL_PROGRAMS: RollProgram[] = [
   { slug: "bilt", name: "Bilt", program: "Bilt Rewards", logo: "/logos/brands/bilt.png", bg: "#0A0A0A", initial: "B" },
   { slug: "delta", name: "Delta", program: "SkyMiles", logo: "/logos/brands/delta.png", bg: "#E01933", initial: "D" },
   { slug: "united", name: "United", program: "MileagePlus", logo: "/logos/brands/united.png", bg: "#002244", initial: "U" },
+  { slug: "southwest", name: "Southwest", program: "Rapid Rewards", logo: "/logos/brands/southwest.svg", bg: "#304CB2", initial: "S" },
   { slug: "aa", name: "American", program: "AAdvantage", logo: "/logos/brands/aa.png", bg: "#0078D2", initial: "A" },
   { slug: "cathay", name: "Cathay Pacific", program: "Asia Miles", logo: "/logos/brands/cathay.png", bg: "#006564", initial: "C" },
   { slug: "qatar", name: "Qatar Airways", program: "Privilege Club", logo: "/logos/brands/qatar.png", bg: "#5C0632", initial: "Q" },
   { slug: "marriott", name: "Marriott", program: "Bonvoy", logo: "/logos/brands/marriott.png", bg: "#2F3337", initial: "M" },
   { slug: "hyatt", name: "World of Hyatt", program: "World of Hyatt", logo: "/logos/brands/hyatt.png", bg: "#1C57A5", initial: "H" },
+  { slug: "hilton", name: "Hilton", program: "Honors", logo: "/logos/brands/hilton.png", bg: "#104C97", initial: "H" },
 ];
 
 // Three rows, mixing categories, matching the handoff's distribution. `items`
@@ -486,8 +488,8 @@ const ROLL_PROGRAMS: RollProgram[] = [
 // run slightly slower so the rows visibly desync.
 const ROLL_ROWS: Array<{ items: number[]; direction: "left" | "right"; duration: number }> = [
   { items: [0, 5, 10, 3], direction: "left", duration: 100 },
-  { items: [2, 6, 11, 4], direction: "right", duration: 116 },
-  { items: [1, 7, 8, 9], direction: "left", duration: 116 },
+  { items: [2, 6, 11, 12, 4], direction: "right", duration: 116 },
+  { items: [1, 7, 8, 9, 13], direction: "left", duration: 116 },
 ];
 
 // Each track repeats its pills this many times: one visible set plus

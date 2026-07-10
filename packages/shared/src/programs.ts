@@ -97,6 +97,16 @@ export const PROGRAM_CATALOG = {
     // sign in there rather than guess a member-area path.
     primarySyncUrl: "https://www.hyatt.com",
   },
+  hilton_honors: {
+    // Hilton Honors. Scraped from www.hilton.com via the same GraphQL
+    // customer endpoint used by Hilton's signed-in web app.
+    programType: "hotel",
+    brandSlug: "hilton",
+    currency: "points",
+    displayName: "Hilton Honors",
+    short: "HH",
+    primarySyncUrl: "https://www.hilton.com/en/",
+  },
   united_mileageplus: {
     programType: "airline",
     brandSlug: "united",
@@ -197,6 +207,16 @@ export const PROGRAM_CATALOG = {
     displayName: "Atmos Rewards",
     short: "AS",
     primarySyncUrl: "https://www.alaskaair.com/atmosrewards/account/overview/",
+  },
+  southwest_rapid_rewards: {
+    // Southwest Rapid Rewards. Scraped from www.southwest.com via
+    // Southwest's loyalty-management customer details API.
+    programType: "airline",
+    brandSlug: "southwest",
+    currency: "points",
+    displayName: "Southwest Rapid Rewards",
+    short: "WN",
+    primarySyncUrl: "https://www.southwest.com/",
   },
 } as const satisfies Record<
   string,
