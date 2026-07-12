@@ -99,7 +99,7 @@ export const BRAND_META: Record<
     initial: "U",
   },
   southwest: {
-    logoPath: "/logos/brands/southwest.svg",
+    logoPath: "/logos/brands/southwest.png",
     bg: "#304CB2", // Southwest blue
     initial: "S",
   },

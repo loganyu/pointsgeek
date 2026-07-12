@@ -474,7 +474,7 @@ const ROLL_PROGRAMS: RollProgram[] = [
   { slug: "bilt", name: "Bilt", program: "Bilt Rewards", logo: "/logos/brands/bilt.png", bg: "#0A0A0A", initial: "B" },
   { slug: "delta", name: "Delta", program: "SkyMiles", logo: "/logos/brands/delta.png", bg: "#E01933", initial: "D" },
   { slug: "united", name: "United", program: "MileagePlus", logo: "/logos/brands/united.png", bg: "#002244", initial: "U" },
-  { slug: "southwest", name: "Southwest", program: "Rapid Rewards", logo: "/logos/brands/southwest.svg", bg: "#304CB2", initial: "S" },
+  { slug: "southwest", name: "Southwest", program: "Rapid Rewards", logo: "/logos/brands/southwest.png", bg: "#304CB2", initial: "S" },
   { slug: "aa", name: "American", program: "AAdvantage", logo: "/logos/brands/aa.png", bg: "#0078D2", initial: "A" },
   { slug: "cathay", name: "Cathay Pacific", program: "Asia Miles", logo: "/logos/brands/cathay.png", bg: "#006564", initial: "C" },
   { slug: "qatar", name: "Qatar Airways", program: "Privilege Club", logo: "/logos/brands/qatar.png", bg: "#5C0632", initial: "Q" },
