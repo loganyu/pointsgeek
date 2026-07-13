@@ -97,9 +97,8 @@ function Hero() {
             margin: "28px 0 36px",
           }}
         >
-          PointsGeek pulls your balances from every loyalty program you use —
-          banks, airlines, hotels — and rolls them into a single, readable view.
-          No passwords shared. No data sold.
+          PointsGeek pulls your balances from every loyalty program you use
+          and rolls them into a single, readable view.
         </p>
 
         {/* CTA row — Google sign-up + extension link */}
@@ -121,23 +120,6 @@ function Hero() {
             Install Chrome extension
             <ArrowUpRightIcon />
           </a>
-        </div>
-
-        {/* Trust strip */}
-        <div
-          className="mt-9 pt-6 border-t border-border-light flex flex-col gap-3 sm:flex-row sm:gap-8 text-text-tertiary"
-          style={{ fontSize: 12.5, letterSpacing: "0.01em" }}
-        >
-          <div>
-            <span className="text-text-secondary font-medium">
-              End-to-end private
-            </span>
-            {" · sessions stay in your browser"}
-          </div>
-          <div>
-            <span className="text-text-secondary font-medium">Free</span>
-            {" · no upsell, no premium tier"}
-          </div>
         </div>
       </div>
 
