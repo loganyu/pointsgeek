@@ -317,18 +317,25 @@ function Chevron({
   );
 }
 
+type SortableDragHandle = Pick<
+  ReturnType<typeof useSortable>,
+  "attributes" | "listeners" | "setActivatorNodeRef"
+>;
+
 /**
  * Monarch-style drag affordance: tiny 2×4 dot grid that fades in on row
- * hover. Positioned absolutely in the row's left padding so it hugs the
- * edge without pushing content. `pointer-events-none` so the whole row
- * (not just the dots) can act as the drag handle.
+ * hover. The surrounding button is the only drag activator, leaving the
+ * rest of the row available for normal text selection.
  */
-function DragDots({ className = "" }: { className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none grid grid-cols-2 gap-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${className}`}
-    >
+function DragDots({
+  label,
+  dragHandle,
+}: {
+  label: string;
+  dragHandle?: SortableDragHandle;
+}) {
+  const dots = (
+    <span className="grid grid-cols-2 gap-[2px]" aria-hidden="true">
       {Array.from({ length: 8 }).map((_, i) => (
         <span
           key={i}
@@ -336,6 +343,32 @@ function DragDots({ className = "" }: { className?: string }) {
         />
       ))}
     </span>
+  );
+
+  if (!dragHandle) {
+    return (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-0 flex w-4 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      >
+        {dots}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      ref={dragHandle.setActivatorNodeRef}
+      type="button"
+      {...dragHandle.attributes}
+      {...dragHandle.listeners}
+      aria-label={label}
+      title="Drag to reorder"
+      onClick={(event) => event.stopPropagation()}
+      className="absolute inset-y-0 left-0 flex w-4 touch-none select-none items-center justify-center opacity-0 cursor-grab group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-text-accent active:cursor-grabbing transition-opacity duration-150"
+    >
+      {dots}
+    </button>
   );
 }
 
@@ -490,7 +523,13 @@ function CardRow({
 
 /* ── Program row (expandable if it has cards) ────────────── */
 
-function ProgramRow({ program }: { program: ProgramRowData }) {
+function ProgramRow({
+  program,
+  dragHandle,
+}: {
+  program: ProgramRowData;
+  dragHandle?: SortableDragHandle;
+}) {
   const [open, setOpen] = usePersistedBoolean(
     PROGRAM_EXPANDED_KEY,
     program.programRowId,
@@ -509,11 +548,14 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
     <>
       <div
         onClick={() => hasCards && setOpen(!open)}
-        className={`relative flex items-center justify-between py-3 pl-3 pr-4 border-b border-border-light last:border-b-0 group ${
+        className={`relative flex items-center justify-between py-3 pl-4 pr-4 border-b border-border-light last:border-b-0 group ${
           hasCards ? "hover:bg-surface-secondary/60" : ""
         } transition-colors`}
       >
-        <DragDots className="absolute left-[4px] top-1/2 -translate-y-1/2" />
+        <DragDots
+          label={`Reorder ${program.displayName}`}
+          dragHandle={dragHandle}
+        />
         <div className="flex items-center gap-2 min-w-0">
           {hasCards ? (
             <Chevron open={open} />
@@ -627,6 +669,7 @@ function SortableProgramRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -653,11 +696,11 @@ function SortableProgramRow({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="select-none touch-none cursor-grab"
     >
-      <ProgramRow program={program} />
+      <ProgramRow
+        program={program}
+        dragHandle={{ attributes, listeners, setActivatorNodeRef }}
+      />
     </div>
   );
 }
@@ -670,12 +713,14 @@ function CategorySection({
   programs,
   emptyMessage,
   defaultOpen = true,
+  dragHandle,
 }: {
   sectionKey: SectionKey;
   title: string;
   programs: ProgramRowData[];
   emptyMessage: string;
   defaultOpen?: boolean;
+  dragHandle?: SortableDragHandle;
 }) {
   const [open, setOpen] = usePersistedBoolean(
     SECTION_EXPANDED_KEY,
@@ -705,9 +750,9 @@ function CategorySection({
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
       <div
         onClick={() => setOpen(!open)}
-        className="relative group flex items-center justify-between py-4 pl-3 pr-4 hover:bg-surface-secondary/40 transition-colors"
+        className="relative group flex items-center justify-between py-4 pl-4 pr-4 hover:bg-surface-secondary/40 transition-colors"
       >
-        <DragDots className="absolute left-[4px] top-1/2 -translate-y-1/2" />
+        <DragDots label={`Reorder ${title}`} dragHandle={dragHandle} />
         <div className="flex items-center gap-2">
           <Chevron open={open} size={14} hitbox={26} />
           <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
@@ -793,6 +838,7 @@ function SortableCategorySection({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -813,18 +859,13 @@ function SortableCategorySection({
     opacity: isDragging ? 0.3 : 1,
   };
 
-  // Whole-section drag: the section card is grabbable; the header's own
-  // click-to-expand still fires because the 4px activation constraint
-  // treats a click without motion as a normal click event.
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="select-none touch-none cursor-grab"
-    >
-      <CategorySection sectionKey={sectionKey} {...rest} />
+    <div ref={setNodeRef} style={style}>
+      <CategorySection
+        sectionKey={sectionKey}
+        {...rest}
+        dragHandle={{ attributes, listeners, setActivatorNodeRef }}
+      />
     </div>
   );
 }
@@ -961,9 +1002,8 @@ export default function ProgramsList({
   };
 
   const sensors = useSensors(
-    // 4px distance keeps short clicks from starting a drag, so clicking the
-    // DragDots area still bubbles to expand/collapse handlers if no pointer
-    // movement happens.
+    // 4px distance keeps short clicks on the drag handle from starting a
+    // drag, while the rest of each row retains normal text-selection behavior.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
 
