@@ -166,6 +166,9 @@ export const pointsPrograms = pgTable(
      *  the loyalty number for airline/hotel programs, or nothing at all. */
     ownerLabel: text("owner_label"),
     programType: programTypeEnum("program_type").notNull(),
+    /** Calendar date on which the current points balance expires. Null when
+     *  the program does not expose an expiration date or points do not expire. */
+    expirationDate: date("expiration_date", { mode: "string" }),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     /** Denormalized sync-status fields. Populated by `/api/balances`:

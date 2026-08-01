@@ -53,6 +53,7 @@ export interface ProgramRowData {
   currency: "points" | "miles" | "usd_cents";
   ownerLabel: string | null;
   externalAccountId: string;
+  expirationDate: string | null;
   syncUrl: string;
   totalBalance: number | null;
   lastUpdated: string | null;
@@ -237,6 +238,16 @@ function timeAgo(iso: string): string {
 
   const years = Math.floor(days / 365);
   return `${years} ${years === 1 ? "year" : "years"} ago`;
+}
+
+function formatExpirationDate(value: string): string {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
 function formatBalance(n: number, currency: ProgramRowData["currency"]): string {
@@ -543,6 +554,10 @@ function ProgramRow({
   // Prefer the total's timestamp; fall back to YTD's if that's the only
   // data source (Marriott from Amex scraper, until marriott.com is wired).
   const displayedLastUpdated = program.lastUpdated ?? program.ytdLastUpdated;
+  const identityLabel = programIdentityLabel(program);
+  const expirationLabel = program.expirationDate
+    ? `Expires ${formatExpirationDate(program.expirationDate)}`
+    : null;
 
   return (
     <>
@@ -569,9 +584,11 @@ function ProgramRow({
             <div className="font-medium text-text-primary truncate group-hover:text-text-accent transition-colors">
               {program.displayName}
             </div>
-            {programIdentityLabel(program) && (
+            {(identityLabel || expirationLabel) && (
               <div className="text-xs text-text-secondary mt-0.5 truncate tabular-nums">
-                {programIdentityLabel(program)}
+                {identityLabel}
+                {identityLabel && expirationLabel ? " · " : ""}
+                {expirationLabel}
               </div>
             )}
           </div>

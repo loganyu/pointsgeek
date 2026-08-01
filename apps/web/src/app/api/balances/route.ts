@@ -152,6 +152,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // A missing value means the scraper did not observe expiration data, so
+    // retain the last known date. Explicit null clears the date for programs
+    // whose page states that points do not expire.
+    const expirationDateByProgramKey = new Map<ProgramKey, string | null>();
+    for (const balance of balances) {
+      if (
+        balance.expirationDate !== undefined &&
+        !expirationDateByProgramKey.has(balance.programKey)
+      ) {
+        expirationDateByProgramKey.set(
+          balance.programKey,
+          balance.expirationDate
+        );
+      }
+    }
+
     const programIdByKey = new Map<ProgramKey, string>();
     for (const [programKey, accountId] of accountByProgramKey) {
       const id = await resolveProgramId({
@@ -166,6 +182,15 @@ export async function POST(req: NextRequest) {
         }),
       });
       programIdByKey.set(programKey, id);
+    }
+
+    for (const [programKey, expirationDate] of expirationDateByProgramKey) {
+      const programId = programIdByKey.get(programKey);
+      if (!programId) continue;
+      await db
+        .update(pointsPrograms)
+        .set({ expirationDate })
+        .where(eq(pointsPrograms.id, programId));
     }
 
     // Mark every program this scrape touched as successfully synced. The

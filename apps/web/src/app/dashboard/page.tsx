@@ -122,6 +122,7 @@ export default async function DashboardPage() {
         currency: meta.currency,
         ownerLabel: p.ownerLabel,
         externalAccountId: p.externalAccountId,
+        expirationDate: p.expirationDate,
         syncUrl: meta.primarySyncUrl,
         totalBalance: latestTotal ? Number(latestTotal.balance) : null,
         lastUpdated: latestTotal?.scrapedAt.toISOString() ?? null,
