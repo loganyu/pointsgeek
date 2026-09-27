@@ -17,6 +17,9 @@ to a brand-colored circle with the brand's first initial (Monarch-style).
 - `capitalone.png` — Capital One cards + Miles
 - `delta.png` — Delta SkyMiles
 - `marriott.png` — Marriott Bonvoy
+- `hyatt.png` — World of Hyatt
+- `hilton.png` — Hilton Honors
+- `southwest.png` — Southwest Rapid Rewards
 - `bilt.png`, `citi.png` — issuer-only today, may become programs later
 
 (SVG also works — just update the `logoPath` extension in

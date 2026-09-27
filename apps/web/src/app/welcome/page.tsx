@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { accounts, users } from "@/lib/db/schema";
+import { sendSignupAlert } from "@/lib/signup-alert";
 import { DEFAULT_TIMEZONE, TIMEZONES } from "@/lib/timezones";
 import { WelcomeForm } from "./welcome-form";
 
@@ -21,6 +22,7 @@ export default async function WelcomePage() {
   if (!session?.user) redirect("/login?route=%2Fwelcome");
 
   const userId = session.user.id!;
+  const userEmail = session.user.email;
   const [user] = await db
     .select({
       firstName: users.firstName,
@@ -60,6 +62,20 @@ export default async function WelcomePage() {
         timezone,
       })
       .where(eq(users.id, userId));
+
+    const authProviders = await db
+      .select({ provider: accounts.provider })
+      .from(accounts)
+      .where(eq(accounts.userId, userId));
+
+    await sendSignupAlert({
+      userId,
+      email: userEmail,
+      firstName,
+      lastName,
+      timezone,
+      providers: authProviders.map((account) => account.provider),
+    });
 
     redirect("/dashboard");
   }

@@ -16,15 +16,24 @@ export const PROVIDERS = [
   "capitalone",
   "citi",
   "delta",
+  "hilton",
   "hyatt",
+  "jal",
   "jetblue",
   "marriott",
   "qatar",
+  "rove",
+  "southwest",
   "united",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
-export const PROGRAM_TYPES = ["bank_rewards", "airline", "hotel"] as const;
+export const PROGRAM_TYPES = [
+  "bank_rewards",
+  "airline",
+  "hotel",
+  "reward_program",
+] as const;
 export type ProgramType = (typeof PROGRAM_TYPES)[number];
 
 /**
@@ -43,6 +52,8 @@ export interface PointsProgram {
   externalAccountId: string;
   ownerLabel: string | null;
   programType: ProgramType;
+  /** Calendar date (`YYYY-MM-DD`) when the current balance expires. */
+  expirationDate: string | null;
   active: boolean;
 }
 
@@ -73,6 +84,12 @@ export interface BalanceRecord {
   programKey: ProgramKey;
   balance: number;
   balanceType: BalanceType;
+  /**
+   * Calendar date (`YYYY-MM-DD`) when this program balance expires. Omit when
+   * the page does not expose expiration information; use null only when the
+   * page explicitly says the points do not expire.
+   */
+  expirationDate?: string | null;
   /** When set, the balance is for this card specifically (per-card). */
   linkedCard?: { cardName: string; lastFour?: string };
   /**
@@ -103,6 +120,8 @@ export interface ScrapeEventDetails {
 export interface BalanceExtraction {
   success: boolean;
   balance?: number;
+  /** Calendar date (`YYYY-MM-DD`) when the extracted balance expires. */
+  expirationDate?: string | null;
   error?: { code: string; message: string };
   durationMs: number;
   selectorsAttempted: string[];

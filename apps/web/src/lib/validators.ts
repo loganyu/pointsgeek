@@ -14,6 +14,7 @@ const balanceRecordSchema = z.object({
   programKey: z.enum(PROGRAM_KEYS),
   balance: z.number().int().min(0),
   balanceType: z.enum(BALANCE_TYPES),
+  expirationDate: z.iso.date().nullable().optional(),
   linkedCard: linkedCardSchema.optional(),
   externalAccountId: z.string().min(1).optional(),
 });

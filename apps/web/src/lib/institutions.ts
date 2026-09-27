@@ -16,7 +16,7 @@
  * source of truth for programKey literals the extension relies on.
  */
 
-export type InstitutionCategory = "bank" | "airline" | "hotel";
+export type InstitutionCategory = "bank" | "airline" | "hotel" | "reward";
 
 export interface Institution {
   name: string;
@@ -30,9 +30,15 @@ export const CATEGORY_LABELS: Record<InstitutionCategory, string> = {
   bank: "Banks & Credit Cards",
   airline: "Airline Loyalty",
   hotel: "Hotel Loyalty",
+  reward: "Reward Programs",
 };
 
-export const CATEGORY_ORDER: InstitutionCategory[] = ["bank", "airline", "hotel"];
+export const CATEGORY_ORDER: InstitutionCategory[] = [
+  "bank",
+  "reward",
+  "airline",
+  "hotel",
+];
 
 export const INSTITUTIONS: Institution[] = [
   // ── Banks & credit cards — scraped ───────────────────────
@@ -41,12 +47,6 @@ export const INSTITUTIONS: Institution[] = [
     url: "https://global.americanexpress.com/overview",
     category: "bank",
     brandSlug: "amex",
-  },
-  {
-    name: "Bilt",
-    url: "https://www.bilt.com/",
-    category: "bank",
-    brandSlug: "bilt",
   },
   {
     name: "Capital One",
@@ -65,6 +65,20 @@ export const INSTITUTIONS: Institution[] = [
     url: "https://online.citi.com/US/ag/dashboard",
     category: "bank",
     brandSlug: "citi",
+  },
+
+  // ── Reward programs — scraped ────────────────────────────
+  {
+    name: "Bilt Rewards",
+    url: "https://www.bilt.com/",
+    category: "reward",
+    brandSlug: "bilt",
+  },
+  {
+    name: "Rove Miles",
+    url: "https://www.rove.com/home",
+    category: "reward",
+    brandSlug: "rove",
   },
 
   // ── Banks & credit cards — pending scrapers ──────────────
@@ -107,6 +121,12 @@ export const INSTITUTIONS: Institution[] = [
     brandSlug: "jetblue",
   },
   {
+    name: "JAL Mileage Bank",
+    url: "https://www.jal.co.jp/arl/en/jmb/",
+    category: "airline",
+    brandSlug: "jal",
+  },
+  {
     name: "Qatar Privilege Club",
     url: "https://www.qatarairways.com/en/Privilege-Club/postLogin/dashboardqrpcuser/avios-balance.html",
     category: "airline",
@@ -118,10 +138,15 @@ export const INSTITUTIONS: Institution[] = [
     category: "airline",
     brandSlug: "united",
   },
+  {
+    name: "Southwest Rapid Rewards",
+    url: "https://www.southwest.com/",
+    category: "airline",
+    brandSlug: "southwest",
+  },
 
   // ── Airline loyalty — pending scrapers (US) ──────────────
   // Uncomment as scrapers ship.
-  // { name: "Southwest Rapid Rewards", url: "https://www.southwest.com", category: "airline" },
   // { name: "Hawaiian HawaiianMiles", url: "https://www.hawaiianairlines.com", category: "airline" },
   // { name: "Frontier Miles", url: "https://www.flyfrontier.com", category: "airline" },
 
@@ -138,7 +163,6 @@ export const INSTITUTIONS: Institution[] = [
   // { name: "Etihad Guest", url: "https://www.etihad.com/etihadguest", category: "airline" },
   // { name: "Flying Blue (Air France/KLM)", url: "https://www.flyingblue.com", category: "airline" },
   // { name: "Iberia Plus", url: "https://www.iberia.com", category: "airline" },
-  // { name: "Japan Airlines Mileage Bank", url: "https://www.jal.co.jp/jalmileagebank/en", category: "airline" },
   // { name: "Lufthansa Miles & More", url: "https://www.miles-and-more.com", category: "airline" },
   // { name: "Qantas Frequent Flyer", url: "https://www.qantas.com/frequent-flyer", category: "airline" },
   // { name: "Singapore KrisFlyer", url: "https://www.singaporeair.com/krisflyer", category: "airline" },
@@ -158,10 +182,15 @@ export const INSTITUTIONS: Institution[] = [
     category: "hotel",
     brandSlug: "hyatt",
   },
+  {
+    name: "Hilton Honors",
+    url: "https://www.hilton.com/en/",
+    category: "hotel",
+    brandSlug: "hilton",
+  },
 
   // ── Hotel loyalty — pending scrapers ─────────────────────
   // Uncomment as scrapers ship.
-  // { name: "Hilton Honors", url: "https://www.hilton.com", category: "hotel" },
   // { name: "IHG One Rewards", url: "https://www.ihg.com", category: "hotel" },
   // { name: "Wyndham Rewards", url: "https://www.wyndhamhotels.com", category: "hotel" },
   // { name: "Choice Privileges", url: "https://www.choicehotels.com", category: "hotel" },

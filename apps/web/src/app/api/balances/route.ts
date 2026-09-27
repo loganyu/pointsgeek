@@ -152,6 +152,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // A missing value means the scraper did not observe expiration data, so
+    // retain the last known date. Explicit null clears the date for programs
+    // whose page states that points do not expire.
+    const expirationDateByProgramKey = new Map<ProgramKey, string | null>();
+    for (const balance of balances) {
+      if (
+        balance.expirationDate !== undefined &&
+        !expirationDateByProgramKey.has(balance.programKey)
+      ) {
+        expirationDateByProgramKey.set(
+          balance.programKey,
+          balance.expirationDate
+        );
+      }
+    }
+
     const programIdByKey = new Map<ProgramKey, string>();
     for (const [programKey, accountId] of accountByProgramKey) {
       const id = await resolveProgramId({
@@ -166,6 +182,15 @@ export async function POST(req: NextRequest) {
         }),
       });
       programIdByKey.set(programKey, id);
+    }
+
+    for (const [programKey, expirationDate] of expirationDateByProgramKey) {
+      const programId = programIdByKey.get(programKey);
+      if (!programId) continue;
+      await db
+        .update(pointsPrograms)
+        .set({ expirationDate })
+        .where(eq(pointsPrograms.id, programId));
     }
 
     // Mark every program this scrape touched as successfully synced. The
@@ -600,9 +625,17 @@ async function findSingleUpgradeableProgram(args: {
 
   if (rows.length !== 1) return null;
   const row = rows[0];
+  const canRepairJalNameFallback =
+    args.programKey === "jal_mileage_bank" &&
+    isRepairableJalNameFallback(
+      row.currentExternalId,
+      row.currentOwnerLabel,
+      args.incomingExternalAccountId
+    );
   if (
+    !canRepairJalNameFallback &&
     externalAccountSpecificity(args.incomingExternalAccountId) <=
-    externalAccountSpecificity(row.currentExternalId)
+      externalAccountSpecificity(row.currentExternalId)
   ) {
     return null;
   }
@@ -642,6 +675,59 @@ function externalAccountSpecificity(id: string): number {
   if (id.startsWith("name:")) return 2;
   if (id === "default") return 0;
   return 1;
+}
+
+function isRepairableJalNameFallback(
+  currentExternalId: string,
+  currentOwnerLabel: string | null,
+  incomingExternalId: string
+): boolean {
+  if (!currentExternalId.startsWith("name:")) return false;
+
+  if (
+    incomingExternalId.startsWith("name:") &&
+    stripLeadingHonorific(currentExternalId.slice("name:".length)) ===
+      stripLeadingHonorific(incomingExternalId.slice("name:".length)) &&
+    currentExternalId !== incomingExternalId
+  ) {
+    return true;
+  }
+
+  if (
+    !incomingExternalId.startsWith("name:") &&
+    !incomingExternalId.startsWith("loyalty:")
+  ) {
+    return false;
+  }
+
+  const current = `${currentExternalId.slice("name:".length)} ${
+    currentOwnerLabel ?? ""
+  }`.toLowerCase();
+  const suspiciousFragments = [
+    "available services",
+    "cityhong",
+    "hong kong",
+    "honolulu",
+    "istanbul",
+    "jakarta",
+    "johannesburg",
+    "kaohsiun",
+    "minh city",
+    "select here",
+  ];
+  return (
+    suspiciousFragments.filter((fragment) => current.includes(fragment))
+      .length >= 2
+  );
+}
+
+function stripLeadingHonorific(name: string): string {
+  return name
+    .replace(/\b(?:mr|mrs|ms|miss|dr)\.?\b/gi, " ")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function hasConflictingCardAccountNames(

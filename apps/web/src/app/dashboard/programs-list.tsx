@@ -53,6 +53,7 @@ export interface ProgramRowData {
   currency: "points" | "miles" | "usd_cents";
   ownerLabel: string | null;
   externalAccountId: string;
+  expirationDate: string | null;
   syncUrl: string;
   totalBalance: number | null;
   lastUpdated: string | null;
@@ -67,9 +68,14 @@ export interface ProgramRowData {
   cards: CardRowData[];
 }
 
-type SectionKey = "banks" | "airlines" | "hotels";
+type SectionKey = "banks" | "rewards" | "airlines" | "hotels";
 
-const DEFAULT_SECTION_ORDER: SectionKey[] = ["banks", "airlines", "hotels"];
+const DEFAULT_SECTION_ORDER: SectionKey[] = [
+  "banks",
+  "rewards",
+  "airlines",
+  "hotels",
+];
 const SECTION_ORDER_KEY = "pg-section-order";
 const PROGRAM_ORDERS_KEY = "pg-program-orders";
 const SECTION_EXPANDED_KEY = "pg-section-expanded";
@@ -234,6 +240,16 @@ function timeAgo(iso: string): string {
   return `${years} ${years === 1 ? "year" : "years"} ago`;
 }
 
+function formatExpirationDate(value: string): string {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 function formatBalance(n: number, currency: ProgramRowData["currency"]): string {
   if (currency === "usd_cents") {
     const dollars = n / 100;
@@ -312,18 +328,25 @@ function Chevron({
   );
 }
 
+type SortableDragHandle = Pick<
+  ReturnType<typeof useSortable>,
+  "attributes" | "listeners" | "setActivatorNodeRef"
+>;
+
 /**
  * Monarch-style drag affordance: tiny 2×4 dot grid that fades in on row
- * hover. Positioned absolutely in the row's left padding so it hugs the
- * edge without pushing content. `pointer-events-none` so the whole row
- * (not just the dots) can act as the drag handle.
+ * hover. The surrounding button is the only drag activator, leaving the
+ * rest of the row available for normal text selection.
  */
-function DragDots({ className = "" }: { className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none grid grid-cols-2 gap-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${className}`}
-    >
+function DragDots({
+  label,
+  dragHandle,
+}: {
+  label: string;
+  dragHandle?: SortableDragHandle;
+}) {
+  const dots = (
+    <span className="grid grid-cols-2 gap-[2px]" aria-hidden="true">
       {Array.from({ length: 8 }).map((_, i) => (
         <span
           key={i}
@@ -331,6 +354,32 @@ function DragDots({ className = "" }: { className?: string }) {
         />
       ))}
     </span>
+  );
+
+  if (!dragHandle) {
+    return (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-0 flex w-4 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      >
+        {dots}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      ref={dragHandle.setActivatorNodeRef}
+      type="button"
+      {...dragHandle.attributes}
+      {...dragHandle.listeners}
+      aria-label={label}
+      title="Drag to reorder"
+      onClick={(event) => event.stopPropagation()}
+      className="absolute inset-y-0 left-0 flex w-4 touch-none select-none items-center justify-center opacity-0 cursor-grab group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-text-accent active:cursor-grabbing transition-opacity duration-150"
+    >
+      {dots}
+    </button>
   );
 }
 
@@ -485,7 +534,13 @@ function CardRow({
 
 /* ── Program row (expandable if it has cards) ────────────── */
 
-function ProgramRow({ program }: { program: ProgramRowData }) {
+function ProgramRow({
+  program,
+  dragHandle,
+}: {
+  program: ProgramRowData;
+  dragHandle?: SortableDragHandle;
+}) {
   const [open, setOpen] = usePersistedBoolean(
     PROGRAM_EXPANDED_KEY,
     program.programRowId,
@@ -499,16 +554,23 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
   // Prefer the total's timestamp; fall back to YTD's if that's the only
   // data source (Marriott from Amex scraper, until marriott.com is wired).
   const displayedLastUpdated = program.lastUpdated ?? program.ytdLastUpdated;
+  const identityLabel = programIdentityLabel(program);
+  const expirationLabel = program.expirationDate
+    ? `Expires ${formatExpirationDate(program.expirationDate)}`
+    : null;
 
   return (
     <>
       <div
         onClick={() => hasCards && setOpen(!open)}
-        className={`relative flex items-center justify-between py-3 pl-3 pr-4 border-b border-border-light last:border-b-0 group ${
+        className={`relative flex items-center justify-between py-3 pl-4 pr-4 border-b border-border-light last:border-b-0 group ${
           hasCards ? "hover:bg-surface-secondary/60" : ""
         } transition-colors`}
       >
-        <DragDots className="absolute left-[4px] top-1/2 -translate-y-1/2" />
+        <DragDots
+          label={`Reorder ${program.displayName}`}
+          dragHandle={dragHandle}
+        />
         <div className="flex items-center gap-2 min-w-0">
           {hasCards ? (
             <Chevron open={open} />
@@ -522,9 +584,11 @@ function ProgramRow({ program }: { program: ProgramRowData }) {
             <div className="font-medium text-text-primary truncate group-hover:text-text-accent transition-colors">
               {program.displayName}
             </div>
-            {programIdentityLabel(program) && (
+            {(identityLabel || expirationLabel) && (
               <div className="text-xs text-text-secondary mt-0.5 truncate tabular-nums">
-                {programIdentityLabel(program)}
+                {identityLabel}
+                {identityLabel && expirationLabel ? " · " : ""}
+                {expirationLabel}
               </div>
             )}
           </div>
@@ -622,6 +686,7 @@ function SortableProgramRow({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -648,11 +713,11 @@ function SortableProgramRow({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="select-none touch-none cursor-grab"
     >
-      <ProgramRow program={program} />
+      <ProgramRow
+        program={program}
+        dragHandle={{ attributes, listeners, setActivatorNodeRef }}
+      />
     </div>
   );
 }
@@ -665,12 +730,14 @@ function CategorySection({
   programs,
   emptyMessage,
   defaultOpen = true,
+  dragHandle,
 }: {
   sectionKey: SectionKey;
   title: string;
   programs: ProgramRowData[];
   emptyMessage: string;
   defaultOpen?: boolean;
+  dragHandle?: SortableDragHandle;
 }) {
   const [open, setOpen] = usePersistedBoolean(
     SECTION_EXPANDED_KEY,
@@ -700,9 +767,9 @@ function CategorySection({
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
       <div
         onClick={() => setOpen(!open)}
-        className="relative group flex items-center justify-between py-4 pl-3 pr-4 hover:bg-surface-secondary/40 transition-colors"
+        className="relative group flex items-center justify-between py-4 pl-4 pr-4 hover:bg-surface-secondary/40 transition-colors"
       >
-        <DragDots className="absolute left-[4px] top-1/2 -translate-y-1/2" />
+        <DragDots label={`Reorder ${title}`} dragHandle={dragHandle} />
         <div className="flex items-center gap-2">
           <Chevron open={open} size={14} hitbox={26} />
           <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
@@ -788,6 +855,7 @@ function SortableCategorySection({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -808,18 +876,13 @@ function SortableCategorySection({
     opacity: isDragging ? 0.3 : 1,
   };
 
-  // Whole-section drag: the section card is grabbable; the header's own
-  // click-to-expand still fires because the 4px activation constraint
-  // treats a click without motion as a normal click event.
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="select-none touch-none cursor-grab"
-    >
-      <CategorySection sectionKey={sectionKey} {...rest} />
+    <div ref={setNodeRef} style={style}>
+      <CategorySection
+        sectionKey={sectionKey}
+        {...rest}
+        dragHandle={{ attributes, listeners, setActivatorNodeRef }}
+      />
     </div>
   );
 }
@@ -828,14 +891,16 @@ function SortableCategorySection({
 
 export default function ProgramsList({
   banks,
+  rewards,
   airlines,
   hotels,
 }: {
   banks: ProgramRowData[];
+  rewards: ProgramRowData[];
   airlines: ProgramRowData[];
   hotels: ProgramRowData[];
 }) {
-  const allPrograms = [...banks, ...airlines, ...hotels];
+  const allPrograms = [...banks, ...rewards, ...airlines, ...hotels];
   // Sum only point/mile programs into the headline; cash balances render
   // separately below.
   const pointsPrograms = allPrograms.filter(
@@ -862,7 +927,7 @@ export default function ProgramsList({
     useState<SectionKey[]>(DEFAULT_SECTION_ORDER);
   const [programOrders, setProgramOrders] = useState<
     Record<SectionKey, string[]>
-  >({ banks: [], airlines: [], hotels: [] });
+  >({ banks: [], rewards: [], airlines: [], hotels: [] });
   const [mounted, setMounted] = useState(false);
   // Currently-dragged item, rendered into the DragOverlay so it floats
   // above every stacking context (including section cards with
@@ -900,6 +965,7 @@ export default function ProgramsList({
         if (parsed && typeof parsed === "object") {
           setProgramOrders({
             banks: Array.isArray(parsed.banks) ? parsed.banks : [],
+            rewards: Array.isArray(parsed.rewards) ? parsed.rewards : [],
             airlines: Array.isArray(parsed.airlines) ? parsed.airlines : [],
             hotels: Array.isArray(parsed.hotels) ? parsed.hotels : [],
           });
@@ -914,6 +980,11 @@ export default function ProgramsList({
   const orderedPrograms = useMemo(
     () => ({
       banks: sortByIds(banks, programOrders.banks, (p) => p.programRowId),
+      rewards: sortByIds(
+        rewards,
+        programOrders.rewards,
+        (p) => p.programRowId
+      ),
       airlines: sortByIds(
         airlines,
         programOrders.airlines,
@@ -921,7 +992,7 @@ export default function ProgramsList({
       ),
       hotels: sortByIds(hotels, programOrders.hotels, (p) => p.programRowId),
     }),
-    [banks, airlines, hotels, programOrders]
+    [banks, rewards, airlines, hotels, programOrders]
   );
 
   const sectionInfo: Record<
@@ -932,6 +1003,10 @@ export default function ProgramsList({
       title: "Banks",
       emptyMessage:
         "No bank rewards programs yet. Sync an Amex, Chase, or Capital One account to get started.",
+    },
+    rewards: {
+      title: "Reward Programs",
+      emptyMessage: "No reward programs yet.",
     },
     airlines: {
       title: "Airlines",
@@ -944,9 +1019,8 @@ export default function ProgramsList({
   };
 
   const sensors = useSensors(
-    // 4px distance keeps short clicks from starting a drag, so clicking the
-    // DragDots area still bubbles to expand/collapse handlers if no pointer
-    // movement happens.
+    // 4px distance keeps short clicks on the drag handle from starting a
+    // drag, while the rest of each row retains normal text-selection behavior.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
 

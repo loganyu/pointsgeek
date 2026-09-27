@@ -1,52 +1,132 @@
-// Verbose migration runner — replaces `drizzle-kit migrate` in the build.
-//
-// drizzle-kit's CLI renders a spinner that SWALLOWS the underlying Postgres
-// error, so a failed migration on Vercel just shows "applying migrations... "
-// then ELIFECYCLE with no cause. This runs the same drizzle migrator (same
-// `drizzle/__drizzle_migrations` ledger, same journal) but logs the real
-// error: message, SQLSTATE code, detail, hint, and where.
-//
-// Migrations must run over a DIRECT (non-pooled) connection — the pooled Neon
-// endpoint (pgBouncer transaction pooling) breaks drizzle's session-level
-// migration lock and hangs. The Neon/Vercel integration injects the direct URL
-// as DATABASE_URL_UNPOOLED (older integrations: POSTGRES_URL_NON_POOLING).
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
+// Run the Drizzle migration ledger with useful errors in local and AWS builds.
+// Local development uses a direct PostgreSQL URL. Amplify uses Aurora's HTTP
+// Data API so the SSR runtime does not need a VPC connection or connection pool.
+import { RDSDataClient } from "@aws-sdk/client-rds-data";
+import { sql } from "drizzle-orm";
+import { drizzle as drizzleAurora } from "drizzle-orm/aws-data-api/pg";
+import { migrate as migrateAurora } from "drizzle-orm/aws-data-api/pg/migrator";
+import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
+import { migrate as migratePostgres } from "drizzle-orm/node-postgres/migrator";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import pg from "pg";
 
-const url =
-  process.env.DATABASE_URL_UNPOOLED ??
-  process.env.POSTGRES_URL_NON_POOLING ??
-  process.env.DATABASE_URL_NON_POOLING ??
-  process.env.DATABASE_URL;
+loadLocalEnv();
 
-if (!url) {
-  console.error("[migrate] no database URL (DATABASE_URL_UNPOOLED or DATABASE_URL)");
-  process.exit(1);
-}
+let cleanup = async () => {};
 
 try {
-  console.log(`[migrate] host: ${new URL(url).host}`);
-} catch {
-  /* unparseable url — let the pool surface the real connection error */
-}
+  const aurora = readAuroraConfig();
+  let db;
+  let runMigrations;
 
-const pool = new pg.Pool({ connectionString: url, max: 1 });
-const db = drizzle(pool);
+  if (aurora) {
+    const { region, ...databaseConfig } = aurora;
+    const client = new RDSDataClient(region ? { region } : {});
+    db = drizzleAurora(client, databaseConfig);
+    runMigrations = () =>
+      migrateAurora(db, { migrationsFolder: "./drizzle" });
+    cleanup = async () => client.destroy();
+    console.log(`[migrate] transport: Aurora Data API (${aurora.database})`);
+  } else {
+    const url = readPostgresUrl();
+    if (!url) {
+      throw new Error(
+        "No database configured. Set DATABASE_URL locally or all AURORA_* variables on AWS."
+      );
+    }
 
-try {
-  await migrate(db, { migrationsFolder: "./drizzle" });
+    try {
+      console.log(`[migrate] transport: PostgreSQL (${new URL(url).host})`);
+    } catch {
+      console.log("[migrate] transport: PostgreSQL");
+    }
+
+    const pool = new pg.Pool({ connectionString: url, max: 1 });
+    db = drizzlePostgres(pool);
+    runMigrations = () =>
+      migratePostgres(db, { migrationsFolder: "./drizzle" });
+    cleanup = async () => pool.end();
+  }
+
+  await runMigrations();
+  await db.execute(sql.raw(`
+    UPDATE "points_programs"
+    SET "program_type" = 'reward_program'::"program_type"
+    WHERE "program_key" = 'bilt_rewards'
+      AND "program_type" <> 'reward_program'::"program_type"
+  `));
   console.log("[migrate] all migrations applied");
-} catch (err) {
+} catch (error) {
   console.error("\n[migrate] FAILED");
-  console.error("  message:", err?.message);
-  console.error("  code:   ", err?.code); // Postgres SQLSTATE
-  console.error("  detail: ", err?.detail);
-  console.error("  hint:   ", err?.hint);
-  console.error("  where:  ", err?.where);
-  console.error("  routine:", err?.routine);
-  if (err?.stack) console.error(err.stack);
+  printError(error);
   process.exitCode = 1;
 } finally {
-  await pool.end();
+  await cleanup();
+}
+
+function readAuroraConfig() {
+  const keys = [
+    "AURORA_DATABASE",
+    "AURORA_RESOURCE_ARN",
+    "AURORA_SECRET_ARN",
+  ];
+  if (!keys.some((key) => process.env[key])) return null;
+
+  const missing = keys
+    .filter((key) => !process.env[key])
+    .join(", ");
+  if (missing) {
+    throw new Error(
+      `Incomplete Aurora Data API configuration; missing ${missing}`
+    );
+  }
+
+  return {
+    database: process.env.AURORA_DATABASE,
+    resourceArn: process.env.AURORA_RESOURCE_ARN,
+    secretArn: process.env.AURORA_SECRET_ARN,
+    region: process.env.AURORA_REGION ?? process.env.AWS_REGION,
+  };
+}
+
+function readPostgresUrl() {
+  return (
+    process.env.DATABASE_URL_UNPOOLED ??
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.DATABASE_URL_NON_POOLING ??
+    process.env.DATABASE_URL
+  );
+}
+
+function printError(error) {
+  const cause = error?.cause;
+  console.error("  message:", error?.message ?? error);
+  console.error("  code:   ", error?.code ?? cause?.code);
+  console.error("  detail: ", error?.detail ?? cause?.detail);
+  console.error("  hint:   ", error?.hint ?? cause?.hint);
+  console.error("  where:  ", error?.where ?? cause?.where);
+  console.error("  routine:", error?.routine ?? cause?.routine);
+  if (error?.stack) console.error(error.stack);
+  if (cause?.stack) console.error("Caused by:", cause.stack);
+}
+
+function loadLocalEnv() {
+  const envPath = resolve(process.cwd(), ".env");
+  if (!existsSync(envPath)) return;
+
+  const lines = readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const equalsAt = trimmed.indexOf("=");
+    if (equalsAt <= 0) continue;
+
+    const key = trimmed.slice(0, equalsAt).trim();
+    if (process.env[key] !== undefined) continue;
+
+    const rawValue = trimmed.slice(equalsAt + 1).trim();
+    process.env[key] = rawValue.replace(/^(['"])(.*)\1$/, "$2");
+  }
 }

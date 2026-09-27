@@ -155,6 +155,48 @@
       "when": 1783355193489,
       "tag": "0021_breezy_warpath",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783431981846,
+      "tag": "0022_nebulous_red_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1783444617778,
+      "tag": "0023_lethal_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783526400000,
+      "tag": "0024_move_bilt_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1783651200000,
+      "tag": "0025_add_hilton_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1783656000000,
+      "tag": "0026_add_southwest_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1785546593152,
+      "tag": "0027_young_thing",
+      "breakpoints": true
     }
   ]
 }

@@ -94,7 +94,7 @@ export function HeroDashboardChip() {
           className="flex-1 ml-2 h-[18px] rounded-md bg-white border border-border-light flex items-center px-2 text-[10.5px] text-text-tertiary"
           style={{ fontFamily: "var(--font-mono)" }}
         >
-          pointsgeek.app/dashboard
+          pointsgeek.xyz/dashboard
         </div>
       </div>
 
@@ -108,10 +108,6 @@ export function HeroDashboardChip() {
             2,345,678
           </div>
           <div className="text-[13px] text-text-secondary">points &amp; miles</div>
-        </div>
-        <div className="flex items-center gap-1.5 mt-2 text-[11.5px] text-text-tertiary">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#86c399]" />
-          All synced · 2 minutes ago
         </div>
       </div>
 

@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Next.js 16 `proxy` handler — replaces the older `middleware` file.
- * Two concerns colocated here because only one proxy file is allowed
- * per app:
+ * Next.js 15 middleware handler. Two concerns are colocated here because only
+ * one middleware file is allowed per app:
  *
  *  1. Auth redirect for protected page routes. Monarch's pattern:
  *     a deep link to a gated page becomes `/login?route=<path>` so
@@ -25,7 +24,7 @@ const SESSION_COOKIES = [
   "__Secure-authjs.session-token",
 ];
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   if (PROTECTED.test(pathname)) {

@@ -1,0 +1,952 @@
+{
+  "source": "/Users/loganyu/.codex/attachments/ce5398bf-ed4e-4c46-a903-641751d797f1/pasted-text.txt",
+  "familyCount": 21,
+  "cardCount": 120,
+  "families": [
+    {
+      "family": "Alaska/Hawaiian Atmos Cards",
+      "cards": [
+        {
+          "family": "Alaska/Hawaiian Atmos Cards",
+          "cardName": "Atmos™ Rewards Summit Visa Infinite®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c159c99e-0bdc-5bb0-baf8-996fb1ee8717/27cd9d7a-f615-4397-9fbb-e62f8d328f18.png",
+          "type": "Personal",
+          "annualFee": "$395/yr"
+        },
+        {
+          "family": "Alaska/Hawaiian Atmos Cards",
+          "cardName": "Atmos™ Rewards Ascent Visa Signature®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6d441362-7d2b-5344-98f8-955d8fc5d6d7/ccae5189-0cd6-4a8e-b8e3-69d0dfd1abd1.png",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Alaska/Hawaiian Atmos Cards",
+          "cardName": "Hawaiian Airlines® World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/27df2b99-78b0-5334-be9f-4a28b56949a1/aee5cb3e-4b22-4ad2-bc40-90e95f3b20e7.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        },
+        {
+          "family": "Alaska/Hawaiian Atmos Cards",
+          "cardName": "Atmos™ Rewards Visa® Business",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d82247dc-dd87-5bbb-961d-17a575865b13/9630b417-2b44-4bfb-81f2-54cab6ca4cbe.png",
+          "type": "Business",
+          "annualFee": "$70/yr"
+        },
+        {
+          "family": "Alaska/Hawaiian Atmos Cards",
+          "cardName": "Hawaiian Airlines® World Elite Business Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/fb5cecba-c854-445d-add6-5bf0a925c3ca/df304c08-ba4b-47a5-abf2-76e3ae21443a.jpg",
+          "type": "Business",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "American Airlines AAdvantage Cards",
+      "cards": [
+        {
+          "family": "American Airlines AAdvantage Cards",
+          "cardName": "Citi / AAdvantage Executive",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/68810b94-bf88-5e74-b83f-600916f3a096/12344f53-d3f2-4712-830b-cc4637a20808.jpg",
+          "type": "Personal",
+          "annualFee": "$595/yr"
+        },
+        {
+          "family": "American Airlines AAdvantage Cards",
+          "cardName": "Citi / AAdvantage Globe Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/42e475c0-8694-513d-932c-c0293007f950/75744e8f-6693-4179-aa88-e31a94d88127.jpg",
+          "type": "Personal",
+          "annualFee": "$350/yr"
+        },
+        {
+          "family": "American Airlines AAdvantage Cards",
+          "cardName": "Citi / AAdvantage Platinum Select",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/7ee33f0a-502f-5113-9913-c105e69c0e04/07b21a6e-3595-4769-b427-37da4dc388ed.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr (1st year waived)"
+        },
+        {
+          "family": "American Airlines AAdvantage Cards",
+          "cardName": "American Airlines AAdvantage® MileUp® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/929effed-77bb-5693-9131-0f679f815c6c/9ed021ad-c555-40f4-88b8-92c6786e1273.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "American Airlines AAdvantage Cards",
+          "cardName": "Citi / AAdvantage Business",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/117fd1e9-ee11-513d-a06e-ff33f7e4886f/20080bb9-043b-4b74-b2f8-031ca336d4dd.jpg",
+          "type": "Business",
+          "annualFee": "$99/yr (1st year waived)"
+        }
+      ]
+    },
+    {
+      "family": "American Express Cards",
+      "cards": [
+        {
+          "family": "American Express Cards",
+          "cardName": "The American Express Platinum Card®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/aa5f7ead-1c98-5ac8-b662-ad04a54a2af6/f44c5950-736d-4732-901b-ef82b283068f.png",
+          "type": "Personal",
+          "annualFee": "$895/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "American Express® Gold Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/75d445f1-f57d-551b-8b75-a125ea539a2c/a175cb12-708d-4712-8c18-a0fef7553019.jpg",
+          "type": "Personal",
+          "annualFee": "$325/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "American Express® Green Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/644fdd5d-176e-58bb-809e-c6da97aff1af/1c16811f-4e15-475f-9aed-ef45d5308ced.jpg",
+          "type": "Personal",
+          "annualFee": "$150/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Blue Cash Preferred® Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/653cb85c-ea42-5c3f-b0e4-a771bd18a516/010629a0-aded-4e1f-a368-c4604834562b.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Blue Cash Everyday® Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/820b5113-3555-5c3e-a63c-f2a8b0fcca6e/18dff0e6-e304-4ee5-9657-811b461ef275.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Business Platinum Card® from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/716026c3-4fa4-5e89-8d87-e3ea59afd400/3310b17d-b60b-4d70-b104-5a5044f231e2.jpg",
+          "type": "Business",
+          "annualFee": "$895/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "American Express® Business Gold Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/e94ca443-7874-5359-98c4-db6ce2eeac81/016ca822-9636-4621-9477-5c8d2c67b04d.jpg",
+          "type": "Business",
+          "annualFee": "$375/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Graphite™ Business Cash Unlimited Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/038a3eaa-419c-590b-8d49-6e8950ac1601/aa0547f7-5e1d-4558-8c04-a9b0f7c0fb3f.jpg",
+          "type": "Business",
+          "annualFee": "$295/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Blue Business Cash™ Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/96198774-8f17-53e9-9421-ed49e267dd7c/0ac13908-ed60-41a8-b937-73d29e6c8781.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Blue Business® Plus Credit Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/0aebd468-0d22-5e6a-81aa-474b1a1c7ca1/8e1b03a6-2320-45fe-81d5-b2e34fbf97c8.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "American Express Cards",
+          "cardName": "Business Green Rewards Card from American Express",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/e35713df-9bfa-5c3e-a277-bfa5ff0cf35c/08bb78dd-5d9d-440c-b69f-a716f05e8f90.jpg",
+          "type": "Business",
+          "annualFee": "$95/yr"
+        }
+      ]
+    },
+    {
+      "family": "Bank of America Cards",
+      "cards": [
+        {
+          "family": "Bank of America Cards",
+          "cardName": "Bank of America® Premium Rewards® Elite Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/2bc3c012-ccc8-59d3-875e-2f513623a557/f792da12-c321-4ef8-8282-317d0a4e0886.jpg",
+          "type": "Personal",
+          "annualFee": "$550/yr"
+        },
+        {
+          "family": "Bank of America Cards",
+          "cardName": "Bank of America® Premium Rewards® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/a03cf629-80a5-5ad0-b207-1929004ed7a4/c8005b4a-d7d1-4da0-87b1-94a9ea0b3bb1.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Bank of America Cards",
+          "cardName": "Bank of America® Travel Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c3c0ba02-a041-59e8-9930-a96a05a3134c/759c4855-4eba-48ca-b9a2-4898fc45cacc.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        }
+      ]
+    },
+    {
+      "family": "Bilt Rewards Cards",
+      "cards": [
+        {
+          "family": "Bilt Rewards Cards",
+          "cardName": "Bilt Palladium Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/5029cffb-1e04-57a8-9330-dddfbadb20fb/86ffd7c7-cd0d-48aa-b8bd-b27c1fc86c72.jpg",
+          "type": "Personal",
+          "annualFee": "$495/yr"
+        },
+        {
+          "family": "Bilt Rewards Cards",
+          "cardName": "Bilt Obsidian Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/616bf116-f29f-5a50-9ad0-180a21bc9ecd/d30411a3-3791-45bc-a219-c17f1200622a.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Bilt Rewards Cards",
+          "cardName": "Bilt Blue Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c6678619-cefa-5155-9a08-0c53883ac46b/60cc5034-9cd9-4104-9cf4-23728845d659.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        }
+      ]
+    },
+    {
+      "family": "Budget Airline Cards",
+      "cards": [
+        {
+          "family": "Budget Airline Cards",
+          "cardName": "FRONTIER Airlines World Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ca67d202-4f2d-41e0-b789-e4d34cdefc48/a293556a-d193-4a8d-801f-268105187ab7.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "Capital One Cards",
+      "cards": [
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Venture X Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/140e4c85-4fb4-5c85-aee5-fb6694124db6/b2d06dfe-6795-4f76-93ca-e20c71c334d2.jpg",
+          "type": "Personal",
+          "annualFee": "$395/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Venture Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/cf9b314a-2dff-5a89-bbff-164eea24cfa0/ecad82c7-e74b-442e-94b6-a607011dda62.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One VentureOne Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/1c9b2cfe-2e75-5d23-9aca-d6853275fd8b/6c8ae7a4-a765-4f28-a562-161e8e9cdf56.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Quicksilver Cash Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ffa840c4-d116-54ee-b710-ba5b247fc7d7/1d2d97db-175c-4548-bd34-c4c12d4b7da4.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Savor Cash Rewards Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/f93ed617-1b9c-562a-9a5c-180388fb5b33/ee61798b-6058-4761-8d24-ef6148867908.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Discover it",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/a40f978e-7edb-411b-b238-7af2ee6224fd/0fa25af9-684b-4f4b-8cc2-15a156e91be3.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Venture X Business Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6e21d57e-93d0-5e47-82e4-3cfeb693cd58/6e4741c7-0a36-4c80-96dc-f4c7b8f41048.jpg",
+          "type": "Business",
+          "annualFee": "$395/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Spark Cash Plus",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6b6824c6-3b6d-51f9-b136-0700e0cc311b/04f4208e-4c1f-43c5-ab44-6a9736d20c8d.jpg",
+          "type": "Business",
+          "annualFee": "$150/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Venture Business",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/16989f15-927e-5414-9b6b-36fa7cd3ca62/d28daa58-e2ba-475e-a04e-ae9283dce73b.jpg",
+          "type": "Business",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Spark Cash Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d7cc6d8d-96b4-5278-bfc3-feb3ffe69b2c/33a76eeb-0689-48b4-b99f-065750c1ccd6.jpg",
+          "type": "Business",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Spark Miles Select for Business",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/20e02b12-ae74-5e7b-aabc-b2a5be5a911e/d039d530-bc1f-466b-a705-492ac90c8981.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Capital One Cards",
+          "cardName": "Capital One Spark Cash Select",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/20e8ff92-e540-5218-8e9f-7e91cc8ccbf9/0bdb83b7-2815-4026-a16e-c646945951d9.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        }
+      ]
+    },
+    {
+      "family": "Chase Cards",
+      "cards": [
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Sapphire Reserve®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d1d8bfef-b12f-5929-87e3-561d4eeb6838/a30016d5-afb8-454e-a691-6a0b0aa0d9ee.jpg",
+          "type": "Personal",
+          "annualFee": "$795/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Sapphire Preferred® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/41819b37-bcba-5ad3-8048-3667e250461b/7e6ce5e5-0eb1-4a59-912a-717716b6777c.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Freedom Flex℠",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/7579c652-d12a-5604-a24a-478e7b9afa0b/b8a756b6-1d5e-49ab-8cf7-a1bc16eb655e.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Freedom Unlimited®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/378b8c7d-e6ab-553b-8fba-1b3587f593a2/1ee6fc73-ace4-47cc-8eab-bb977c3b525c.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Freedom",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/5b036ed0-bac3-48eb-a29c-0b84a97e01d2/47d016c6-5c28-4149-b4ae-634ad85c25ac.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Chase Sapphire Reserve® for Business",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/f95b3eee-11d2-5b91-b725-e0d3f801b4f7/af8a34e4-37b0-47b6-9696-bad74573c884.jpg",
+          "type": "Business",
+          "annualFee": "$795/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Ink Business Preferred® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4a969244-4015-5361-af9a-8bcd2a898615/d0aff52f-9d0b-42aa-a7cc-db4bdab33761.png",
+          "type": "Business",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Ink Business Premier® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c12a5394-3fd5-5959-9f59-2361df874ee5/ecc307f4-6b25-4c22-b2ea-e39e574dd0ca.jpg",
+          "type": "Business",
+          "annualFee": "$195/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Ink Business Unlimited® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d90f5331-d4db-50f8-b6fb-ca00d97d88f6/6d7820ee-a5f2-47cf-a924-bea4ba65c342.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Chase Cards",
+          "cardName": "Ink Business Cash® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/998312c4-ed83-5958-8197-7646912f88e9/a413549f-c177-4426-9a69-f63238fe1431.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        }
+      ]
+    },
+    {
+      "family": "Citi Cards",
+      "cards": [
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Strata Elite℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/236d3f80-3850-5e51-8f57-c271e5fc2ec8/f0ff89fd-2cbd-4ce4-8773-eebfd306792a.jpg",
+          "type": "Personal",
+          "annualFee": "$595/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Strata Premier℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/fa4ece0c-768a-5457-ad78-84ec2621f0e6/8bc4c8d7-520f-4b28-b9fb-e0afcf75cf22.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Strata℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4d458cdf-26ca-567f-ad0d-24ab487812cd/733a2035-2eae-40f3-905a-5e7815b00665.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Double Cash® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/3203bb94-1973-52c8-afbd-0c0d4150fd2f/4efcb338-e09a-42be-9410-a74fa5f55125.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Custom Cash® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/94351a48-e6bf-5716-82c5-c65c2c4f94ed/7f142467-308f-449b-9dae-0aca5d7d3777.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi® Diamond Preferred® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ce0d717c-8741-51ce-ad81-f402be0e4e57/ede92145-eb7e-4a3b-abd7-c4cc1c2cfb23.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Simplicity® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/51421462-b9a4-5ee9-a66d-08f12663f7c5/dad3576b-af86-444f-97c9-787c3dcca800.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Costco Anywhere Visa® Card by Citi",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ec4d7791-fa6e-5af0-a8b7-602e011f3490/59119f69-4718-4a1e-8f4a-cbcacb517a13.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Citi Cards",
+          "cardName": "Citi Prestige® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/5058e31a-6655-4a51-a873-f15b506422fa/aed06dcc-6521-4de3-9473-db00b7753cc4.jpg",
+          "type": "Personal",
+          "annualFee": "$495/yr"
+        }
+      ]
+    },
+    {
+      "family": "Delta SkyMiles American Express Cards",
+      "cards": [
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Reserve American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/bbbb4b9a-c0a4-516a-9b32-c16501242b13/c06f7173-20a7-48bb-a2ba-0ec6a0711a33.jpg",
+          "type": "Personal",
+          "annualFee": "$650/yr"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Platinum American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/a357dd19-9b50-5046-aaef-cb724c7e1878/d6f60171-5359-4857-aea9-3d1a1293943c.jpg",
+          "type": "Personal",
+          "annualFee": "$350/yr"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Gold American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d54fa38a-2a22-5e66-84db-2db1d6a69204/354ac157-5474-4643-874f-0a73718b5bf6.jpg",
+          "type": "Personal",
+          "annualFee": "$150/yr (1st year waived)"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Blue American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ebe77e6d-dddf-5d42-bcb3-0fbfb9b95c03/a885e714-37ee-4850-86fd-a076aa2a15d3.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Reserve Business American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/e710f3e5-ae6c-5fc0-8022-653c729713ff/4968f61b-1c0d-43ca-92e8-bccb3ca5a453.jpg",
+          "type": "Business",
+          "annualFee": "$650/yr"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Platinum Business American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6bef5522-a081-5050-8e48-48c1b59fcea1/c0aa40f9-15ac-4665-b322-1de20c1cd91b.jpg",
+          "type": "Business",
+          "annualFee": "$350/yr"
+        },
+        {
+          "family": "Delta SkyMiles American Express Cards",
+          "cardName": "Delta SkyMiles® Gold Business American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d2946ca7-cd89-5f08-8b0c-510cb0e85ab0/b5225741-ffe1-40c1-9216-14a54e7d1dd6.jpg",
+          "type": "Business",
+          "annualFee": "$150/yr (1st year waived)"
+        }
+      ]
+    },
+    {
+      "family": "Hilton Honors American Express Cards",
+      "cards": [
+        {
+          "family": "Hilton Honors American Express Cards",
+          "cardName": "Hilton Honors American Express Aspire Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/5a242289-42ac-5326-bfec-078fb8e7073d/fec0a7cc-dad8-4b83-a571-d9c59d1e8d5d.jpg",
+          "type": "Personal",
+          "annualFee": "$550/yr"
+        },
+        {
+          "family": "Hilton Honors American Express Cards",
+          "cardName": "Hilton Honors American Express Surpass® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/cd512271-761d-5191-8797-d0c68c7a3809/d37bea84-5530-4d8f-9de1-62b939c70e2a.jpg",
+          "type": "Personal",
+          "annualFee": "$150/yr (1st year waived)"
+        },
+        {
+          "family": "Hilton Honors American Express Cards",
+          "cardName": "Hilton Honors American Express Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d1e8724d-9943-5530-a4bf-f330a7d15f5c/7755b3e0-4cf9-4b09-87c8-05a76a2dfdfa.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Hilton Honors American Express Cards",
+          "cardName": "Hilton Honors American Express Business Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/49c595ad-21a8-5fe5-a78b-b86d6a03383f/88f46f74-d266-4e3d-93f6-0fec0e9198b7.jpg",
+          "type": "Business",
+          "annualFee": "$195/yr (1st year waived)"
+        }
+      ]
+    },
+    {
+      "family": "IHG One Rewards Credit Cards",
+      "cards": [
+        {
+          "family": "IHG One Rewards Credit Cards",
+          "cardName": "IHG One Rewards Premier Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/9035e545-3b21-51d1-be20-ca901cea676a/35fa2a3e-e473-4186-89ef-447f3b1201fe.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        },
+        {
+          "family": "IHG One Rewards Credit Cards",
+          "cardName": "IHG One Rewards Traveler Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/0660bcd4-db70-50ba-8b99-af3124e658fd/24a1fd21-38f9-4f12-9540-61dced1c30c9.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "IHG One Rewards Credit Cards",
+          "cardName": "IHG® Rewards Club Select Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/f31529c8-a06a-4ada-8abe-711a910758fb/82993bbe-b9f4-4608-8097-52e4b012ac95.jpg",
+          "type": "Personal",
+          "annualFee": "$49/yr"
+        },
+        {
+          "family": "IHG One Rewards Credit Cards",
+          "cardName": "IHG One Rewards Premier Business Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/a3e8cca7-02a6-5279-b38b-f898424edca6/c3a67ef1-259e-483b-9ceb-fd755a96cf31.jpg",
+          "type": "Business",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "International Airline Cards",
+      "cards": [
+        {
+          "family": "International Airline Cards",
+          "cardName": "Aeroplan® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/2f3e4d46-ff6f-5766-b759-4935a833d3da/2f04d40e-d522-40d2-9821-da75e1989bcf.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "British Airways Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/1b6b4525-36a7-555f-a886-b757731a382c/19aedeb9-3f0d-4898-bcf8-f566a66e53d0.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Aer Lingus Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6e03dffc-27a7-5b26-ad0b-7393a15428a5/a15cbb72-757e-4124-8feb-d4f5797baf70.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Iberia Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/5760dee0-f6ba-5096-acb4-aba9236c3b85/af17ca23-c345-40eb-9730-097b0f0babd1.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Air France KLM Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ce973bff-0059-59af-bd9a-7ad9f50acde5/4469692b-cc11-42d8-8add-c5d01329923b.jpg",
+          "type": "Personal",
+          "annualFee": "$89/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Virgin Red Rewards Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4221de63-6ddc-486b-b105-fedf5659caa0/1128d91e-e1f4-4c13-9b46-9da6194aada5.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Emirates Skywards Premium World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4cbd763a-46d0-4d11-8558-f1246ffa2b28/a2fdf2b9-e1ca-4b7a-9382-3309e68993dd.jpg",
+          "type": "Personal",
+          "annualFee": "$499/yr"
+        },
+        {
+          "family": "International Airline Cards",
+          "cardName": "Emirates Skywards Rewards World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/b290d4e3-d1c4-4f52-aee0-9debfee98cf0/25693ccb-5f21-4bfb-86b1-3d6701cfd384.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "JetBlue Cards",
+      "cards": [
+        {
+          "family": "JetBlue Cards",
+          "cardName": "JetBlue Premier World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/37208e96-6a60-58fc-9379-297b183298d2/eb385796-c631-4783-a818-88d0278c812a.jpg",
+          "type": "Personal",
+          "annualFee": "$499/yr"
+        },
+        {
+          "family": "JetBlue Cards",
+          "cardName": "JetBlue Plus World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4172bc45-f4a2-52d5-9296-360609f61080/31865b2a-e16c-41ef-bbb7-5ec1efed54fd.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        },
+        {
+          "family": "JetBlue Cards",
+          "cardName": "JetBlue World Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/0b6363c7-d883-5727-9306-1ec8e74a029e/c8a54f1e-0e4f-4927-b4f8-ecceda4f7ac8.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "JetBlue Cards",
+          "cardName": "JetBlue Business World Elite Mastercard®",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d4771867-35fd-53cd-a8e2-172db2273a7f/a3fa2aaf-5ec1-4f15-91fb-50728405bd31.jpg",
+          "type": "Business",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "Marriott Bonvoy Cards",
+      "cards": [
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Brilliant® American Express® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/08f6d39c-b5b6-52df-9edb-327fc1785ce6/eaf7e370-0684-48d4-89a2-484007aab10c.jpg",
+          "type": "Personal",
+          "annualFee": "$650/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "The Ritz-Carlton® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/ab934433-224b-5281-bafd-69f2ec509dd3/bb4a045e-3c4a-4b8e-9079-29cfd1debe30.jpg",
+          "type": "Personal",
+          "annualFee": "$450/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Bountiful™ Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/a4640fb8-f7bc-558b-aeaf-0d0a867ce375/d86a298e-0a01-4017-82a9-7551df3a19bb.jpg",
+          "type": "Personal",
+          "annualFee": "$250/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Bevy® American Express® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/8cb93948-b3f9-57fc-b927-429fe9226513/b649e671-7f48-4823-a219-17e0fbfbd34c.jpg",
+          "type": "Personal",
+          "annualFee": "$250/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Boundless® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/33909f3f-d72c-5b7d-b9cf-5aff7a123fca/08cb3cce-0a6e-4142-bc4c-f544e9899547.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Bold® Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6d433449-6d16-5b90-8c6b-24478db56c91/b5362032-b8d7-4be6-a74e-9034f188ebfd.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy® American Express® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/6a86951e-92bd-49df-91fb-009064d3c0c1/f08c5ae7-05b7-49d1-876a-885e238f076c.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Premier Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4db995f0-8a95-42a7-868f-c7b1d4f61f98/688a7ef4-d1f6-4d32-ae20-6fab57f7d476.jpg",
+          "type": "Personal",
+          "annualFee": "$85/yr"
+        },
+        {
+          "family": "Marriott Bonvoy Cards",
+          "cardName": "Marriott Bonvoy Business® American Express® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c42410a6-a537-538c-a7d8-4884f662cee4/984a377b-a55f-4089-919b-5b27171fc4f0.jpg",
+          "type": "Business",
+          "annualFee": "$125/yr"
+        }
+      ]
+    },
+    {
+      "family": "Southwest Rapid Rewards Cards",
+      "cards": [
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest Rapid Rewards® Priority Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/13d993ad-a0ef-5417-8574-ddb61b08d219/0bb45587-8567-4a02-be5a-8ff1a10e63e0.jpg",
+          "type": "Personal",
+          "annualFee": "$229/yr"
+        },
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest Rapid Rewards® Premier Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/2a1c9f19-4989-516d-aa38-2dda012a748a/463ff284-210c-48f6-8e76-2ee03fb87fb0.jpg",
+          "type": "Personal",
+          "annualFee": "$149/yr"
+        },
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest Rapid Rewards® Plus Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/10baa668-0e4f-5310-a047-c46dfc268eef/b6e0cc1c-4a88-457d-9ad9-c1ffe84342a6.jpg",
+          "type": "Personal",
+          "annualFee": "$99/yr"
+        },
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest® Rapid Rewards® Performance Business Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d46f89ac-31ed-5fad-8934-c7e430ba6c65/096e4638-40b5-4339-a322-94b11430bd08.jpg",
+          "type": "Business",
+          "annualFee": "$299/yr"
+        },
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest® Rapid Rewards® Premier Business Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/604be1db-dbf9-5d30-b583-fc821a00c75c/156da5b8-927b-4c03-b530-0f41b528651d.jpg",
+          "type": "Business",
+          "annualFee": "$149/yr"
+        },
+        {
+          "family": "Southwest Rapid Rewards Cards",
+          "cardName": "Southwest® Rapid Rewards® Plus Business Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/f0755e6a-d98d-5acf-b586-9dd8b041d208/fffe9a5a-6258-4719-8c49-acb143153bc7.jpg",
+          "type": "Business",
+          "annualFee": "$99/yr"
+        }
+      ]
+    },
+    {
+      "family": "U.S. Bank Cards",
+      "cards": [
+        {
+          "family": "U.S. Bank Cards",
+          "cardName": "U.S. Bank Altitude™ Reserve Visa Infinite® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/276d57d3-b5cb-5ae6-b960-b1ab2df1b072/f119da08-86a3-461d-aba6-85d0321586a3.jpg",
+          "type": "Personal",
+          "annualFee": "$400/yr"
+        },
+        {
+          "family": "U.S. Bank Cards",
+          "cardName": "U.S. Bank Altitude® Connect Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/4357c2cc-58f2-57f6-a778-6cac72b25ca7/44228d10-53e8-4f38-8e62-5f1614d180e9.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "U.S. Bank Cards",
+          "cardName": "U.S. Bank Altitude® Go Visa Signature® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/733e5644-2734-5edd-a539-3eb73f7682a1/cde7b520-308f-4256-99a3-32c2b67d868e.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "U.S. Bank Cards",
+          "cardName": "U.S. Bank FlexPerks Travel Rewards Visa Signature Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/d5275c75-fcda-463f-852e-bb07d6b8343e/bcc63ced-e118-443a-bbeb-cadba8a8b898.jpg",
+          "type": "Personal",
+          "annualFee": "$49/yr (1st year waived)"
+        }
+      ]
+    },
+    {
+      "family": "United MileagePlus Cards",
+      "cards": [
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United Club℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/edec39f7-8f91-5d4e-8471-a3e49258776b/4f333688-c9d1-4901-82fc-be9471672dc7.jpg",
+          "type": "Personal",
+          "annualFee": "$695/yr"
+        },
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United Quest℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/1fa483d2-bb1f-5a8e-b79f-bb9df7ad747d/ffb4378c-2953-4a0d-b060-3b0218f40254.jpg",
+          "type": "Personal",
+          "annualFee": "$350/yr"
+        },
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United℠ Explorer Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/9f3d83b1-a3f0-51ae-a101-aa0ce6a75fcb/2b18e9c8-6f7e-49f7-aab6-93c544c16a4e.jpg",
+          "type": "Personal",
+          "annualFee": "$150/yr (1st year waived)"
+        },
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United Gateway℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/38b8432a-07b8-596e-899e-041ffe87bb3d/302489c8-f4dd-41bc-8f42-3628623f6b5e.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United Club℠ Business Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/b3d36212-e2a9-520f-a8d8-c024365d3358/fba14912-b138-4a18-97f0-6149036d0cc6.jpg",
+          "type": "Business",
+          "annualFee": "$695/yr"
+        },
+        {
+          "family": "United MileagePlus Cards",
+          "cardName": "United℠ Business Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/955bbb7d-f81a-5b5e-8de7-a8cf1cb22b9d/e18e7ae4-d8a7-4bd6-88ee-3b700641081d.jpg",
+          "type": "Business",
+          "annualFee": "$150/yr"
+        }
+      ]
+    },
+    {
+      "family": "Wells Fargo Cards",
+      "cards": [
+        {
+          "family": "Wells Fargo Cards",
+          "cardName": "Wells Fargo Autograph Journey℠ Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/00ed8ff1-e672-5487-b281-9a777949ba88/1eb865fa-ec12-427f-997d-ce5551bb29da.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "Wells Fargo Cards",
+          "cardName": "Wells Fargo Autograph® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/8ff73e3e-d7ad-558e-b20a-74027d9e4ea1/e0af2e7f-5a66-428c-8b9a-c0c3a74ebf22.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Wells Fargo Cards",
+          "cardName": "Wells Fargo Active Cash® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c6d6840f-fc96-56bf-a49f-69faa6a51b5a/e7cb9dae-3300-4c67-83a2-a35951346fad.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Wells Fargo Cards",
+          "cardName": "Signify Business Cash® Card by Wells Fargo",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/176c7636-274a-4cd5-a491-5b95ab782008/9f5d7d99-95e0-427e-89ee-d7726081e2a0.jpg",
+          "type": "Business",
+          "annualFee": "$0/yr"
+        }
+      ]
+    },
+    {
+      "family": "World of Hyatt Cards",
+      "cards": [
+        {
+          "family": "World of Hyatt Cards",
+          "cardName": "World of Hyatt Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/51a09242-54cb-58c3-a141-d50998b84521/c582d969-7ba7-46d7-b5c1-e965c7e95c04.jpg",
+          "type": "Personal",
+          "annualFee": "$95/yr"
+        },
+        {
+          "family": "World of Hyatt Cards",
+          "cardName": "World of Hyatt Business Credit Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/53bc1269-92b7-589c-8020-2aaf9db4cdd1/155d7b4b-d210-469e-974d-1bb253995372.jpg",
+          "type": "Business",
+          "annualFee": "$199/yr"
+        }
+      ]
+    },
+    {
+      "family": "Wyndham Rewards Cards",
+      "cards": [
+        {
+          "family": "Wyndham Rewards Cards",
+          "cardName": "Wyndham Rewards Earner® Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/c0bc37b4-4be2-4ea3-ab52-ff6b3c1f6ac5/0bec8d94-6749-401c-af7b-71472438d5de.jpg",
+          "type": "Personal",
+          "annualFee": "$0/yr"
+        },
+        {
+          "family": "Wyndham Rewards Cards",
+          "cardName": "Wyndham Rewards Earner® Plus Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/523bd57a-b818-4f69-97fd-dfb2a766fa8f/d9bf5598-db55-4aaa-8528-b47a8848df78.jpg",
+          "type": "Personal",
+          "annualFee": "$75/yr"
+        },
+        {
+          "family": "Wyndham Rewards Cards",
+          "cardName": "Wyndham Rewards Earner® Business Card",
+          "cardImage": "https://tt-magnet-cardtracker-uploads.s3.us-east-1.amazonaws.com/cards/2c6f6c1f-c45f-4c9e-835b-b0a30bd35c6a/5cd42833-64aa-4360-8c7f-463ce22c8ad1.jpg",
+          "type": "Business",
+          "annualFee": "$95/yr"
+        }
+      ]
+    }
+  ]
+}

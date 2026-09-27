@@ -64,6 +64,16 @@ export const PROGRAM_CATALOG = {
     // balance directly, so the homepage is enough for the content script.
     primarySyncUrl: "https://www.jetblue.com/",
   },
+  jal_mileage_bank: {
+    // Japan Airlines Mileage Bank. Scraped from the signed-in JMB page,
+    // which exposes the redeemable miles balance in the rendered DOM.
+    programType: "airline",
+    brandSlug: "jal",
+    currency: "miles",
+    displayName: "JAL Mileage Bank",
+    short: "JL",
+    primarySyncUrl: "https://www.jal.co.jp/arl/en/jmb/",
+  },
   marriott_bonvoy: {
     programType: "hotel",
     brandSlug: "marriott",
@@ -86,6 +96,16 @@ export const PROGRAM_CATALOG = {
     // page, so we link to the homepage (always valid) and let the user
     // sign in there rather than guess a member-area path.
     primarySyncUrl: "https://www.hyatt.com",
+  },
+  hilton_honors: {
+    // Hilton Honors. Scraped from www.hilton.com via the same GraphQL
+    // customer endpoint used by Hilton's signed-in web app.
+    programType: "hotel",
+    brandSlug: "hilton",
+    currency: "points",
+    displayName: "Hilton Honors",
+    short: "HH",
+    primarySyncUrl: "https://www.hilton.com/en/",
   },
   united_mileageplus: {
     programType: "airline",
@@ -114,12 +134,22 @@ export const PROGRAM_CATALOG = {
     // airline + hotel partners, similar to Amex MR / Chase UR. Scraped
     // from www.bilt.com via api.biltrewards.com (cross-origin, bearer
     // auth from a JWT stored in localStorage).
-    programType: "bank_rewards",
+    programType: "reward_program",
     brandSlug: "bilt",
     currency: "points",
     displayName: "Bilt Rewards",
     short: "BILT",
     primarySyncUrl: "https://www.bilt.com/",
+  },
+  rove_miles: {
+    // Rove Miles. A standalone travel rewards program scraped from
+    // www.rove.com via the same bearer-auth API the web app uses.
+    programType: "reward_program",
+    brandSlug: "rove",
+    currency: "miles",
+    displayName: "Rove Miles",
+    short: "ROVE",
+    primarySyncUrl: "https://www.rove.com/home",
   },
   asia_miles: {
     // Cathay Asia Miles. Cathay Pacific's loyalty currency, also used
@@ -178,10 +208,20 @@ export const PROGRAM_CATALOG = {
     short: "AS",
     primarySyncUrl: "https://www.alaskaair.com/atmosrewards/account/overview/",
   },
+  southwest_rapid_rewards: {
+    // Southwest Rapid Rewards. Scraped from www.southwest.com via
+    // Southwest's loyalty-management customer details API.
+    programType: "airline",
+    brandSlug: "southwest",
+    currency: "points",
+    displayName: "Southwest Rapid Rewards",
+    short: "WN",
+    primarySyncUrl: "https://www.southwest.com/",
+  },
 } as const satisfies Record<
   string,
   {
-    programType: "bank_rewards" | "airline" | "hotel";
+    programType: "bank_rewards" | "airline" | "hotel" | "reward_program";
     brandSlug: string;
     currency: "points" | "miles" | "usd_cents";
     displayName: string;
