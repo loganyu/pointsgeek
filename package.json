@@ -7,6 +7,7 @@
     "dev:ext": "pnpm --filter @points-geek/extension dev",
     "dev:ext:staging": "pnpm --filter @points-geek/extension dev:staging",
     "build": "pnpm --filter @points-geek/web build",
+    "build:amplify": "pnpm --filter @points-geek/web build:amplify",
     "build:vercel": "pnpm --filter @points-geek/web build:vercel",
     "build:ext": "pnpm --filter @points-geek/extension build",
     "build:ext:local": "pnpm --filter @points-geek/extension build:local",
